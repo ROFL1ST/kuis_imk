@@ -282,6 +282,147 @@ export const quizData = {
       options: ["Melihat objek lengkap meskipun gambar tidak utuh/terputus", "Melihat warna cerah", "Melihat objek bergerak", "Melihat teks kecil"],
       correct: "Melihat objek lengkap meskipun gambar tidak utuh/terputus",
       hint: "Otak kita otomatis 'menutup' celah pada gambar garis putus-putus."
+    },
+    // --- 20 SOAL TAMBAHAN BARU (PART 3 - ID 41-60) ---
+    {
+      id: 41,
+      question: "Perbedaan utama antara 'Slip' dan 'Mistake' menurut Don Norman adalah:",
+      options: ["Slip adalah kesalahan tindakan (tidak sengaja), Mistake adalah kesalahan perencanaan (salah paham)", "Slip dilakukan pemula, Mistake dilakukan ahli", "Slip terjadi di software, Mistake di hardware", "Tidak ada bedanya"],
+      correct: "Slip adalah kesalahan tindakan (tidak sengaja), Mistake adalah kesalahan perencanaan (salah paham)",
+      hint: "Slip terjadi saat kamu ingin tekan 'A' tapi terpencet 'B'. Mistake terjadi saat kamu yakin 'B' adalah tombol yang benar, padahal salah."
+    },
+    {
+      id: 42,
+      question: "Apa yang dimaksud dengan 'Mental Model' pengguna?",
+      options: ["Gambar struktur otak", "Keyakinan pengguna tentang bagaimana suatu sistem bekerja berdasarkan pengalaman masa lalu", "Desain visual aplikasi", "Algoritma AI"],
+      correct: "Keyakinan pengguna tentang bagaimana suatu sistem bekerja berdasarkan pengalaman masa lalu",
+      hint: "Alasan mengapa kita mencari tombol 'X' di pojok kanan atas untuk menutup aplikasi."
+    },
+    {
+      id: 43,
+      question: "Metode 'Card Sorting' biasanya digunakan untuk:",
+      options: ["Menguji kecepatan server", "Merancang struktur navigasi dan arsitektur informasi", "Memilih warna terbaik", "Mengurutkan kartu remi"],
+      correct: "Merancang struktur navigasi dan arsitektur informasi",
+      hint: "Membantu desainer memahami bagaimana user mengelompokkan informasi secara alami."
+    },
+    {
+      id: 44,
+      question: "Teknik 'Wizard of Oz' dalam pengujian prototipe melibatkan:",
+      options: ["Manusia yang bersembunyi dan mensimulasikan respon sistem seolah-olah otomatis", "Menggunakan sihir", "Software otomatis penuh", "Pengujian tanpa user"],
+      correct: "Manusia yang bersembunyi dan mensimulasikan respon sistem seolah-olah otomatis",
+      hint: "Seperti filmnya, ada 'orang di balik layar' yang mengendalikan sistem yang belum jadi."
+    },
+    {
+      id: 45,
+      question: "Prinsip aksesibilitas WCAG disingkat menjadi POUR. Apa kepanjangannya?",
+      options: ["Perceivable, Operable, Understandable, Robust", "Perfect, Outstanding, Usable, Reliable", "Public, Open, User, Right", "Power, On, Under, Reset"],
+      correct: "Perceivable, Operable, Understandable, Robust",
+      hint: "4 Prinsip dasar agar web bisa diakses penyandang disabilitas."
+    },
+    {
+      id: 46,
+      question: "Pola membaca 'F-Pattern' sering ditemukan pada saat pengguna melihat:",
+      options: ["Halaman web yang padat teks", "Video YouTube", "Gambar lukisan", "Logo perusahaan"],
+      correct: "Halaman web yang padat teks",
+      hint: "Mata memindai bagian atas, lalu turun sedikit memindai lagi, lalu turun vertikal."
+    },
+    {
+      id: 47,
+      question: "Navigasi 'Breadcrumbs' (remahan roti) berfungsi untuk:",
+      options: ["Memberi makan burung", "Menunjukkan lokasi pengguna saat ini dalam hierarki situs", "Menghapus history", "Menyimpan password"],
+      correct: "Menunjukkan lokasi pengguna saat ini dalam hierarki situs",
+      hint: "Contoh: Home > Elektronik > Laptop > Gaming."
+    },
+    {
+      id: 48,
+      question: "Apa itu 'Dark Pattern' dalam desain UI/UX?",
+      options: ["Mode gelap (Dark Mode)", "Trik desain yang memanipulasi pengguna melakukan hal yang tidak mereka inginkan", "Pola latar belakang hitam", "Coding backend"],
+      correct: "Trik desain yang memanipulasi pengguna melakukan hal yang tidak mereka inginkan",
+      hint: "Contoh: Tombol 'Unsubscribe' yang warnanya samar atau pertanyaan jebakan saat checkout."
+    },
+    {
+      id: 49,
+      question: "Dalam desain responsif, apa fungsi 'Media Query'?",
+      options: ["Memutar video", "Mendeteksi ukuran layar perangkat dan menyesuaikan gaya CSS", "Mencari gambar di Google", "Mengompres file media"],
+      correct: "Mendeteksi ukuran layar perangkat dan menyesuaikan gaya CSS",
+      hint: "Teknologi inti agar web tampil bagus di HP dan Laptop sekaligus."
+    },
+    {
+      id: 50,
+      question: "Perbedaan 'Skeuomorphism' dan 'Flat Design' adalah:",
+      options: ["Skeuomorphism meniru objek dunia nyata (tekstur/bayangan), Flat Design minimalis 2D", "Flat design lebih mahal", "Skeuomorphism hanya untuk iOS", "Tidak ada bedanya"],
+      correct: "Skeuomorphism meniru objek dunia nyata (tekstur/bayangan), Flat Design minimalis 2D",
+      hint: "Ingat ikon Instagram lama (lensa kamera nyata) vs ikon baru (garis sederhana)."
+    },
+    {
+      id: 51,
+      question: "Hukum Jakob (Jakob's Law) menyatakan bahwa:",
+      options: ["Pengguna menghabiskan sebagian besar waktunya di situs lain, jadi mereka ingin situsmu bekerja seperti situs lain", "Situs harus unik dan beda", "Jakob adalah desainer terbaik", "Loading harus di bawah 1 detik"],
+      correct: "Pengguna menghabiskan sebagian besar waktunya di situs lain, jadi mereka ingin situsmu bekerja seperti situs lain",
+      hint: "Alasan kenapa hampir semua toko online meletakkan keranjang belanja di pojok kanan atas."
+    },
+    {
+      id: 52,
+      question: "Kuesioner SUS (System Usability Scale) memiliki berapa butir pertanyaan?",
+      options: ["10 pertanyaan", "100 pertanyaan", "5 pertanyaan", "1 pertanyaan (NPS)"],
+      correct: "10 pertanyaan",
+      hint: "Standar industri yang cepat untuk mengukur 'perceived usability'."
+    },
+    {
+      id: 53,
+      question: "Warna kontras teks terhadap background minimal menurut standar WCAG AA (untuk teks normal) adalah:",
+      options: ["4.5 : 1", "1 : 1", "10 : 1", "2 : 1"],
+      correct: "4.5 : 1",
+      hint: "Agar teks tetap terbaca oleh orang dengan penglihatan lemah atau layar redup."
+    },
+    {
+      id: 54,
+      question: "Apa fungsi 'Persona' dalam User-Centered Design?",
+      options: ["Sebagai foto profil admin", "Membantu tim fokus pada kebutuhan user spesifik daripada keinginan diri sendiri", "Syarat administrasi proyek", "Untuk marketing saja"],
+      correct: "Membantu tim fokus pada kebutuhan user spesifik daripada keinginan diri sendiri",
+      hint: "Mencegah mentalitas 'Saya suka fitur ini, jadi user pasti juga suka'."
+    },
+    {
+      id: 55,
+      question: "Metode 'Think Aloud' dalam usability testing meminta pengguna untuk:",
+      options: ["Diam saja saat tes", "Menyuarakan apa yang mereka pikirkan, rasakan, dan bingungkan saat menggunakan aplikasi", "Bernyanyi", "Menulis esai setelah tes"],
+      correct: "Menyuarakan apa yang mereka pikirkan, rasakan, dan bingungkan saat menggunakan aplikasi",
+      hint: "Cara paling efektif melihat 'isi kepala' pengguna saat bingung menghadapi UI."
+    },
+    {
+      id: 56,
+      question: "Istilah 'Fold' (Above the Fold) merujuk pada:",
+      options: ["Bagian layar yang terlihat pertama kali tanpa scrolling", "Lipatan laptop", "Folder penyimpanan", "Menu dropdown"],
+      correct: "Bagian layar yang terlihat pertama kali tanpa scrolling",
+      hint: "Istilah warisan dari koran cetak (lipatan koran)."
+    },
+    {
+      id: 57,
+      question: "Apa tujuan dari 'A/B Testing'?",
+      options: ["Tes golongan darah", "Membandingkan dua versi desain untuk melihat mana yang performanya lebih baik secara statistik", "Menguji alfabet", "Testing manual"],
+      correct: "Membandingkan dua versi desain untuk melihat mana yang performanya lebih baik secara statistik",
+      hint: "Versi A (kontrol) vs Versi B (variasi), mana yang lebih banyak diklik?"
+    },
+    {
+      id: 58,
+      question: "Dalam tipografi, 'Leading' (dibaca: ledding) adalah:",
+      options: ["Jarak antar baris teks (line height)", "Huruf pertama paragraf", "Jarak antar huruf", "Ketebalan huruf"],
+      correct: "Jarak antar baris teks (line height)",
+      hint: "Jika terlalu rapat, mata susah pindah baris. Jika terlalu lebar, teks terlihat terpisah."
+    },
+    {
+      id: 59,
+      question: "Fenomena 'Banner Blindness' adalah kecenderungan pengguna untuk:",
+      options: ["Suka melihat banner", "Mengabaikan elemen yang terlihat seperti iklan/banner", "Buta warna", "Menutup mata saat browsing"],
+      correct: "Mengabaikan elemen yang terlihat seperti iklan/banner",
+      hint: "Pengguna secara tidak sadar melewati area kanan atau atas jika bentuknya mirip iklan."
+    },
+    {
+      id: 60,
+      question: "Prinsip 'KISS' dalam desain antarmuka berarti:",
+      options: ["Keep It Simple, Stupid", "Kiss In Soft Screen", "Keep Interface Super Shinny", "Keyboard Input System Standard"],
+      correct: "Keep It Simple, Stupid",
+      hint: "Kesederhanaan adalah kunci. Hindari kerumitan yang tidak perlu."
     }
   ]
 };
