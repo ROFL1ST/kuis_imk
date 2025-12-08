@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { quizData } from './data/data';
 import { CheckCircle, XCircle, ChevronRight, ChevronLeft, RefreshCw, Eye, ArrowLeft, User, History, Trophy, Lightbulb, Shuffle } from 'lucide-react';
-
+import { Analytics } from '@vercel/analytics/react';
 const getStorage = (key, defaultValue) => {
   const saved = localStorage.getItem(key);
   if (!saved) return defaultValue;
@@ -449,6 +449,7 @@ function App() {
       {gameState === 'quiz' && renderQuiz()}
       {gameState === 'review' && renderReview()}
       {gameState === 'history_review' && renderDetailView()}
+      <Analytics />
     </div>
   );
 }
