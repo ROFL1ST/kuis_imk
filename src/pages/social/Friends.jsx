@@ -1,26 +1,31 @@
 import { useEffect, useState } from "react";
 import { socialAPI } from "../../services/api";
 import toast from "react-hot-toast";
-import { UserPlus, Trash2, User, Check, X, Bell } from "lucide-react";
+import { UserPlus, Trash2, User, Check, X, Bell, Clock, ArrowRight } from "lucide-react";
 
 const Friends = () => {
   const [friends, setFriends] = useState([]);
-  const [requests, setRequests] = useState([]); // State untuk request masuk
+  const [requests, setRequests] = useState([]); // Request Masuk
+  const [sentRequests, setSentRequests] = useState([]); // Request Terkirim (Pending)
   const [usernameInput, setUsernameInput] = useState("");
   const [loading, setLoading] = useState(true);
 
   const fetchData = () => {
     setLoading(true);
-    // Fetch teman dan request secara paralel
-    Promise.all([socialAPI.getFriends(), socialAPI.getFriendRequests()])
-      .then(([friendsRes, requestsRes]) => {
+    Promise.all([
+      socialAPI.getFriends(),
+      socialAPI.getFriendRequests(),
+      socialAPI.getSentRequests(), // Fetch data sent request
+    ])
+      .then(([friendsRes, requestsRes, sentRes]) => {
         setFriends(friendsRes.data.data || []);
         setRequests(requestsRes.data.data || []);
+        setSentRequests(sentRes.data.data || []);
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Gagal memuat data teman");
+        toast.error("Gagal memuat data sosial");
         setLoading(false);
       });
   };
@@ -36,7 +41,7 @@ const Friends = () => {
       await socialAPI.addFriend(usernameInput);
       toast.success("Permintaan pertemanan dikirim!");
       setUsernameInput("");
-      fetchData(); // Refresh data (opsional, siapa tau ada update status)
+      fetchData();
     } catch (err) {
       toast.error(err.response?.data?.message || "Gagal mengirim permintaan");
     }
@@ -46,7 +51,7 @@ const Friends = () => {
     try {
       await socialAPI.confirmFriend(requesterId);
       toast.success("Pertemanan diterima!");
-      fetchData(); // Refresh list teman dan request
+      fetchData();
     } catch (err) {
       toast.error("Gagal menerima pertemanan");
     }
@@ -59,6 +64,17 @@ const Friends = () => {
       fetchData();
     } catch (err) {
       toast.error("Gagal menolak permintaan");
+    }
+  };
+
+  // Logic cancel request yang kita kirim
+  const handleCancelRequest = async (friendId) => {
+    try {
+      await socialAPI.cancelRequest(friendId);
+      toast.success("Permintaan dibatalkan");
+      fetchData();
+    } catch (err) {
+      toast.error("Gagal membatalkan permintaan");
     }
   };
 
@@ -75,10 +91,11 @@ const Friends = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Kolom Kiri: Tambah Teman & Request Masuk */}
+    <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* === KOLOM KIRI (Aksi & Notifikasi) === */}
       <div className="lg:col-span-1 space-y-6">
-        {/* Form Tambah Teman */}
+        
+        {/* 1. Form Tambah Teman */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
             <UserPlus size={20} className="text-indigo-600" /> Tambah Teman
@@ -97,11 +114,12 @@ const Friends = () => {
           </form>
         </div>
 
-        {/* List Request Masuk */}
+        {/* 2. Permintaan Masuk (Incoming Requests) */}
         {requests.length > 0 && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
-              <Bell size={20} className="text-amber-500" /> Permintaan ({requests.length})
+              <Bell size={20} className="text-amber-500" /> Permintaan Masuk
+              <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">{requests.length}</span>
             </h2>
             <div className="space-y-3">
               {requests.map((req) => (
@@ -116,17 +134,11 @@ const Friends = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => handleConfirmFriend(req.user_id)}
-                      className="flex-1 bg-indigo-600 text-white text-xs py-1.5 rounded flex items-center justify-center gap-1 hover:bg-indigo-700 transition"
-                    >
-                      <Check size={14} /> Terima
+                    <button onClick={() => handleConfirmFriend(req.user_id)} className="flex-1 bg-indigo-600 text-white text-xs py-1.5 rounded hover:bg-indigo-700 transition">
+                      Terima
                     </button>
-                    <button
-                      onClick={() => handleRefuseFriend(req.user_id)}
-                      className="flex-1 bg-white border border-slate-300 text-slate-600 text-xs py-1.5 rounded flex items-center justify-center gap-1 hover:bg-slate-50 transition"
-                    >
-                      <X size={14} /> Tolak
+                    <button onClick={() => handleRefuseFriend(req.user_id)} className="flex-1 bg-white border border-slate-300 text-slate-600 text-xs py-1.5 rounded hover:bg-slate-50 transition">
+                      Tolak
                     </button>
                   </div>
                 </div>
@@ -134,13 +146,48 @@ const Friends = () => {
             </div>
           </div>
         )}
+
+        {/* 3. Permintaan Terkirim (Sent Requests) - BARU */}
+        {sentRequests.length > 0 && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
+              <Clock size={20} className="text-blue-500" /> Menunggu Konfirmasi
+            </h2>
+            <div className="space-y-3">
+              {sentRequests.map((req) => (
+                <div key={req.ID} className="flex items-center justify-between p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                   <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                      <ArrowRight size={16} />
+                    </div>
+                    <div>
+                      {/* Perhatikan: di sini kita pakai req.friend karena ini orang yg KITA add */}
+                      <p className="font-semibold text-sm text-slate-800">{req.friend.name}</p>
+                      <p className="text-xs text-slate-500">@{req.friend.username}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleCancelRequest(req.friend_id)}
+                    className="text-slate-400 hover:text-red-500 transition p-1"
+                    title="Batalkan Request"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
-      {/* Kolom Kanan: Daftar Teman */}
+      {/* === KOLOM KANAN (Daftar Teman) === */}
       <div className="lg:col-span-2">
-        <h2 className="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-2">
-          Daftar Teman <span className="text-slate-400 text-lg font-normal">({friends.length})</span>
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            Daftar Teman <span className="text-slate-400 text-lg font-normal">({friends.length})</span>
+          </h2>
+        </div>
 
         {loading ? (
           <div className="text-center py-12 text-slate-400">Memuat data teman...</div>
@@ -149,15 +196,12 @@ const Friends = () => {
             <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <User size={32} />
             </div>
-            <p className="text-slate-500">Belum ada teman. Yuk cari teman baru!</p>
+            <p className="text-slate-500">Belum ada teman.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {friends.map((user) => (
-              <div
-                key={user.ID}
-                className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition"
-              >
+              <div key={user.ID} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold text-lg">
                     {user.name.charAt(0).toUpperCase()}
