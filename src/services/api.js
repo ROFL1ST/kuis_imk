@@ -61,10 +61,26 @@ export const quizAPI = {
 
 // Social & Leaderboard Endpoints
 export const socialAPI = {
-  addFriend: (username) => api.post("/friends/add", { username }), //
-  getFriends: () => api.get("/friends"), //
-  removeFriend: (friendId) => api.delete(`/friends/${friendId}`), //
-  getLeaderboard: (slug) => api.get(`/leaderboard/${slug}`), //
+  // Mengambil daftar teman (status: accepted)
+  getFriends: () => api.get("/friends"),
+
+  // Endpoint BARU: Mengambil daftar permintaan pertemanan (status: pending)
+  getFriendRequests: () => api.get("/friends/requests"),
+
+  // UPDATE: Endpoint ganti dari '/friends/add' menjadi '/friends/request'
+  addFriend: (username) => api.post("/friends/request", { username }),
+
+  // Endpoint BARU: Konfirmasi teman
+  confirmFriend: (requesterId) => api.post("/friends/confirm", { requester_id: requesterId }),
+
+  // Endpoint BARU: Tolak teman
+  refuseFriend: (requesterId) => api.post("/friends/refuse", { requester_id: requesterId }),
+
+  // Menghapus teman
+  removeFriend: (friendId) => api.delete(`/friends/${friendId}`),
+
+  // Leaderboard (Tetap)
+  getLeaderboard: (slug) => api.get(`/leaderboard/${slug}`),
 };
 
 export default api;
