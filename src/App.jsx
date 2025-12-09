@@ -13,6 +13,7 @@ import Friends from "./pages/social/Friends"; // Buat file ini
 import Leaderboard from "./pages/social/Leaderboard"; // Buat file ini
 import Dashboard from "./pages/dashboard/Dashboard";
 import ReviewPage from "./pages/dashboard/ReviewPage";
+import Register from "./pages/auth/Register";
 
 const MainLayout = ({ children }) => (
   <>
@@ -28,6 +29,7 @@ function App() {
         <Toaster position="top-center" />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
