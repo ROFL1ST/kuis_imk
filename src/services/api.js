@@ -35,8 +35,6 @@ api.interceptors.response.use(
   }
 );
 
-
-
 // Auth Endpoints
 export const authAPI = {
   login: (credentials) => api.post("/login", credentials),
@@ -63,15 +61,23 @@ export const socialAPI = {
   getFriends: () => api.get("/friends"),
   getFriendRequests: () => api.get("/friends/requests"),
   getSentRequests: () => api.get("/friends/sent"), // <--- BARU: Ambil request terkirim
-  
+
   addFriend: (username) => api.post("/friends/request", { username }),
-  confirmFriend: (requesterId) => api.post("/friends/confirm", { requester_id: requesterId }),
-  refuseFriend: (requesterId) => api.post("/friends/refuse", { requester_id: requesterId }),
-  
+  confirmFriend: (requesterId) =>
+    api.post("/friends/confirm", { requester_id: requesterId }),
+  refuseFriend: (requesterId) =>
+    api.post("/friends/refuse", { requester_id: requesterId }),
+
   removeFriend: (friendId) => api.delete(`/friends/${friendId}`),
   cancelRequest: (friendId) => api.delete(`/friends/cancel/${friendId}`), // <--- BARU: Cancel request
-  
+
   getLeaderboard: (slug) => api.get(`/leaderboard/${slug}`),
+
+  getFeed: () => api.get("/feed"), // Activity Feed
+  createChallenge: (data) => api.post("/challenges", data), // Buat Tantangan
+  getMyChallenges: () => api.get("/challenges"), // Lihat list Tantangan
+  acceptChallenge: (challengeId) => api.post(`/challenges/${challengeId}/accept`), //
+  refuseChallenge: (challengeId) => api.post(`/challenges/${challengeId}/refuse`), //
 };
 
 export default api;

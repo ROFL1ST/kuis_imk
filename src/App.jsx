@@ -14,6 +14,7 @@ import Leaderboard from "./pages/social/Leaderboard"; // Buat file ini
 import Dashboard from "./pages/dashboard/Dashboard";
 import ReviewPage from "./pages/dashboard/ReviewPage";
 import Register from "./pages/auth/Register";
+import ChallengeList from "./pages/social/ChallengeList";
 
 const MainLayout = ({ children }) => (
   <>
@@ -38,7 +39,7 @@ function App() {
             <Route path="/history/review/:historyId" element={<MainLayout><ReviewPage /></MainLayout>} />
             <Route path="/friends" element={<MainLayout><Friends /></MainLayout>} />
             <Route path="/leaderboard/:slug" element={<MainLayout><Leaderboard /></MainLayout>} />
-            
+            <Route path="/challenges" element={<MainLayout><ChallengeList /></MainLayout>} />
             {/* Gameplay Fullscreen */}
             <Route path="/play/:quizId" element={<QuizPlay />} />
           </Route>
