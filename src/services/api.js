@@ -40,6 +40,7 @@ export const authAPI = {
   login: (credentials) => api.post("/login", credentials),
   register: (userData) => api.post("/register", userData),
   adminLogin: (credentials) => api.post("/admin/login", credentials), //
+  authMe: () => api.get("/auth/me"),
 };
 
 // Topic & Quiz Endpoints

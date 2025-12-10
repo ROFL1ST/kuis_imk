@@ -16,6 +16,7 @@ import ReviewPage from "./pages/dashboard/ReviewPage";
 import Register from "./pages/auth/Register";
 import ChallengeList from "./pages/social/ChallengeList";
 
+
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
@@ -24,6 +25,7 @@ const MainLayout = ({ children }) => (
 );
 
 function App() {
+ 
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -31,15 +33,64 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
+
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
-            <Route path="/topic/:slug" element={<MainLayout><QuizList /></MainLayout>} />
-            <Route path="/history" element={<MainLayout><History /></MainLayout>} />
-            <Route path="/history/review/:historyId" element={<MainLayout><ReviewPage /></MainLayout>} />
-            <Route path="/friends" element={<MainLayout><Friends /></MainLayout>} />
-            <Route path="/leaderboard/:slug" element={<MainLayout><Leaderboard /></MainLayout>} />
-            <Route path="/challenges" element={<MainLayout><ChallengeList /></MainLayout>} />
+            <Route
+              path="/"
+              element={
+                <MainLayout>
+                  <Dashboard />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/topic/:slug"
+              element={
+                <MainLayout>
+                  <QuizList />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <MainLayout>
+                  <History />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/history/review/:historyId"
+              element={
+                <MainLayout>
+                  <ReviewPage />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/friends"
+              element={
+                <MainLayout>
+                  <Friends />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/leaderboard/:slug"
+              element={
+                <MainLayout>
+                  <Leaderboard />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/challenges"
+              element={
+                <MainLayout>
+                  <ChallengeList />
+                </MainLayout>
+              }
+            />
             {/* Gameplay Fullscreen */}
             <Route path="/play/:quizId" element={<QuizPlay />} />
           </Route>
