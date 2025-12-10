@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { PlayCircle, Trophy, ArrowLeft, Swords, X } from "lucide-react";
+import { useParams, Link } from "react-router-dom";
+import { PlayCircle, Trophy, ArrowLeft, Swords, CheckCircle2 } from "lucide-react";
 import { topicAPI, socialAPI } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth"; 
 import toast from "react-hot-toast";
+import Modal from "../../components/ui/Modal"; // Import Modal
 
 const QuizList = () => {
   const { slug } = useParams();
+  const { user } = useAuth();
   const [quizzes, setQuizzes] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [existingChallenges, setExistingChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Modal State
@@ -15,13 +19,14 @@ const QuizList = () => {
   const [selectedQuizId, setSelectedQuizId] = useState(null);
 
   useEffect(() => {
-    // Load Kuis & Teman sekaligus
     Promise.all([
       topicAPI.getQuizzesBySlug(slug),
-      socialAPI.getFriends()
-    ]).then(([quizRes, friendRes]) => {
+      socialAPI.getFriends(),
+      socialAPI.getMyChallenges()
+    ]).then(([quizRes, friendRes, challengeRes]) => {
       setQuizzes(quizRes.data.data || []);
       setFriends(friendRes.data.data || []);
+      setExistingChallenges(challengeRes.data.data || []);
     }).catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, [slug]);
@@ -38,11 +43,25 @@ const QuizList = () => {
         opponent_username: friendUsername
       });
       toast.success(`Tantangan dikirim ke ${friendUsername}!`);
+      
+      const res = await socialAPI.getMyChallenges();
+      setExistingChallenges(res.data.data || []);
+      
       setIsModalOpen(false);
     } catch (err) {
       console.log(err);
       toast.error("Gagal mengirim tantangan.");
     }
+  };
+
+  const checkIsChallenged = (friendId) => {
+    return existingChallenges.some(ch => {
+      const isSameQuiz = ch.quiz_id === selectedQuizId;
+      const isActive = ch.status === 'pending' || ch.status === 'active';
+      const isUserInvolved = (ch.challenger_id === user.ID && ch.opponent_id === friendId) || 
+                             (ch.challenger_id === friendId && ch.opponent_id === user.ID);
+      return isSameQuiz && isActive && isUserInvolved;
+    });
   };
 
   return (
@@ -99,53 +118,60 @@ const QuizList = () => {
         </div>
       )}
 
-      {/* === MODAL TANTANG TEMAN === */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
-            <button 
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
-            >
-              <X size={24} />
-            </button>
-            
-            <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Swords className="text-orange-500" /> Pilih Lawan Duel
-            </h2>
-            
-            {friends.length === 0 ? (
-              <p className="text-slate-500 text-center py-6">
-                Kamu belum punya teman untuk ditantang. <br/>
-                <Link to="/friends" className="text-indigo-600 font-bold">Cari teman dulu yuk!</Link>
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {friends.map(friend => (
-                  <button
-                    key={friend.ID}
-                    onClick={() => handleSendChallenge(friend.username)}
-                    className="w-full text-left p-3 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 flex justify-between items-center group transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">
-                        {friend.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-700 text-sm">{friend.name}</p>
-                        <p className="text-xs text-slate-400">@{friend.username}</p>
-                      </div>
+      {/* === IMPLEMENTASI REUSABLE MODAL === */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        title={<><Swords className="text-orange-500" /> Pilih Lawan Duel</>}
+      >
+        {friends.length === 0 ? (
+          <p className="text-slate-500 text-center py-6">
+            Kamu belum punya teman untuk ditantang. <br/>
+            <Link to="/friends" className="text-indigo-600 font-bold">Cari teman dulu yuk!</Link>
+          </p>
+        ) : (
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+            {friends.map(friend => {
+              const isAlreadyChallenged = checkIsChallenged(friend.ID);
+              return (
+                <button
+                  key={friend.ID}
+                  onClick={() => !isAlreadyChallenged && handleSendChallenge(friend.username)}
+                  disabled={isAlreadyChallenged}
+                  className={`w-full text-left p-3 rounded-lg border flex justify-between items-center group transition
+                    ${isAlreadyChallenged 
+                      ? "bg-slate-50 border-slate-100 cursor-not-allowed opacity-60" 
+                      : "bg-white border-transparent hover:bg-slate-50 hover:border-slate-200"
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs
+                      ${isAlreadyChallenged ? "bg-slate-200 text-slate-500" : "bg-indigo-100 text-indigo-700"}
+                    `}>
+                      {friend.name.charAt(0)}
                     </div>
+                    <div>
+                      <p className="font-bold text-slate-700 text-sm">{friend.name}</p>
+                      <p className="text-xs text-slate-400">@{friend.username}</p>
+                    </div>
+                  </div>
+                  
+                  {isAlreadyChallenged ? (
+                    <span className="text-xs font-bold text-slate-400 bg-slate-200 px-3 py-1 rounded-full flex items-center gap-1">
+                      <CheckCircle2 size={12} /> Aktif
+                    </span>
+                  ) : (
                     <span className="text-xs font-bold text-white bg-indigo-600 px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">
                       Pilih
                     </span>
-                  </button>
-                ))}
-              </div>
-            )}
+                  )}
+                </button>
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };

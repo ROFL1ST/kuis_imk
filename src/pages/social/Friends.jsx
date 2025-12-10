@@ -1,21 +1,38 @@
 import { useEffect, useState } from "react";
 import { socialAPI } from "../../services/api";
 import toast from "react-hot-toast";
-import { UserPlus, Trash2, User, Check, X, Bell, Clock, ArrowRight } from "lucide-react";
+import {
+  UserPlus,
+  Trash2,
+  User,
+  Bell,
+  Clock,
+  ArrowRight,
+  AlertTriangle,
+} from "lucide-react";
+import Modal from "../../components/ui/Modal"; // Import Modal
+import { X } from "lucide-react";
 
 const Friends = () => {
   const [friends, setFriends] = useState([]);
-  const [requests, setRequests] = useState([]); // Request Masuk
-  const [sentRequests, setSentRequests] = useState([]); // Request Terkirim (Pending)
+  const [requests, setRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
   const [usernameInput, setUsernameInput] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // State Modal Konfirmasi
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    friendId: null,
+    friendName: "",
+  });
 
   const fetchData = () => {
     setLoading(true);
     Promise.all([
       socialAPI.getFriends(),
       socialAPI.getFriendRequests(),
-      socialAPI.getSentRequests(), // Fetch data sent request
+      socialAPI.getSentRequests(),
     ])
       .then(([friendsRes, requestsRes, sentRes]) => {
         setFriends(friendsRes.data.data || []);
@@ -53,6 +70,8 @@ const Friends = () => {
       toast.success("Pertemanan diterima!");
       fetchData();
     } catch (err) {
+      console.log(err);
+
       toast.error("Gagal menerima pertemanan");
     }
   };
@@ -63,39 +82,50 @@ const Friends = () => {
       toast.success("Permintaan ditolak");
       fetchData();
     } catch (err) {
+      console.log(err);
+
       toast.error("Gagal menolak permintaan");
     }
   };
 
-  // Logic cancel request yang kita kirim
   const handleCancelRequest = async (friendId) => {
     try {
       await socialAPI.cancelRequest(friendId);
       toast.success("Permintaan dibatalkan");
       fetchData();
     } catch (err) {
+      console.log(err);
+
       toast.error("Gagal membatalkan permintaan");
     }
   };
 
-  const handleRemoveFriend = async (friendId) => {
-    if (!confirm("Hapus teman ini?")) return;
+  const openDeleteModal = (friend) => {
+    setConfirmModal({
+      isOpen: true,
+      friendId: friend.ID,
+      friendName: friend.name,
+    });
+  };
+
+  const executeRemoveFriend = async () => {
     try {
-      await socialAPI.removeFriend(friendId);
+      await socialAPI.removeFriend(confirmModal.friendId);
       toast.success("Teman dihapus");
       fetchData();
     } catch (err) {
       console.log(err);
       toast.error("Gagal menghapus teman");
+    } finally {
+      setConfirmModal({ isOpen: false, friendId: null, friendName: "" });
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* === KOLOM KIRI (Aksi & Notifikasi) === */}
+      {/* Kolom Kiri - Sama seperti sebelumnya (tanpa perubahan) */}
       <div className="lg:col-span-1 space-y-6">
-        
-        {/* 1. Form Tambah Teman */}
+        {/* ... (Kode Form Add, Request Masuk, Request Terkirim tetap sama) ... */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
             <UserPlus size={20} className="text-indigo-600" /> Tambah Teman
@@ -114,30 +144,44 @@ const Friends = () => {
           </form>
         </div>
 
-        {/* 2. Permintaan Masuk (Incoming Requests) */}
         {requests.length > 0 && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
               <Bell size={20} className="text-amber-500" /> Permintaan Masuk
-              <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">{requests.length}</span>
+              <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">
+                {requests.length}
+              </span>
             </h2>
             <div className="space-y-3">
               {requests.map((req) => (
-                <div key={req.ID} className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <div
+                  key={req.ID}
+                  className="p-3 bg-slate-50 rounded-lg border border-slate-100"
+                >
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
                       <User size={16} />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm text-slate-800">{req.requester.name}</p>
-                      <p className="text-xs text-slate-500">@{req.requester.username}</p>
+                      <p className="font-semibold text-sm text-slate-800">
+                        {req.requester.name}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        @{req.requester.username}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleConfirmFriend(req.user_id)} className="flex-1 bg-indigo-600 text-white text-xs py-1.5 rounded hover:bg-indigo-700 transition">
+                    <button
+                      onClick={() => handleConfirmFriend(req.user_id)}
+                      className="flex-1 bg-indigo-600 text-white text-xs py-1.5 rounded hover:bg-indigo-700 transition"
+                    >
                       Terima
                     </button>
-                    <button onClick={() => handleRefuseFriend(req.user_id)} className="flex-1 bg-white border border-slate-300 text-slate-600 text-xs py-1.5 rounded hover:bg-slate-50 transition">
+                    <button
+                      onClick={() => handleRefuseFriend(req.user_id)}
+                      className="flex-1 bg-white border border-slate-300 text-slate-600 text-xs py-1.5 rounded hover:bg-slate-50 transition"
+                    >
                       Tolak
                     </button>
                   </div>
@@ -147,7 +191,6 @@ const Friends = () => {
           </div>
         )}
 
-        {/* 3. Permintaan Terkirim (Sent Requests) - BARU */}
         {sentRequests.length > 0 && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
@@ -155,18 +198,24 @@ const Friends = () => {
             </h2>
             <div className="space-y-3">
               {sentRequests.map((req) => (
-                <div key={req.ID} className="flex items-center justify-between p-3 bg-blue-50/50 rounded-lg border border-blue-100">
-                   <div className="flex items-center gap-3">
+                <div
+                  key={req.ID}
+                  className="flex items-center justify-between p-3 bg-blue-50/50 rounded-lg border border-blue-100"
+                >
+                  <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
                       <ArrowRight size={16} />
                     </div>
                     <div>
-                      {/* Perhatikan: di sini kita pakai req.friend karena ini orang yg KITA add */}
-                      <p className="font-semibold text-sm text-slate-800">{req.friend.name}</p>
-                      <p className="text-xs text-slate-500">@{req.friend.username}</p>
+                      <p className="font-semibold text-sm text-slate-800">
+                        {req.friend.name}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        @{req.friend.username}
+                      </p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => handleCancelRequest(req.friend_id)}
                     className="text-slate-400 hover:text-red-500 transition p-1"
                     title="Batalkan Request"
@@ -178,19 +227,23 @@ const Friends = () => {
             </div>
           </div>
         )}
-
       </div>
 
-      {/* === KOLOM KANAN (Daftar Teman) === */}
+      {/* Kolom Kanan */}
       <div className="lg:col-span-2">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            Daftar Teman <span className="text-slate-400 text-lg font-normal">({friends.length})</span>
+            Daftar Teman{" "}
+            <span className="text-slate-400 text-lg font-normal">
+              ({friends.length})
+            </span>
           </h2>
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-slate-400">Memuat data teman...</div>
+          <div className="text-center py-12 text-slate-400">
+            Memuat data teman...
+          </div>
         ) : friends.length === 0 ? (
           <div className="p-12 bg-slate-50 rounded-xl text-center border border-dashed border-slate-300">
             <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -201,7 +254,10 @@ const Friends = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {friends.map((user) => (
-              <div key={user.ID} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition">
+              <div
+                key={user.ID}
+                className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition"
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold text-lg">
                     {user.name.charAt(0).toUpperCase()}
@@ -212,7 +268,7 @@ const Friends = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => handleRemoveFriend(user.ID)}
+                  onClick={() => openDeleteModal(user)}
                   className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition"
                   title="Hapus Teman"
                 >
@@ -223,6 +279,43 @@ const Friends = () => {
           </div>
         )}
       </div>
+
+      {/* === REUSABLE MODAL (KONFIRMASI HAPUS) === */}
+      <Modal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        maxWidth="max-w-sm"
+      >
+        <div className="flex items-center gap-3 text-red-600 mb-4">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <AlertTriangle size={24} />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">Hapus Teman?</h2>
+        </div>
+
+        <p className="text-slate-600 mb-6 text-sm leading-relaxed">
+          Apakah kamu yakin ingin menghapus{" "}
+          <span className="font-bold text-slate-800">
+            {confirmModal.friendName}
+          </span>{" "}
+          dari daftar temanmu?
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+            className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition"
+          >
+            Batal
+          </button>
+          <button
+            onClick={executeRemoveFriend}
+            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition"
+          >
+            Ya, Hapus
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };

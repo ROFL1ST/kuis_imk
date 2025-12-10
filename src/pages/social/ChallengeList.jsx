@@ -37,6 +37,7 @@ const ChallengeList = () => {
       toast.success("Tantangan diterima!");
       fetchData();
     } catch (err) {
+      console.log(err);
       toast.error("Gagal menerima tantangan");
     }
   };
@@ -48,6 +49,8 @@ const ChallengeList = () => {
       toast.success("Tantangan ditolak.");
       fetchData();
     } catch (err) {
+      console.log(err);
+
       toast.error("Gagal menolak tantangan");
     }
   };
