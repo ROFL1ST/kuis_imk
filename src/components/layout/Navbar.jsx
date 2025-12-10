@@ -163,7 +163,7 @@ const Navbar = () => {
                 <div className="text-xs text-slate-500">@{user?.username}</div>
               </div>
               <button
-                onClick={logout}
+                onClick={() => setIsLogoutModalOpen(true)}
                 className="text-red-500 font-medium text-sm"
               >
                 Keluar
