@@ -23,6 +23,7 @@ const Navbar = () => {
     logout();
     setIsLogoutModalOpen(false);
   };
+
   return (
     <>
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
@@ -66,7 +67,7 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Gamification Stats & Profile */}
+          {/* Gamification Stats & Profile (Desktop) */}
           <div className="hidden sm:flex items-center gap-4 border-l pl-4 ml-4">
             {/* Streak Badge */}
             <div
@@ -86,12 +87,17 @@ const Navbar = () => {
               Lvl {user?.level || 1}
             </div>
 
-            <div className="text-right">
-              <div className="text-sm font-bold text-slate-700">
+            {/* Profile Link (Updated) */}
+            <Link 
+              to="/profile" 
+              className="text-right group cursor-pointer block"
+            >
+              <div className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition">
                 {user?.name}
               </div>
               <div className="text-xs text-slate-500">@{user?.username}</div>
-            </div>
+            </Link>
+
             <button
               onClick={() => setIsLogoutModalOpen(true)}
               className="p-2 text-red-500 hover:bg-red-50 rounded-full"
@@ -156,12 +162,18 @@ const Navbar = () => {
             </Link>
 
             <div className="mt-3 border-t pt-3 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-bold text-slate-700">
+              {/* Mobile Profile Link (Updated) */}
+              <Link 
+                to="/profile" 
+                onClick={() => setOpen(false)} 
+                className="group cursor-pointer block"
+              >
+                <div className="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition">
                   {user?.name}
                 </div>
                 <div className="text-xs text-slate-500">@{user?.username}</div>
-              </div>
+              </Link>
+              
               <button
                 onClick={() => setIsLogoutModalOpen(true)}
                 className="text-red-500 font-medium text-sm"
@@ -172,6 +184,8 @@ const Navbar = () => {
           </div>
         )}
       </nav>
+
+      {/* Logout Confirmation Modal */}
       <Modal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}

@@ -81,4 +81,12 @@ export const socialAPI = {
   refuseChallenge: (challengeId) => api.post(`/challenges/${challengeId}/refuse`), //
 };
 
+// User Profile Endpoints
+export const userAPI = {
+  getProfile: () => api.get("/users/me"),
+  updateProfile: (data) => api.put("/users/me", data),
+  getUserProfile: (username) => api.get(`/users/${username}`),
+  getAchievements: () => api.get("/users/achievements"),
+};
+
 export default api;

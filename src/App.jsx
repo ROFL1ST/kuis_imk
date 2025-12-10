@@ -15,7 +15,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import ReviewPage from "./pages/dashboard/ReviewPage";
 import Register from "./pages/auth/Register";
 import ChallengeList from "./pages/social/ChallengeList";
-
+import Profile from "./pages/profile/Profile";
 
 const MainLayout = ({ children }) => (
   <>
@@ -25,7 +25,6 @@ const MainLayout = ({ children }) => (
 );
 
 function App() {
- 
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -72,6 +71,14 @@ function App() {
               element={
                 <MainLayout>
                   <Friends />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <MainLayout>
+                  <Profile />
                 </MainLayout>
               }
             />
