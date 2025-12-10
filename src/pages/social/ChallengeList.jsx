@@ -10,7 +10,7 @@ import {
   XCircle,
   Crown,
   Frown,
-  MinusCircle, // Import ikon tambahan
+  MinusCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -133,14 +133,12 @@ const ChallengeList = () => {
                   )}
 
                   <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
-                    {/* Bagian Kiri: Hasil & Info */}
                     <div>
                       <div className="flex items-center justify-center md:justify-start gap-2 text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">
                         <Clock size={14} /> Selesai pada{" "}
                         {new Date(duel.UpdatedAt).toLocaleDateString()}
                       </div>
 
-                      {/* BANNER HASIL */}
                       {amIWinner ? (
                         <h3 className="text-3xl font-black text-yellow-700 flex items-center justify-center md:justify-start gap-2 mb-1 animate-pulse">
                           <Crown size={32} fill="currentColor" /> VICTORY!
@@ -162,9 +160,7 @@ const ChallengeList = () => {
                       </p>
                     </div>
 
-                    {/* Bagian Kanan: SCOREBOARD MEGAH */}
                     <div className="flex items-end gap-8 bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/60 shadow-sm">
-                      {/* Skor Saya */}
                       <div className="flex flex-col items-center">
                         {amIWinner && (
                           <Crown
@@ -191,7 +187,6 @@ const ChallengeList = () => {
                         :
                       </div>
 
-                      {/* Skor Musuh */}
                       <div className="flex flex-col items-center relative">
                         {amILoser && (
                           <Crown
@@ -224,15 +219,11 @@ const ChallengeList = () => {
               );
             }
 
-            // ============================================================
-            // TAMPILAN STANDAR (PENDING / ACTIVE) - Kode Lama
-            // ============================================================
             return (
               <div
                 key={duel.ID}
                 className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 transition hover:shadow-md"
               >
-                {/* Info Duel */}
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">
                     <Clock size={12} />{" "}
@@ -267,7 +258,6 @@ const ChallengeList = () => {
                   )}
                 </div>
 
-                {/* Score Board Standar */}
                 <div className="flex items-center gap-6 bg-slate-50 px-6 py-3 rounded-lg border border-slate-100">
                   <div className="text-center">
                     <p className="text-xs text-slate-500 font-bold mb-1">
@@ -298,7 +288,6 @@ const ChallengeList = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="w-full sm:w-auto flex gap-2 font-bold">
                   {isPending &&
                     (isMeChallenger ? (
@@ -327,8 +316,13 @@ const ChallengeList = () => {
 
                   {isActive &&
                     (!iHavePlayed ? (
+                      /* === UPDATED LINK DISINI === */
                       <Link
                         to={`/play/${duel.quiz_id}`}
+                        state={{
+                          title: duel.quiz?.title,
+                          isChallenge: true, // Kirim flag Challenge
+                        }}
                         className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all animate-pulse"
                       >
                         <PlayCircle size={20} /> MAINKAN SEKARANG

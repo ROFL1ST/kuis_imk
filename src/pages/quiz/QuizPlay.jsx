@@ -5,14 +5,17 @@ import toast from "react-hot-toast";
 import { AnimatePresence, motion } from "framer-motion";
 import { 
   CheckCircle2, Lightbulb, XCircle, Clock, Trophy, 
-  Home, RefreshCcw, ListChecks 
+  Home, RefreshCcw, ListChecks, Swords 
 } from "lucide-react";
 
 const QuizPlay = () => {
   const { quizId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Tangkap Data dari Link
   const quizTitle = location.state?.title || "Kuis";
+  const isChallenge = location.state?.isChallenge || false; 
 
   // State Data
   const [questions, setQuestions] = useState([]);
@@ -24,7 +27,7 @@ const QuizPlay = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showHint, setShowHint] = useState(false);
   
-  // State Result (PENTING UNTUK TAMPILAN REVIEW)
+  // State Result
   const [isFinished, setIsFinished] = useState(false);
   const [resultData, setResultData] = useState(null);
   
@@ -85,9 +88,14 @@ const QuizPlay = () => {
     });
     const finalScore = Math.round((correctCount / questions.length) * 100);
 
+    // LOGIC: Jika dari challenge, tambahkan prefix "[DUEL]"
+    const submissionTitle = isChallenge 
+      ? `[DUEL] ${quizTitle}` 
+      : quizTitle;
+
     const payload = {
       quiz_id: parseInt(quizId),
-      quiz_title: quizTitle,
+      quiz_title: submissionTitle,
       score: finalScore,
       total_soal: questions.length,
       snapshot: answers,
@@ -97,9 +105,6 @@ const QuizPlay = () => {
       await quizAPI.submitScore(payload);
       toast.success("Kuis selesai!");
       
-      // === PERBAIKAN DI SINI ===
-      // Jangan navigate("/history")!
-      // Kita simpan data hasil ke state agar UI berubah jadi Review
       setDuration(timeTaken);
       setResultData({
         score: finalScore,
@@ -107,7 +112,7 @@ const QuizPlay = () => {
         wrong: questions.length - correctCount,
         total: questions.length
       });
-      setIsFinished(true); // Trigger perubahan tampilan
+      setIsFinished(true); 
 
     } catch (err) {
       console.log(err);
@@ -121,7 +126,7 @@ const QuizPlay = () => {
   if (questions.length === 0) return <div className="text-center mt-20 text-slate-500">Soal kosong.</div>;
 
   // ============================================================
-  // TAMPILAN 1: REVIEW HASIL (Muncul setelah Submit)
+  // TAMPILAN 1: REVIEW HASIL
   // ============================================================
   if (isFinished && resultData) {
     const isPass = resultData.score >= 70;
@@ -130,7 +135,6 @@ const QuizPlay = () => {
       <div className="min-h-screen bg-slate-50 py-12 px-4">
         <div className="max-w-3xl mx-auto">
           
-          {/* Kartu Skor */}
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -158,7 +162,6 @@ const QuizPlay = () => {
               {isPass ? "Luar Biasa!" : "Jangan Menyerah!"}
             </h1>
             
-            {/* Statistik Grid */}
             <div className="grid grid-cols-3 gap-4 border-t pt-6 mt-6">
               <div className="text-center">
                 <p className="text-xs text-slate-400 font-bold uppercase mb-1">Waktu</p>
@@ -181,7 +184,6 @@ const QuizPlay = () => {
             </div>
           </motion.div>
 
-          {/* List Review Jawaban */}
           <div className="mb-8">
             <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
               <ListChecks className="text-indigo-600" /> Review Jawaban
@@ -221,7 +223,6 @@ const QuizPlay = () => {
             </div>
           </div>
 
-          {/* Tombol Navigasi */}
           <div className="flex gap-3 justify-center pb-8">
             <Link to="/" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition">
               <Home size={20} /> Dashboard
@@ -237,7 +238,7 @@ const QuizPlay = () => {
   }
 
   // ============================================================
-  // TAMPILAN 2: SOAL (Muncul saat belum selesai)
+  // TAMPILAN 2: GAMEPLAY
   // ============================================================
   const currentQ = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
@@ -246,13 +247,14 @@ const QuizPlay = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-3xl">
 
-        {/* Header */}
         <div className="flex justify-between items-center mb-6 text-slate-600 font-medium">
-          <span>{quizTitle}</span>
+          <span className="flex items-center gap-2">
+            {isChallenge && <Swords className="text-orange-500" size={20}/>}
+            {isChallenge ? "DUEL MODE" : quizTitle}
+          </span>
           <span>Soal {currentIndex + 1} dari {questions.length}</span>
         </div>
 
-        {/* Progress Bar */}
         <div className="w-full bg-slate-200 rounded-full h-2 mb-6">
           <motion.div 
             className="bg-indigo-600 h-2 rounded-full"
@@ -261,7 +263,6 @@ const QuizPlay = () => {
           />
         </div>
 
-        {/* Hint Button */}
         {currentQ.hint && (
           <button
             onClick={() => setShowHint(!showHint)}
@@ -272,14 +273,12 @@ const QuizPlay = () => {
           </button>
         )}
 
-        {/* Hint Box */}
         {showHint && (
           <div className="bg-yellow-50 border border-yellow-300 p-4 rounded-xl mb-4 text-yellow-700">
             💡 <span className="font-medium">{currentQ.hint}</span>
           </div>
         )}
 
-        {/* Question Card */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQ.ID}
@@ -312,7 +311,6 @@ const QuizPlay = () => {
           </motion.div>
         </AnimatePresence>
 
-        {/* Footer Buttons */}
         <div className="mt-8 flex justify-between">
           <button
             onClick={handlePrevious}
