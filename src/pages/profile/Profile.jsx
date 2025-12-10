@@ -233,7 +233,7 @@ const Profile = () => {
                   <span className="font-bold text-orange-700">{user.streak_count} Hari Streak</span>
                 </motion.div>
                 
-                <motion.div
+                {/* <motion.div
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.5 }}
@@ -241,7 +241,7 @@ const Profile = () => {
                 >
                   <CheckCircle className="text-green-600" size={18} />
                   <span className="font-bold text-green-700">Rank #{stats.rank || "1"}</span>
-                </motion.div>
+                </motion.div> */}
               </div>
 
               {/* Progress Bar */}
