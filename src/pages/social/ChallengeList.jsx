@@ -11,8 +11,10 @@ import {
   Crown,
   Frown,
   MinusCircle,
+  AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import Modal from "../../components/ui/Modal";
 
 const ChallengeList = () => {
   const [challenges, setChallenges] = useState([]);
@@ -42,16 +44,22 @@ const ChallengeList = () => {
     }
   };
 
-  const handleRefuse = async (id) => {
-    if (!confirm("Tolak tantangan ini?")) return;
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    challengeId: null,
+    challengerName: "",
+  });
+
+  const handleRefuse = async () => {
     try {
-      await socialAPI.refuseChallenge(id);
+      await socialAPI.refuseChallenge(confirmModal.challengeId);
       toast.success("Tantangan ditolak.");
       fetchData();
     } catch (err) {
       console.log(err);
-
       toast.error("Gagal menolak tantangan");
+    } finally {
+      setConfirmModal({ challengeId: null, challengerName: "", isOpen: false });
     }
   };
 
@@ -68,7 +76,6 @@ const ChallengeList = () => {
         <Swords className="text-orange-600" size={32} /> Arena Duel
       </h1>
       <p className="text-slate-500 mb-8">Riwayat dan tantangan aktifmu.</p>
-
       {challenges.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl shadow-sm border-2 border-dashed border-slate-200">
           <Swords size={48} className="mx-auto text-slate-300 mb-4" />
@@ -324,7 +331,13 @@ const ChallengeList = () => {
                             <CheckCircle2 size={20} /> Terima
                           </button>
                           <button
-                            onClick={() => handleRefuse(duel.ID)}
+                            onClick={() =>
+                              setConfirmModal({
+                                isOpen: true,
+                                challengeId: duel.ID,
+                                challengerName: enemy?.name,
+                              })
+                            }
                             className="flex-1 px-4 py-3 bg-white border-2 border-red-100 text-red-500 rounded-lg hover:bg-red-50 hover:border-red-300 flex items-center justify-center gap-2 transition-all"
                           >
                             <XCircle size={20} /> Tolak
@@ -364,6 +377,42 @@ const ChallengeList = () => {
           })}
         </div>
       )}
+      <Modal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        maxWidth="max-w-sm"
+      >
+        <div className="flex items-center gap-3 text-red-600 mb-4">
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <AlertTriangle size={24} />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">Tolak Tantangan?</h2>
+        </div>
+
+        <p className="text-slate-600 mb-6 text-base leading-relaxed">
+          Apakah kamu yakin ingin menolak tantangan dari{" "}
+          <span className="font-bold text-slate-800">
+            {confirmModal.challengerName}
+          </span>{" "}
+          ?
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+            className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleRefuse}
+            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition"
+          >
+            Ya, Hapus
+          </button>
+        </div>
+      </Modal>
+      F
     </div>
   );
 };
