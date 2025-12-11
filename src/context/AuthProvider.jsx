@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
             ),
             {
               duration: 5000,
-              position: "top-right",
+              position: "top-center",
               style: {
                 background: "#fff",
                 color: "#333",
