@@ -100,9 +100,9 @@ const ChallengeList = () => {
             const isPending = duel.status === "pending";
             const isActive = duel.status === "active";
             const isFinished = duel.status === "finished";
+            const isRejected = duel.status === "rejected";
             const iHavePlayed = myScore !== -1;
 
-            // logic pemenang
             const amIWinner = isFinished && duel.winner_id === user.ID;
             const isDraw = isFinished && duel.winner_id === null;
             const amILoser = isFinished && !amIWinner && !isDraw;
@@ -120,7 +120,6 @@ const ChallengeList = () => {
                       : "bg-gradient-to-br from-slate-50 to-slate-100 border-slate-300 grayscale-[30%]"
                   }`}
                 >
-                  {/* Dekorasi Latar Belakang (Watermark) */}
                   {amIWinner && (
                     <Trophy
                       className="absolute -top-6 -right-6 text-yellow-200 opacity-50 rotate-12"
@@ -254,6 +253,10 @@ const ChallengeList = () => {
                         <Swords size={16} /> {enemy?.name} Menantangmu!
                       </span>
                     )
+                  ) : isRejected ? (
+                    <span className="text-red-600 font-bold flex items-center gap-1">
+                      <XCircle size={16} /> Tantangan Ditolak
+                    </span>
                   ) : (
                     <span className="text-indigo-600 font-bold flex items-center gap-1">
                       <Swords size={16} /> Duel Aktif!
@@ -292,52 +295,69 @@ const ChallengeList = () => {
                 </div>
 
                 <div className="w-full sm:w-auto flex gap-2 font-bold">
-                  {isPending &&
-                    (isMeChallenger ? (
-                      <button
-                        disabled
-                        className="w-full px-5 py-3 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
-                      >
-                        <Clock size={20} /> Menunggu
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleAccept(duel.ID)}
-                          className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all"
-                        >
-                          <CheckCircle2 size={20} /> Terima
-                        </button>
-                        <button
-                          onClick={() => handleRefuse(duel.ID)}
-                          className="flex-1 px-4 py-3 bg-white border-2 border-red-100 text-red-500 rounded-lg hover:bg-red-50 hover:border-red-300 flex items-center justify-center gap-2 transition-all"
-                        >
-                          <XCircle size={20} /> Tolak
-                        </button>
-                      </>
-                    ))}
+                  {/* isRejected → hanya tampil badge */}
+                  {isRejected && (
+                    <button
+                      disabled
+                      className="w-full px-5 py-3 bg-red-50 text-red-400 border border-red-100 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <XCircle size={20} /> Ditolak
+                    </button>
+                  )}
 
-                  {isActive &&
-                    (!iHavePlayed ? (
-                      /* === UPDATED LINK DISINI === */
-                      <Link
-                        to={`/play/${duel.quiz_id}`}
-                        state={{
-                          title: duel.quiz?.title,
-                          isChallenge: true, // Kirim flag Challenge
-                        }}
-                        className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all animate-pulse"
-                      >
-                        <PlayCircle size={20} /> MAINKAN SEKARANG
-                      </Link>
-                    ) : (
-                      <button
-                        disabled
-                        className="w-full px-6 py-3 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
-                      >
-                        <CheckCircle2 size={20} /> Menunggu Lawan
-                      </button>
-                    ))}
+                  {/* Pending */}
+                  {!isRejected && isPending && (
+                    <>
+                      {isMeChallenger ? (
+                        <button
+                          disabled
+                          className="w-full px-5 py-3 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                        >
+                          <Clock size={20} /> Menunggu
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleAccept(duel.ID)}
+                            className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all"
+                          >
+                            <CheckCircle2 size={20} /> Terima
+                          </button>
+                          <button
+                            onClick={() => handleRefuse(duel.ID)}
+                            className="flex-1 px-4 py-3 bg-white border-2 border-red-100 text-red-500 rounded-lg hover:bg-red-50 hover:border-red-300 flex items-center justify-center gap-2 transition-all"
+                          >
+                            <XCircle size={20} /> Tolak
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {/* Active */}
+                  {!isRejected && isActive && (
+                    <>
+                      {!iHavePlayed ? (
+                        <Link
+                          to={`/play/${duel.quiz_id}`}
+                          state={{
+                            title: duel.quiz?.title,
+                            isChallenge: true,
+                          }}
+                          className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 shadow-md hover:shadow-lg flex items-center justify-center gap-2 transition-all animate-pulse"
+                        >
+                          <PlayCircle size={20} /> MAINKAN SEKARANG
+                        </Link>
+                      ) : (
+                        <button
+                          disabled
+                          className="w-full px-6 py-3 bg-slate-100 text-slate-500 border border-slate-200 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                        >
+                          <CheckCircle2 size={20} /> Menunggu Lawan
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             );

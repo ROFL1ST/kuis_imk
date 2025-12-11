@@ -2,40 +2,112 @@
 import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 import { authAPI } from "../services/api";
-import { getToken, setToken, removeToken, getUser, setUser as saveUser } from "../services/auth";
+import {
+  getToken,
+  setToken,
+  removeToken,
+  getUser,
+  setUser as saveUser,
+} from "../services/auth";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getUser());
   const [token, setTokenState] = useState(getToken());
-  
-  // 1. Set loading TRUE di awal agar aplikasi menunggu cek token
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
-  // 2. Effect untuk cek validitas token ke server saat refresh/load
+  useEffect(() => {
+    let eventSource = null;
+
+    if (token) {
+      const baseURL =
+        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const url = `${baseURL}/notifications/stream?token=${token}`;
+
+      eventSource = new EventSource(url);
+
+      eventSource.onmessage = (event) => {
+        try {
+          // Parse data JSON dari backend
+          const data = JSON.parse(event.data);
+
+          // Custom Toast Component agar bisa diklik
+          toast(
+            (t) => (
+              <div
+                onClick={() => {
+                  toast.dismiss(t.id); // Tutup toast saat diklik
+                  if (data.url) navigate(data.url); // Navigasi ke halaman tujuan
+                }}
+                className="cursor-pointer flex items-center gap-2 w-full"
+              >
+                <span className="text-lg">
+                  {data.type === "success"
+                    ? "🎉"
+                    : data.type === "warning"
+                    ? "⚔️"
+                    : "🔔"}
+                </span>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{data.message}</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Klik untuk melihat
+                  </p>
+                </div>
+              </div>
+            ),
+            {
+              duration: 5000,
+              position: "top-right",
+              style: {
+                background: "#fff",
+                color: "#333",
+                border: "1px solid #e2e8f0",
+                padding: "12px",
+                borderRadius: "12px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              },
+            }
+          );
+        } catch (e) {
+          console.error("Gagal parse notifikasi:", e);
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        console.error("EventSource gagal:", err);
+        eventSource.close();
+      };
+    }
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, [token, navigate]);
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = getToken();
-      
+
       if (storedToken) {
         try {
-          // Panggil API authMe
           const res = await authAPI.authMe();
           const { token: newToken, user: newUser } = res.data.data;
 
-          // Update State & Storage jika token valid
           setTokenState(newToken);
           setUser(newUser);
           setToken(newToken);
           saveUser(newUser);
         } catch (error) {
           console.error("Sesi tidak valid:", error);
-          logout(); // Token expired/invalid -> Logout
+          logout();
         }
       } else {
-        logout(); // Tidak ada token -> Pastikan bersih
+        logout();
       }
-      
-      setLoading(false); // Proses selesai
+
+      setLoading(false);
     };
 
     initAuth();
@@ -54,7 +126,10 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || "Login gagal" };
+      return {
+        success: false,
+        message: error.response?.data?.message || "Login gagal",
+      };
     } finally {
       setLoading(false);
     }
@@ -66,7 +141,14 @@ export const AuthProvider = ({ children }) => {
     removeToken();
   };
 
-  const value = { user, token, login, logout, loading, isAuthenticated: !!token };
+  const value = {
+    user,
+    token,
+    login,
+    logout,
+    loading,
+    isAuthenticated: !!token,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
