@@ -3,14 +3,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { 
-  Brain, 
-  LogIn, 
-  User, 
-  Lock, 
-  Sparkles,
-  ArrowRight
-} from "lucide-react";
+import { Brain, LogIn, User, Lock, Sparkles, ArrowRight } from "lucide-react";
 
 const Login = () => {
   const { login, loading } = useAuth();
@@ -19,6 +12,10 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (form.username === "" || form.password === "") {
+      toast.error("Semua field harus diisi!");
+      return;
+    }
     const result = await login(form);
     if (result.success) {
       toast.success("Login Berhasil!");
@@ -37,7 +34,7 @@ const Login = () => {
         className="w-full max-w-md"
       >
         {/* Header dengan Logo */}
-        <motion.div 
+        <motion.div
           className="text-center mb-8"
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
@@ -49,7 +46,9 @@ const Login = () => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             QuizzApp
           </h1>
-          <p className="text-slate-600 mt-2">Uji pengetahuanmu dengan kuis seru!</p>
+          <p className="text-slate-600 mt-2">
+            Uji pengetahuanmu dengan kuis seru!
+          </p>
         </motion.div>
 
         {/* Form Card */}
@@ -79,7 +78,9 @@ const Login = () => {
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                   placeholder="Username"
                   value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, username: e.target.value })
+                  }
                 />
               </div>
             </motion.div>
@@ -96,7 +97,9 @@ const Login = () => {
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                   placeholder="Password"
                   value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
                 />
               </div>
             </motion.div>
@@ -135,8 +138,8 @@ const Login = () => {
           >
             <p className="text-slate-600">
               Belum punya akun?{" "}
-              <Link 
-                to="/register" 
+              <Link
+                to="/register"
                 className="text-indigo-600 font-bold hover:text-indigo-700 inline-flex items-center gap-1 group"
               >
                 Daftar Sekarang
@@ -151,7 +154,7 @@ const Login = () => {
         </motion.form>
 
         {/* Footer */}
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}

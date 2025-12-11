@@ -21,6 +21,16 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (form.name === "" || form.username === "" || form.password === "") {
+      toast.error("Semua field harus diisi!");
+      return;
+    } else if (form.password.length < 6) {
+      toast.error("Password harus minimal 6 karakter!");
+      return;
+    } else if (form.username.includes(" ")) {
+      toast.error("Username tidak boleh mengandung spasi!");
+      return;
+    }
     setLoading(true);
     try {
       await authAPI.register(form);
