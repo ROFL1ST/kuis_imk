@@ -141,8 +141,14 @@ export const AuthProvider = ({ children }) => {
     removeToken();
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+    saveUser(userData);
+  };
+
   const value = {
     user,
+    setUser: updateUser,
     token,
     login,
     logout,
