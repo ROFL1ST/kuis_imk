@@ -104,18 +104,14 @@ const Profile = () => {
 
   if (!profile) return null;
 
-  const { user, stats, topic_performance } = profile;
+  const { user, stats, topic_performance, level_progress } = profile;
 
-  // Calculate user level based on XP
-  const calculateLevelProgress = (xp) => {
-    const currentLevel = Math.floor(xp / 1000) + 1;
-    const currentLevelXP = xp % 1000;
-    const progress = (currentLevelXP / 1000) * 100;
-    return { currentLevel, progress };
-  };
-
-  const { currentLevel, progress } = calculateLevelProgress(user.xp);
-
+  // Gunakan data dari backend, dengan fallback value agar tidak error
+  const currentProgress = level_progress ? level_progress.progress_percent : 0;
+  const nextLevelXp = level_progress ? level_progress.next_level_xp : 1000;
+  const currentXp = user.xp;
+  const currentLevel = user.level;
+  const displayProgress = Math.min(currentProgress, 100);
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -189,7 +185,7 @@ const Profile = () => {
                     strokeWidth="3"
                     strokeLinecap="round"
                     initial={{ pathLength: 0 }}
-                    animate={{ pathLength: progress / 100 }}
+                    animate={{ pathLength: displayProgress / 100 }}
                     transition={{ duration: 1.5, ease: "easeInOut" }}
                     transform="rotate(-90 50 50)"
                   />
@@ -280,13 +276,13 @@ const Profile = () => {
                     Progress Level {currentLevel}
                   </span>
                   <span className="font-bold text-indigo-600">
-                    {progress.toFixed(1)}%
+                    {displayProgress.toFixed(1)}%
                   </span>
                 </div>
                 <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
+                    animate={{ width: `${displayProgress}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
                     className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full relative"
                   >
