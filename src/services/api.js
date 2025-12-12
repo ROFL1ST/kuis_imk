@@ -79,6 +79,7 @@ export const socialAPI = {
   getMyChallenges: () => api.get("/challenges"), // Lihat list Tantangan
   acceptChallenge: (challengeId) => api.post(`/challenges/${challengeId}/accept`), //
   refuseChallenge: (challengeId) => api.post(`/challenges/${challengeId}/refuse`), //
+  startGame: (challengeId) => api.post(`/challenges/${challengeId}/start`),
 };
 
 // User Profile Endpoints
