@@ -163,7 +163,7 @@ const Profile = () => {
     if (!profileData) return;
     const { user } = profileData;
     
-    // Set Title Browser
+    
     const title = `${user.name} (@${user.username}) | QuizApp`;
     document.title = title;
 
