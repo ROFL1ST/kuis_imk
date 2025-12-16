@@ -16,6 +16,7 @@ import ReviewPage from "./pages/dashboard/ReviewPage";
 import Register from "./pages/auth/Register";
 import ChallengeList from "./pages/social/ChallengeList";
 import Profile from "./pages/profile/Profile";
+import About from "./pages/about/About";
 
 const MainLayout = ({ children }) => (
   <>
@@ -103,6 +104,14 @@ function App() {
             />
             {/* Gameplay Fullscreen */}
             <Route path="/play/:quizId" element={<QuizPlay />} />
+            <Route
+              path="/about"
+              element={
+                <MainLayout>
+                  <About />
+                </MainLayout>
+              }
+            />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

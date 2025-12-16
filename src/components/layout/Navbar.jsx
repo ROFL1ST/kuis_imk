@@ -115,9 +115,9 @@ const Navbar = () => {
                     <Settings size={16} /> Pengaturan
                   </button>
                   
-                  <button className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium">
+                  <Link to="/about" className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium">
                     <Info size={16} /> Tentang Aplikasi
-                  </button>
+                  </Link>
 
                   <div className="h-px bg-slate-100 my-1"></div>
 
@@ -170,6 +170,9 @@ const Navbar = () => {
                 </Link>
                 <Link to="/history" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium">
                   <History size={20} /> Riwayat
+                </Link>
+                <Link to="/about" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium">
+                  <Info size={20} /> Tentang Aplikasi
                 </Link>
             </div>
 
