@@ -21,7 +21,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let eventSource = null;
 
-    if (token) {
+    const savedSettings = localStorage.getItem("settings_notifications");
+    const isNotifEnabled = savedSettings !== null ? JSON.parse(savedSettings) : true;
+
+    if (token && isNotifEnabled) {
       const baseURL =
         import.meta.env.VITE_API_URL || "http://localhost:8000/api";
       const url = `${baseURL}/notifications/stream?token=${token}`;
@@ -30,16 +33,14 @@ export const AuthProvider = ({ children }) => {
 
       eventSource.onmessage = (event) => {
         try {
-          // Parse data JSON dari backend
           const data = JSON.parse(event.data);
 
-          // Custom Toast Component agar bisa diklik
           toast(
             (t) => (
               <div
                 onClick={() => {
-                  toast.dismiss(t.id); // Tutup toast saat diklik
-                  if (data.url) navigate(data.url); // Navigasi ke halaman tujuan
+                  toast.dismiss(t.id);
+                  if (data.url) navigate(data.url);
                 }}
                 className="cursor-pointer flex items-center gap-2 w-full"
               >
@@ -77,7 +78,6 @@ export const AuthProvider = ({ children }) => {
       };
 
       eventSource.onerror = (err) => {
-        console.error("EventSource gagal:", err);
         eventSource.close();
       };
     }
@@ -86,6 +86,7 @@ export const AuthProvider = ({ children }) => {
       if (eventSource) eventSource.close();
     };
   }, [token, navigate]);
+
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = getToken();

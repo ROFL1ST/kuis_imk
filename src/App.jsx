@@ -17,6 +17,7 @@ import Register from "./pages/auth/Register";
 import ChallengeList from "./pages/social/ChallengeList";
 import Profile from "./pages/profile/Profile";
 import About from "./pages/about/About";
+import Settings from "./pages/profile/Settings";
 
 const MainLayout = ({ children }) => (
   <>
@@ -109,6 +110,14 @@ function App() {
               element={
                 <MainLayout>
                   <About />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <MainLayout>
+                  <Settings />
                 </MainLayout>
               }
             />
