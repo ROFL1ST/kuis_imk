@@ -74,8 +74,11 @@ function App() {
                 </MainLayout>
               }
             />
+            {/* <Route path="/profile" element={<Navigate to="/" replace />} /> */}
+
+            {/* ROUTE BARU: Format Instagram */}
             <Route
-              path="/profile"
+              path="/:username"
               element={
                 <MainLayout>
                   <Profile />
