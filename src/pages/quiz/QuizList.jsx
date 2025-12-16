@@ -9,6 +9,7 @@ import {
   Clock,
   Users,
   Zap,
+  UserPlus, // Icon baru untuk 2v2
 } from "lucide-react";
 import { topicAPI, socialAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -27,7 +28,7 @@ const QuizList = () => {
   const [selectedQuizId, setSelectedQuizId] = useState(null);
 
   const [challengeSettings, setChallengeSettings] = useState({
-    mode: "1v1", // '1v1' or 'battleroyale'
+    mode: "1v1", // '1v1', '2v2', or 'battleroyale'
     timeLimit: 0, // Minutes
     isRealtime: false,
     selectedOpponents: [], // Array of usernames
@@ -55,26 +56,50 @@ const QuizList = () => {
   };
 
   const toggleOpponent = (username) => {
-    const current = challengeSettings.selectedOpponents;
-    let updated = [];
+    const { mode, selectedOpponents } = challengeSettings;
+    let updated = [...selectedOpponents];
 
-    if (current.includes(username)) {
-      updated = current.filter((u) => u !== username);
+    if (updated.includes(username)) {
+      // Hapus jika sudah ada
+      updated = updated.filter((u) => u !== username);
     } else {
-      if (challengeSettings.mode === "1v1" && current.length >= 1) {
-        // Jika 1v1, replace pilihan sebelumnya
-        updated = [username];
+      // Logic Limitasi berdasarkan Mode
+      if (mode === "1v1") {
+        updated = [username]; // Replace (Max 1)
+      } else if (mode === "2v2") {
+        if (updated.length < 3) {
+          updated.push(username); // Append (Max 3)
+        } else {
+          toast.error("Mode 2v2 maksimal 3 orang (1 Teman + 2 Lawan)");
+        }
       } else {
-        updated = [...current, username];
+        updated.push(username); // Battle Royale (Unlimited)
       }
     }
     setChallengeSettings({ ...challengeSettings, selectedOpponents: updated });
   };
 
+  // Ubah mode -> Reset pilihan
+  const changeMode = (newMode) => {
+    setChallengeSettings({
+      ...challengeSettings,
+      mode: newMode,
+      selectedOpponents: [],
+    });
+  };
+
   const [loadingChallenge, setLoadingChallenge] = useState(false);
   const handleSendChallenge = async () => {
+    // Validasi Akhir
     if (challengeSettings.selectedOpponents.length === 0) {
       toast.error("Pilih minimal 1 lawan!");
+      return;
+    }
+    if (
+      challengeSettings.mode === "2v2" &&
+      challengeSettings.selectedOpponents.length !== 3
+    ) {
+      toast.error("Mode 2v2 harus memilih 3 orang (1 Teman, 2 Lawan)");
       return;
     }
 
@@ -84,7 +109,7 @@ const QuizList = () => {
         quiz_id: selectedQuizId,
         opponent_usernames: challengeSettings.selectedOpponents,
         mode: challengeSettings.mode,
-        time_limit: parseInt(challengeSettings.timeLimit) * 60, // Convert minutes to seconds
+        time_limit: parseInt(challengeSettings.timeLimit) * 60, // Convert to seconds
         is_realtime: challengeSettings.isRealtime,
       };
 
@@ -182,16 +207,11 @@ const QuizList = () => {
             <label className="block text-sm font-bold text-slate-700 mb-2">
               Pilih Mode
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
+              {/* MODE 1v1 */}
               <button
-                onClick={() =>
-                  setChallengeSettings({
-                    ...challengeSettings,
-                    mode: "1v1",
-                    selectedOpponents: [],
-                  })
-                }
-                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition
+                onClick={() => changeMode("1v1")}
+                className={`p-2 rounded-xl border-2 flex flex-col items-center gap-1 transition text-sm
                   ${
                     challengeSettings.mode === "1v1"
                       ? "border-indigo-500 bg-indigo-50 text-indigo-700"
@@ -199,18 +219,29 @@ const QuizList = () => {
                   }
                 `}
               >
-                <Swords size={24} />
+                <Swords size={20} />
                 <span className="font-bold">1 VS 1</span>
               </button>
+
+              {/* MODE 2v2 */}
               <button
-                onClick={() =>
-                  setChallengeSettings({
-                    ...challengeSettings,
-                    mode: "battleroyale",
-                    selectedOpponents: [],
-                  })
-                }
-                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition
+                onClick={() => changeMode("2v2")}
+                className={`p-2 rounded-xl border-2 flex flex-col items-center gap-1 transition text-sm
+                  ${
+                    challengeSettings.mode === "2v2"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-slate-100 hover:border-slate-300"
+                  }
+                `}
+              >
+                <UserPlus size={20} />
+                <span className="font-bold">2 VS 2</span>
+              </button>
+
+              {/* MODE BATTLE ROYALE */}
+              <button
+                onClick={() => changeMode("battleroyale")}
+                className={`p-2 rounded-xl border-2 flex flex-col items-center gap-1 transition text-sm
                   ${
                     challengeSettings.mode === "battleroyale"
                       ? "border-purple-500 bg-purple-50 text-purple-700"
@@ -218,10 +249,17 @@ const QuizList = () => {
                   }
                 `}
               >
-                <Users size={24} />
+                <Users size={20} />
                 <span className="font-bold">Battle Royale</span>
               </button>
             </div>
+            {/* Helper Text untuk 2v2 */}
+            {challengeSettings.mode === "2v2" && (
+              <p className="text-xs text-blue-600 mt-2 font-medium bg-blue-50 p-2 rounded-lg border border-blue-100">
+                ℹ️ Pilih 3 orang: Urutan pertama akan jadi <b>Teman Setim</b>,
+                dua berikutnya jadi <b>Lawan</b>.
+              </p>
+            )}
           </div>
 
           {/* 2. Pengaturan Waktu */}
@@ -248,9 +286,6 @@ const QuizList = () => {
                 }
               />
             </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Biarkan 0 jika tanpa batas waktu.
-            </p>
           </div>
 
           {/* 3. Realtime Checkbox */}
@@ -279,8 +314,14 @@ const QuizList = () => {
           {/* 4. Pilih Teman */}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">
-              Pilih Lawan {challengeSettings.mode === "1v1" ? "(Maks 1)" : ""}
+              Pilih Lawan/Tim
+              {challengeSettings.mode === "1v1"
+                ? " (Pilih 1)"
+                : challengeSettings.mode === "2v2"
+                ? ` (${challengeSettings.selectedOpponents.length}/3)`
+                : ""}
             </label>
+
             {friends.length === 0 ? (
               <p className="text-sm text-slate-500 bg-slate-50 p-3 rounded-lg text-center">
                 Belum punya teman.{" "}
@@ -295,6 +336,18 @@ const QuizList = () => {
                     challengeSettings.selectedOpponents.includes(
                       friend.username
                     );
+                  const selectedIndex =
+                    challengeSettings.selectedOpponents.indexOf(
+                      friend.username
+                    );
+
+                  // Label khusus mode 2v2
+                  let roleLabel = "";
+                  if (isSelected && challengeSettings.mode === "2v2") {
+                    if (selectedIndex === 0) roleLabel = "TEAMMATE";
+                    else roleLabel = "ENEMY";
+                  }
+
                   return (
                     <button
                       key={friend.ID}
@@ -302,7 +355,10 @@ const QuizList = () => {
                       className={`w-full text-left p-2.5 rounded-lg border flex justify-between items-center group transition
                         ${
                           isSelected
-                            ? "bg-indigo-50 border-indigo-200"
+                            ? challengeSettings.mode === "2v2" &&
+                              selectedIndex === 0
+                              ? "bg-blue-50 border-blue-200" // Teammate Style
+                              : "bg-indigo-50 border-indigo-200" // Normal/Enemy Style
                             : "bg-white border-transparent hover:bg-slate-50"
                         }
                       `}
@@ -312,7 +368,10 @@ const QuizList = () => {
                           className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs
                           ${
                             isSelected
-                              ? "bg-indigo-500 text-white"
+                              ? challengeSettings.mode === "2v2" &&
+                                selectedIndex === 0
+                                ? "bg-blue-500 text-white"
+                                : "bg-indigo-500 text-white"
                               : "bg-slate-100 text-slate-500"
                           }
                         `}
@@ -320,13 +379,29 @@ const QuizList = () => {
                           {friend.name.charAt(0)}
                         </div>
                         <div>
-                          <p
-                            className={`text-sm font-bold ${
-                              isSelected ? "text-indigo-700" : "text-slate-700"
-                            }`}
-                          >
-                            {friend.name}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p
+                              className={`text-sm font-bold ${
+                                isSelected
+                                  ? "text-indigo-700"
+                                  : "text-slate-700"
+                              }`}
+                            >
+                              {friend.name}
+                            </p>
+                            {/* Role Badge 2v2 */}
+                            {roleLabel && (
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                                  roleLabel === "TEAMMATE"
+                                    ? "bg-blue-200 text-blue-800"
+                                    : "bg-red-200 text-red-800"
+                                }`}
+                              >
+                                {roleLabel}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-slate-400">
                             @{friend.username}
                           </p>
@@ -334,7 +409,15 @@ const QuizList = () => {
                       </div>
 
                       {isSelected && (
-                        <CheckCircle2 size={18} className="text-indigo-600" />
+                        <CheckCircle2
+                          size={18}
+                          className={
+                            challengeSettings.mode === "2v2" &&
+                            selectedIndex === 0
+                              ? "text-blue-600"
+                              : "text-indigo-600"
+                          }
+                        />
                       )}
                     </button>
                   );
@@ -348,14 +431,22 @@ const QuizList = () => {
             onClick={handleSendChallenge}
             disabled={
               challengeSettings.selectedOpponents.length === 0 ||
-              loadingChallenge
+              loadingChallenge ||
+              (challengeSettings.mode === "2v2" &&
+                challengeSettings.selectedOpponents.length !== 3)
             }
             className={`w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2 ${
               loadingChallenge ? "cursor-not-allowed" : ""
             }`}
           >
-            <Swords size={20} />{" "}
-            {loadingChallenge ? "Membuat Tantangan..." : "KIRIM TANTANGAN"}
+            <Swords size={20} />
+            {loadingChallenge
+              ? "Membuat Tantangan..."
+              : challengeSettings.mode === "2v2"
+              ? challengeSettings.selectedOpponents.length === 3
+                ? "KIRIM TANTANGAN (2 vs 2)"
+                : `Pilih ${3 - challengeSettings.selectedOpponents.length} lagi`
+              : "KIRIM TANTANGAN"}
           </button>
         </div>
       </Modal>
