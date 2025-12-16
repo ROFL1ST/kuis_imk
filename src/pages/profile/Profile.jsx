@@ -30,6 +30,7 @@ import {
   Flag, // Icon Report
   Target,
   BarChart2,
+  Share2, // [BARU] Import icon Share
 } from "lucide-react";
 
 const Profile = () => {
@@ -157,6 +158,35 @@ const Profile = () => {
     fetchData();
   }, [username, isOwnProfile]);
 
+  // --- [BARU] UPDATE METADATA SAAT PROFIL DIMUAT ---
+  useEffect(() => {
+    if (!profileData) return;
+    const { user } = profileData;
+    
+    // Set Title Browser
+    const title = `${user.name} (@${user.username}) | QuizApp`;
+    document.title = title;
+
+    // Helper untuk update meta tag
+    const updateMeta = (name, content) => {
+        let el = document.querySelector(`meta[name="${name}"]`) || document.querySelector(`meta[property="${name}"]`);
+        if (!el) {
+            el = document.createElement('meta');
+            name.startsWith('og:') ? el.setAttribute('property', name) : el.setAttribute('name', name);
+            document.head.appendChild(el);
+        }
+        el.setAttribute('content', content);
+    };
+
+    // Update Meta Deskripsi & Open Graph (Untuk Share Preview)
+    const desc = `Lihat profil ${user.name} di QuizApp! Level ${user.level} • ${user.xp} XP.`;
+    updateMeta('description', desc);
+    updateMeta('og:title', title);
+    updateMeta('og:description', desc);
+    updateMeta('og:url', window.location.href);
+
+  }, [profileData]);
+
   // Handler Update (Own Profile)
   const handleUpdate = async (e) => {
     if (!isOwnProfile) return;
@@ -185,6 +215,31 @@ const Profile = () => {
       toast.error("Gagal mengirim request");
     }
   };
+
+  // --- [BARU] HANDLER SHARE ---
+  const handleShare = async () => {
+    if (!profileData) return;
+    
+    const shareData = {
+        title: `Profil ${profileData.user.name}`,
+        text: `Cek profil ${profileData.user.name} (@${profileData.user.username}) di QuizApp!`,
+        url: window.location.href
+    };
+
+    // Gunakan Web Share API jika didukung (Native Mobile Share)
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.log("Share dibatalkan");
+        }
+    } else {
+        // Fallback: Copy Link
+        navigator.clipboard.writeText(shareData.url).then(() => {
+            toast.success("Link profil disalin!");
+        }).catch(() => toast.error("Gagal menyalin link"));
+    }
+  }
 
   if (loading) {
     return (
@@ -294,7 +349,7 @@ const Profile = () => {
             </motion.div>
 
             {/* User Info */}
-            <div className="flex-1 text-center lg:text-left">
+            <div className="flex-1 text-center lg:text-left w-full">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -306,52 +361,68 @@ const Profile = () => {
                 </div>
 
                 {/* TOMBOL AKSI */}
-                {isOwnProfile ? (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsEditOpen(true)}
-                    className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group shadow-md"
-                  >
-                    <Edit3 size={18} /> Edit Profil{" "}
-                    <ChevronRight
-                      className="group-hover:translate-x-1 transition-transform"
-                      size={16}
-                    />
-                  </motion.button>
-                ) : (
-                  <div className="flex gap-2 justify-center lg:justify-end">
-                    {/* Logika Tombol Teman */}
-                    {friendStatus === "friend" ? (
-                      <button
-                        disabled
-                        className="px-6 py-3 bg-green-100 text-green-700 font-bold rounded-xl flex items-center gap-2 border border-green-200 cursor-default opacity-80"
-                      >
-                        <UserCheck size={18} /> Teman
-                      </button>
-                    ) : friendStatus === "pending" ? (
-                      <button
-                        disabled
-                        className="px-6 py-3 bg-orange-100 text-orange-600 font-bold rounded-xl flex items-center gap-2 border border-orange-200 cursor-default opacity-80"
-                      >
-                        <Hourglass size={18} /> Menunggu
-                      </button>
-                    ) : (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleAddFriend}
-                        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group shadow-md"
-                      >
-                        <UserPlus size={18} /> Tambah Teman
-                      </motion.button>
+                <div className="flex gap-2 justify-center lg:justify-end items-center">
+                    
+                    {/* [BARU] Tombol Share - Hanya muncul di profil sendiri */}
+                    {isOwnProfile && (
+                        <motion.button 
+                            whileHover={{ scale: 1.05 }} 
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleShare}
+                            className="p-3 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-indigo-600 transition shadow-sm"
+                            title="Bagikan Profil"
+                        >
+                            <Share2 size={20} />
+                        </motion.button>
                     )}
 
-                    <button className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 hover:text-red-500 transition">
-                      <Flag size={20} />
-                    </button>
-                  </div>
-                )}
+                    {isOwnProfile ? (
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsEditOpen(true)}
+                        className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group shadow-md"
+                    >
+                        <Edit3 size={18} /> Edit Profil{" "}
+                        <ChevronRight
+                        className="group-hover:translate-x-1 transition-transform"
+                        size={16}
+                        />
+                    </motion.button>
+                    ) : (
+                        <>
+                            {/* Logika Tombol Teman */}
+                            {friendStatus === "friend" ? (
+                            <button
+                                disabled
+                                className="px-6 py-3 bg-green-100 text-green-700 font-bold rounded-xl flex items-center gap-2 border border-green-200 cursor-default opacity-80"
+                            >
+                                <UserCheck size={18} /> Teman
+                            </button>
+                            ) : friendStatus === "pending" ? (
+                            <button
+                                disabled
+                                className="px-6 py-3 bg-orange-100 text-orange-600 font-bold rounded-xl flex items-center gap-2 border border-orange-200 cursor-default opacity-80"
+                            >
+                                <Hourglass size={18} /> Menunggu
+                            </button>
+                            ) : (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleAddFriend}
+                                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group shadow-md"
+                            >
+                                <UserPlus size={18} /> Tambah Teman
+                            </motion.button>
+                            )}
+
+                            <button className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 hover:text-red-500 transition">
+                            <Flag size={20} />
+                            </button>
+                        </>
+                    )}
+                </div>
               </div>
 
               {/* Stats Bar (Tampil di Own & Public) */}
@@ -368,7 +439,7 @@ const Profile = () => {
                   </span>
                 </motion.div>
 
-                {/* Streak tampil jika ada > 0 */}
+                {/* Streak tampil jika ada > 0 atau profil sendiri */}
                 {(user.streak_count > 0 || isOwnProfile) && (
                   <motion.div
                     initial={{ x: -20, opacity: 0 }}
@@ -563,7 +634,11 @@ const Profile = () => {
                     label="Bergabung"
                     value={
                       user.CreatedAt
-                        ? new Date(user.CreatedAt).toLocaleDateString()
+                        ? new Date(user.CreatedAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })
                         : "-"
                     }
                   />
@@ -583,7 +658,7 @@ const Profile = () => {
           </div>
         </>
       ) : (
-        // === TAMPILAN PUBLIC (DIPERBAIKI AGAR MIRIP DUOLINGO/LEBIH BAGUS DARI SEBELUMNYA) ===
+        // === TAMPILAN PUBLIC (DIPERBAIKI AGAR MIRIP DUOLINGO) ===
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -732,7 +807,9 @@ const Profile = () => {
                     type="text"
                     className="w-full pl-11 p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                     value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, name: e.target.value })
+                    }
                   />
                   <User
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -823,7 +900,8 @@ const StatCard = ({
     blue: "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200",
     green: "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200",
     yellow: "bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200",
-    purple: "bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200",
+    purple:
+      "bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200",
   };
   return (
     <motion.div
