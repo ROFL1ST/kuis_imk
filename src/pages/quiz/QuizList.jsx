@@ -124,6 +124,10 @@ const QuizList = () => {
     }
   };
 
+  useEffect(() => {
+    document.title = `Kuis di ${slug} | QuizApp`;
+  }, [slug]);
+
   return (
     <div className="max-w-4xl mx-auto pb-20">
       <Link

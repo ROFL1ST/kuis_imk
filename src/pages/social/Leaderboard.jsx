@@ -15,6 +15,10 @@ const Leaderboard = () => {
       .finally(() => setLoading(false));
   }, [slug]);
 
+  useEffect(() => {
+    document.title = `Leaderboard: ${slug} | QuizApp`;
+  }, [slug]);
+
   const getRankStyle = (index) => {
     if(index === 0) return "bg-yellow-100 border-yellow-200 text-yellow-800";
     if(index === 1) return "bg-slate-100 border-slate-200 text-slate-700";

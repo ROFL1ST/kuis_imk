@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authAPI } from "../../services/api";
 import toast from "react-hot-toast";
@@ -43,6 +43,9 @@ const Register = () => {
     }
   };
 
+  useEffect(() => {
+    document.title = "Register | QuizApp";
+  }, []);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
       <motion.div

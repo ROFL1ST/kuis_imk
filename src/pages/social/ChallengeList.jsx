@@ -305,6 +305,10 @@ const ChallengeList = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = "Arena Duel | QuizApp";
+  }, []);
+
   const [lobbyModal, setLobbyModal] = useState({
     isOpen: false,
     challengeId: null,
