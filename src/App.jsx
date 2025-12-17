@@ -18,6 +18,10 @@ import ChallengeList from "./pages/social/ChallengeList";
 import Profile from "./pages/profile/Profile";
 import About from "./pages/about/About";
 import Settings from "./pages/profile/Settings";
+import VerifyEmail from "./pages/auth/VerifyEmail";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import EmailAlert from "./components/ui/EmailAlert";
 
 const MainLayout = ({ children }) => (
   <>
@@ -31,10 +35,13 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Toaster position="top-center" />
+        <EmailAlert />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route element={<ProtectedRoute />}>
             <Route
               path="/"

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import {
@@ -14,10 +13,11 @@ import {
   AlertTriangle,
   UserCog,
   Mail,
-  Construction // Icon untuk indikator 'Dalam Pengembangan'
+  CheckCircle, // Icon baru untuk status verified
+  XCircle      // Icon baru untuk status unverified
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
-import { userAPI } from "../../services/api";
+import { updateProfile } from "../../services/api"; 
 import Modal from "../../components/ui/Modal";
 
 const Settings = () => {
@@ -29,6 +29,10 @@ const Settings = () => {
     newPassword: "",
     confirmPassword: ""
   });
+
+  // State untuk Email
+  const [email, setEmail] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
   
   // State untuk preferensi
   const [preferences, setPreferences] = useState({
@@ -40,9 +44,15 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  // Load data user ke state email saat mount
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+    }
+  }, [user]);
+
   // --- LOGIKA LOAD & SAVE PREFERENCES ---
   useEffect(() => {
-    // Load dari LocalStorage saat mount
     const savedNotif = localStorage.getItem("settings_notifications");
     if (savedNotif !== null) {
       setPreferences(prev => ({ ...prev, notifications: JSON.parse(savedNotif) }));
@@ -52,13 +62,50 @@ const Settings = () => {
   const toggleNotifications = () => {
     const newVal = !preferences.notifications;
     setPreferences(prev => ({ ...prev, notifications: newVal }));
-    
-    // Simpan ke LocalStorage
     localStorage.setItem("settings_notifications", JSON.stringify(newVal));
-    
     toast.success(newVal ? "Notifikasi diaktifkan" : "Notifikasi dinonaktifkan", {
         icon: newVal ? '🔔' : '🔕'
     });
+  };
+
+  // Handler Update Email
+  const handleUpdateEmail = async () => {
+    // Validasi sederhana
+    if (!email || !email.includes('@')) {
+        return toast.error("Masukkan alamat email yang valid");
+    }
+    if (email === user.email && user.is_email_verified) {
+        return toast("Email ini sudah tersimpan dan terverifikasi.", { icon: "ℹ️" });
+    }
+
+    setEmailLoading(true);
+    try {
+        const res = await updateProfile({ email });
+        
+        // Cek respon untuk pesan verifikasi
+        if (!res.data.user.is_email_verified) {
+            toast.success("Link verifikasi telah dikirim ke email Anda! Silakan cek inbox/spam.", {
+                duration: 5000,
+                icon: "📧"
+            });
+        } else {
+            toast.success("Email berhasil diperbarui!");
+        }
+
+        // Update local storage user data agar UI sync
+        const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const updatedUser = { ...currentUser, ...res.user };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        
+        // Reload halaman opsional, atau biarkan state reaktif jika context mendukung
+        // window.location.reload(); 
+
+    } catch (err) {
+        console.error(err);
+        toast.error(err.response?.data?.message || "Gagal memperbarui email");
+    } finally {
+        setEmailLoading(false);
+    }
   };
 
   // Handler Ganti Password
@@ -73,7 +120,8 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      await userAPI.updateProfile({ 
+      // Panggil API updateProfile dengan password baru
+      await updateProfile({ 
         password: passForm.newPassword 
       });
       
@@ -94,6 +142,7 @@ const Settings = () => {
       toast.success("Akun berhasil dihapus (Simulasi)");
       logout(); 
     } catch (err) {
+      console.error(err);
       toast.error("Gagal menghapus akun");
     }
   };
@@ -148,35 +197,49 @@ const Settings = () => {
         {/* --- KOLOM KANAN: FORM & SETTINGS --- */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* 1. INFORMASI AKUN (EMAIL) - [DEV MODE] */}
+          {/* 1. INFORMASI AKUN (EMAIL) - [SUDAH AKTIF] */}
           <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                     <Mail className="text-indigo-600" size={20} /> Email
                 </h2>
-                <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded border border-slate-200 flex items-center gap-1">
-                    <Construction size={12} /> Dalam Pengembangan
-                </span>
+                {/* Indikator Status Verifikasi */}
+                {user?.email && (
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded border flex items-center gap-1 ${
+                        user.is_email_verified 
+                        ? "bg-green-100 text-green-600 border-green-200" 
+                        : "bg-yellow-100 text-yellow-600 border-yellow-200"
+                    }`}>
+                        {user.is_email_verified ? (
+                            <><CheckCircle size={12} /> Terverifikasi</>
+                        ) : (
+                            <><XCircle size={12} /> Belum Verifikasi</>
+                        )}
+                    </span>
+                )}
              </div>
              
-             <div className="space-y-4 opacity-60">
+             <div className="space-y-4">
                 <div>
                    <label className="block text-sm font-medium text-slate-700 mb-1">Alamat Email</label>
                    <input 
                      type="email" 
-                     disabled
-                     className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 text-slate-500 cursor-not-allowed"
-                     placeholder="Belum ada email terhubung"
-                     value={user?.email || ""}
+                     className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white text-slate-700"
+                     placeholder="contoh@email.com"
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
                    />
-                   <p className="text-xs text-slate-400 mt-1">Fitur menautkan email akan segera hadir.</p>
+                   <p className="text-xs text-slate-400 mt-1">
+                     Email digunakan untuk pemulihan akun (Lupa Password).
+                   </p>
                 </div>
                 <div className="flex justify-end pt-2">
                    <button 
-                     disabled
-                     className="px-6 py-2.5 bg-slate-200 text-slate-400 font-bold rounded-xl cursor-not-allowed flex items-center gap-2"
+                     onClick={handleUpdateEmail}
+                     disabled={emailLoading || (email === user?.email && user?.is_email_verified)}
+                     className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition flex items-center gap-2 shadow-sm"
                    >
-                      <Save size={18} /> Simpan Email
+                      {emailLoading ? "Menyimpan..." : <><Save size={18} /> Simpan Email</>}
                    </button>
                 </div>
              </div>
@@ -256,7 +319,7 @@ const Settings = () => {
                       <div className="p-2 bg-purple-100 text-purple-600 rounded-lg"><Moon size={18} /></div>
                       <div>
                          <p className="font-bold text-slate-700 text-sm flex items-center gap-2">
-                            Mode Gelap <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-500 font-normal">Dev</span>
+                           Mode Gelap <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-500 font-normal">Dev</span>
                          </p>
                          <p className="text-xs text-slate-500">Tampilan ramah mata.</p>
                       </div>
@@ -270,7 +333,7 @@ const Settings = () => {
                       <div className="p-2 bg-green-100 text-green-600 rounded-lg"><Globe size={18} /></div>
                       <div>
                          <p className="font-bold text-slate-700 text-sm flex items-center gap-2">
-                            Bahasa <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-500 font-normal">Dev</span>
+                           Bahasa <span className="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-500 font-normal">Dev</span>
                          </p>
                          <p className="text-xs text-slate-500">Pilih bahasa aplikasi.</p>
                       </div>
