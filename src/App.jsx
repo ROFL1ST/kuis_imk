@@ -24,6 +24,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import EmailAlert from "./components/ui/EmailAlert";
 import Notifications from "./pages/dashboard/Notifications";
 import WhatsNew from "./pages/about/WhatsNew";
+import ScrollToTop from "./components/layout/ScrollToTop";
 
 const MainLayout = ({ children }) => (
   <>
@@ -36,6 +37,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ScrollToTop />
         <Toaster position="top-center" />
         <EmailAlert />
         <Routes>

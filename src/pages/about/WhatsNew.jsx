@@ -27,6 +27,7 @@ const WhatsNew = () => {
           text: "Notifikasi Realtime dengan Badge di Navbar.",
         },
         { type: "fix", text: "Perbaikan timer pada halaman Quiz Play." },
+        { type: "fix", text: "Perbaikan bug minor lainnya." },
       ],
     },
     {
