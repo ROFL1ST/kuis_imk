@@ -77,8 +77,10 @@ export const socialAPI = {
   getFeed: () => api.get("/feed"), // Activity Feed
   createChallenge: (data) => api.post("/challenges", data), // Buat Tantangan
   getMyChallenges: () => api.get("/challenges"), // Lihat list Tantangan
-  acceptChallenge: (challengeId) => api.post(`/challenges/${challengeId}/accept`), //
-  refuseChallenge: (challengeId) => api.post(`/challenges/${challengeId}/refuse`), //
+  acceptChallenge: (challengeId) =>
+    api.post(`/challenges/${challengeId}/accept`), //
+  refuseChallenge: (challengeId) =>
+    api.post(`/challenges/${challengeId}/refuse`), //
   startGame: (challengeId) => api.post(`/challenges/${challengeId}/start`),
 };
 
@@ -90,4 +92,29 @@ export const userAPI = {
   getAchievements: () => api.get("/users/achievements"),
 };
 
+export const updateProfile = async (data) => {
+  const response = await api.put("/users/me", data);
+  return response.data;
+};
+
+// 2. Verifikasi Email
+export const verifyEmail = async (token) => {
+  const response = await api.post("/verify-email", { token });
+  return response.data;
+};
+
+// 3. Forgot Password (Request Token)
+export const forgotPassword = async (email) => {
+  const response = await api.post("/forgot-password", { email });
+  return response.data;
+};
+
+// 4. Reset Password (Submit Password Baru)
+export const resetPassword = async (token, newPassword) => {
+  const response = await api.post("/reset-password", {
+    token,
+    new_password: newPassword,
+  });
+  return response.data;
+};
 export default api;

@@ -103,6 +103,23 @@ const Login = () => {
                 />
               </div>
             </motion.div>
+            
+            {/* --- TOMBOL LUPA PASSWORD DITAMBAHKAN DI SINI --- */}
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="flex justify-end"
+            >
+                <Link 
+                    to="/forgot-password" 
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+                >
+                    Lupa Password?
+                </Link>
+            </motion.div>
+            {/* ------------------------------------------------ */}
+
           </div>
 
           {/* Login Button */}
@@ -110,7 +127,7 @@ const Login = () => {
             disabled={loading}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full mt-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-xl font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-3 group"
+            className="w-full mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-xl font-bold hover:shadow-lg transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-3 group"
           >
             {loading ? (
               <>
