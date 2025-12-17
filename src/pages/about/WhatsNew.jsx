@@ -26,6 +26,10 @@ const WhatsNew = () => {
           type: "improvement",
           text: "Notifikasi Realtime dengan Badge di Navbar.",
         },
+         {
+          type: "improvement",
+          text: "Scroll to top otomatis saat navigasi.",
+        },
         { type: "fix", text: "Perbaikan timer pada halaman Quiz Play." },
         { type: "fix", text: "Perbaikan bug minor lainnya." },
       ],
