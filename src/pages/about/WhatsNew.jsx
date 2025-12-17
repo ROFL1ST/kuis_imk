@@ -138,7 +138,7 @@ const WhatsNew = () => {
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-slate-400 text-sm">
-            Punya ide fitur baru? <Link to="/contact" className="text-indigo-600 font-bold hover:underline">Hubungi Kami</Link>
+            Punya ide fitur baru? <a href="https://github.com/ROFL1ST" className="text-indigo-600 font-bold hover:underline">Hubungi Kami</a>
           </p>
         </div>
       </div>
