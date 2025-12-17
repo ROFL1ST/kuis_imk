@@ -23,6 +23,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import EmailAlert from "./components/ui/EmailAlert";
 import Notifications from "./pages/dashboard/Notifications";
+import WhatsNew from "./pages/about/WhatsNew";
 
 const MainLayout = ({ children }) => (
   <>
@@ -43,6 +44,7 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/whats-new" element={<WhatsNew />} />
           <Route element={<ProtectedRoute />}>
             <Route
               path="/"
