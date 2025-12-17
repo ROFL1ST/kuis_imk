@@ -21,6 +21,7 @@ import Settings from "./pages/profile/Settings";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import EmailAlert from "./components/ui/EmailAlert";
 
 const MainLayout = ({ children }) => (
   <>
@@ -34,6 +35,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Toaster position="top-center" />
+        <EmailAlert />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

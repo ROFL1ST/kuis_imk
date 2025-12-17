@@ -195,8 +195,14 @@ const Profile = () => {
     e.preventDefault();
     try {
       const res = await userAPI.updateProfile(form);
+      const freshRes = await userAPI.getProfile();
+      const freshData = freshRes.data.data;
+      // console.log(freshData);
       toast.success("Profil berhasil diperbarui!");
-      setProfileData((prev) => ({ ...prev, user: res.data.data }));
+      setProfileData((prev) => ({ ...prev, user: freshData.user }));
+      if (form.username !== cleanUrlUsername) {
+        navigate(`/@${form.username}`, { replace: true });
+      }
       setAuthUser(res.data.data);
       setIsEditOpen(false);
       if (form.username !== cleanUrlUsername) {
