@@ -30,6 +30,10 @@ const Settings = () => {
     confirmPassword: ""
   });
 
+  useEffect(() => {
+    document.title = "Pengaturan Akun | QuizApp";
+  }, []);
+
   // State untuk Email
   const [email, setEmail] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);

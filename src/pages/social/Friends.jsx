@@ -26,6 +26,10 @@ const Friends = () => {
   const [usernameInput, setUsernameInput] = useState("");
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    document.title = "Sosial | QuizApp";
+  }, []);
+
   // State Modal Konfirmasi
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,

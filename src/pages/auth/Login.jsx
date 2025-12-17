@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -25,6 +25,9 @@ const Login = () => {
     }
   };
 
+  useEffect(() => {
+    document.title = "Login | QuizApp";
+  }, []);
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
       <motion.div
@@ -103,23 +106,22 @@ const Login = () => {
                 />
               </div>
             </motion.div>
-            
+
             {/* --- TOMBOL LUPA PASSWORD DITAMBAHKAN DI SINI --- */}
-            <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="flex justify-end"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="flex justify-end"
             >
-                <Link 
-                    to="/forgot-password" 
-                    className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
-                >
-                    Lupa Password?
-                </Link>
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+              >
+                Lupa Password?
+              </Link>
             </motion.div>
             {/* ------------------------------------------------ */}
-
           </div>
 
           {/* Login Button */}

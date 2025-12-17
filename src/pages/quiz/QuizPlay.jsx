@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { authAPI, quizAPI } from "../../services/api";
 import toast from "react-hot-toast";
@@ -175,6 +175,10 @@ const QuizPlay = () => {
       setSubmitting(false);
     }
   };
+  
+  useEffect(() => {
+    document.title = `Bermain: ${quizTitle} | QuizApp`;
+  }, [quizTitle]);
 
   if (loading)
     return (

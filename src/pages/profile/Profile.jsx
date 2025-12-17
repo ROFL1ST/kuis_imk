@@ -44,6 +44,8 @@ const Profile = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isImageHover, setIsImageHover] = useState(false);
 
+  
+
   // State khusus Friend Status ("none", "pending", "friend")
   const [friendStatus, setFriendStatus] = useState("none");
 

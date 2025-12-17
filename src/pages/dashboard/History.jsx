@@ -9,6 +9,10 @@ const History = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "Riwayat Aktivitas | QuizApp";
+  }, []);
+
+  useEffect(() => {
     quizAPI
       .getMyHistory()
       .then((res) => setHistories(res.data.data))
