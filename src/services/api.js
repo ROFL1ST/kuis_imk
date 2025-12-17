@@ -117,4 +117,11 @@ export const resetPassword = async (token, newPassword) => {
   });
   return response.data;
 };
+
+export const notificationAPI = {
+  getList: () => api.get("/notifications"),
+  markRead: (id) => api.put(`/notifications/${id}/read`),
+  clearAll: () => api.delete("/notifications"),
+};
+
 export default api;

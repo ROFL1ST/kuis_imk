@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import {
   LogOut,
@@ -14,20 +14,30 @@ import {
   Settings,
   Info,
   ChevronDown,
-  X, // Icon Close untuk menu mobile
+  X,
+  Bell,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Modal from "../ui/Modal";
+// Pastikan import notificationAPI
+
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, unreadCount } = useAuth();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false); // Mobile menu state
-  const [dropdownOpen, setDropdownOpen] = useState(false); // Desktop dropdown state
+  const location = useLocation(); // Untuk mendeteksi perubahan halaman
+  
+  const [open, setOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  
+  // State untuk jumlah notifikasi belum dibaca
 
-  // Ref untuk mendeteksi klik di luar dropdown
+
   const dropdownRef = useRef(null);
+
+  // --- LOGIKA BADGE NOTIFIKASI ---
+  
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -87,6 +97,23 @@ const Navbar = () => {
 
           {/* === BAGIAN KANAN (STATS & PROFIL DESKTOP) === */}
           <div className="hidden sm:flex items-center gap-4 border-l pl-4 ml-4">
+            
+            {/* [UPDATE] Tombol Notifikasi dengan Badge */}
+            <Link
+                to="/notifications"
+                className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"
+                title="Notifikasi"
+            >
+                <Bell size={20} />
+                
+                {/* Badge Merah */}
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 ring-2 ring-white text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+            </Link>
+
             {/* Stats Badges */}
             <div
               className="flex items-center gap-1 bg-orange-50 text-orange-600 px-3 py-1 rounded-full text-xs font-bold border border-orange-100"
@@ -173,10 +200,14 @@ const Navbar = () => {
 
           {/* === TOMBOL HAMBURGER MOBILE === */}
           <button
-            className="sm:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition"
+            className="sm:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition relative"
             onClick={() => setOpen(!open)}
           >
             {open ? <X size={24} /> : <Menu size={24} />}
+            {/* Badge Mobile di Menu Burger (Opsional) */}
+            {!open && unreadCount > 0 && (
+               <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
+            )}
           </button>
         </div>
 
@@ -226,6 +257,23 @@ const Navbar = () => {
               >
                 <History size={20} /> Riwayat
               </Link>
+              
+              {/* [UPDATE] Menu Notifikasi Mobile dengan Badge */}
+              <Link
+                to="/notifications"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between px-4 py-3.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium"
+              >
+                <div className="flex items-center gap-3">
+                    <Bell size={20} /> Notifikasi
+                </div>
+                {unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                )}
+              </Link>
+
               <Link
                 to="/about"
                 onClick={() => setOpen(false)}

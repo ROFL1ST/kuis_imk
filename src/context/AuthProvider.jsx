@@ -1,7 +1,6 @@
-// src/context/AuthProvider.jsx
 import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
-import { authAPI } from "../services/api";
+import { authAPI, notificationAPI } from "../services/api"; // Import notificationAPI
 import {
   getToken,
   setToken,
@@ -15,71 +14,88 @@ import { useNavigate } from "react-router-dom";
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getUser());
   const [token, setTokenState] = useState(getToken());
+  // [BARU] State untuk jumlah notifikasi belum dibaca
+  const [unreadCount, setUnreadCount] = useState(0); 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
+  // [BARU] Fungsi fetch notifikasi
+  const fetchUnreadCount = async () => {
+    if (!token) return;
+    try {
+      const res = await notificationAPI.getList();
+      // Hitung manual client-side (atau buat endpoint khusus count di backend)
+      const count = res.data.data.filter((n) => !n.is_read).length;
+      setUnreadCount(count);
+    } catch (error) {
+      console.error("Gagal load notifikasi:", error);
+    }
+  };
+
   useEffect(() => {
     let eventSource = null;
-
     const savedSettings = localStorage.getItem("settings_notifications");
     const isNotifEnabled = savedSettings !== null ? JSON.parse(savedSettings) : true;
 
-    if (token && isNotifEnabled) {
-      const baseURL =
-        import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-      const url = `${baseURL}/notifications/stream?token=${token}`;
+    if (token) {
+      // Load awal saat token tersedia
+      fetchUnreadCount(); 
 
-      eventSource = new EventSource(url);
+      if (isNotifEnabled) {
+        const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const url = `${baseURL}/notifications/stream?token=${token}`;
 
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
+        eventSource = new EventSource(url);
 
-          toast(
-            (t) => (
-              <div
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  if (data.url) navigate(data.url);
-                }}
-                className="cursor-pointer flex items-center gap-2 w-full"
-              >
-                <span className="text-lg">
-                  {data.type === "success"
-                    ? "🎉"
-                    : data.type === "warning"
-                    ? "⚔️"
-                    : "🔔"}
-                </span>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{data.message}</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Klik untuk melihat
-                  </p>
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+
+            // [BARU] Update Counter Realtime (+1)
+            setUnreadCount((prev) => prev + 1);
+
+            // Tampilkan Toast
+            toast(
+              (t) => (
+                <div
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                    if (data.link) navigate(data.link); // Gunakan data.link dari backend
+                    else navigate("/notifications");
+                  }}
+                  className="cursor-pointer flex items-center gap-3 w-full"
+                >
+                  <span className="text-xl">
+                    {data.type === "success" ? "🎉" : data.type === "warning" ? "⚠️" : "🔔"}
+                  </span>
+                  <div className="flex-1">
+                    <p className="font-bold text-sm text-slate-800">{data.title || "Notifikasi Baru"}</p>
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{data.message}</p>
+                  </div>
                 </div>
-              </div>
-            ),
-            {
-              duration: 5000,
-              position: "top-center",
-              style: {
-                background: "#fff",
-                color: "#333",
-                border: "1px solid #e2e8f0",
-                padding: "12px",
-                borderRadius: "12px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              },
-            }
-          );
-        } catch (e) {
-          console.error("Gagal parse notifikasi:", e);
-        }
-      };
+              ),
+              {
+                duration: 5000,
+                position: "top-center", // Posisi lebih standar
+                style: {
+                  background: "#fff",
+                  color: "#333",
+                  border: "1px solid #f1f5f9",
+                  padding: "12px",
+                  borderRadius: "16px",
+                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                },
+              }
+            );
+          } catch (e) {
+            console.error("Gagal parse notifikasi:", e);
+          }
+        };
 
-      eventSource.onerror = (err) => {
-        eventSource.close();
-      };
+        eventSource.onerror = () => {
+          eventSource.close();
+        };
+      }
     }
 
     return () => {
@@ -87,15 +103,14 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token, navigate]);
 
+  // Init Auth
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = getToken();
-
       if (storedToken) {
         try {
           const res = await authAPI.authMe();
           const { token: newToken, user: newUser } = res.data.data;
-
           setTokenState(newToken);
           setUser(newUser);
           setToken(newToken);
@@ -107,10 +122,8 @@ export const AuthProvider = ({ children }) => {
       } else {
         logout();
       }
-
       setLoading(false);
     };
-
     initAuth();
   }, []);
 
@@ -119,12 +132,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authAPI.login(credentials);
       const { token: newToken, user: newUser } = res.data.data;
-
       setTokenState(newToken);
       setUser(newUser);
       setToken(newToken);
       saveUser(newUser);
-
       return { success: true };
     } catch (error) {
       return {
@@ -139,6 +150,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setTokenState(null);
     setUser(null);
+    setUnreadCount(0); // Reset notifikasi
     removeToken();
   };
 
@@ -155,6 +167,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     loading,
     isAuthenticated: !!token,
+    unreadCount, // [BARU] Expose count ke global
+    refreshNotifications: fetchUnreadCount, // [BARU] Fungsi untuk refresh manual (dipakai saat mark read)
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

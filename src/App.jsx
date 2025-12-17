@@ -22,6 +22,7 @@ import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import EmailAlert from "./components/ui/EmailAlert";
+import Notifications from "./pages/dashboard/Notifications";
 
 const MainLayout = ({ children }) => (
   <>
@@ -80,6 +81,15 @@ function App() {
               element={
                 <MainLayout>
                   <Friends />
+                </MainLayout>
+              }
+            />
+
+            <Route
+              path="/notifications"
+              element={
+                <MainLayout>
+                  <Notifications />
                 </MainLayout>
               }
             />
