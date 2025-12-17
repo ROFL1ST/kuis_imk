@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef, use } from "react";
+import { useEffect, useState, useRef } from "react"; // Hapus 'use' yang tidak perlu
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { authAPI, quizAPI } from "../../services/api";
 import toast from "react-hot-toast";
 import { AnimatePresence, motion } from "framer-motion";
-import confetti from "canvas-confetti"; // Pastikan install: npm install canvas-confetti
+import confetti from "canvas-confetti";
 import {
   CheckCircle2,
   Lightbulb,
@@ -16,7 +16,8 @@ import {
   Swords,
   Zap,
   Loader2,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle // Import icon Alert
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
@@ -27,10 +28,12 @@ const QuizPlay = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Tangkap Data dari Link (Lobby/ChallengeList)
+  // Tangkap Data dari Link
   const quizTitle = location.state?.title || "Kuis";
   const isChallenge = location.state?.isChallenge || false;
-  const isRealtime = location.state?.isRealtime || false; 
+  const isRealtime = location.state?.isRealtime || false;
+  // [BARU] Ambil Time Limit (dalam detik)
+  const timeLimit = location.state?.timeLimit || 0; 
 
   // State Data
   const [questions, setQuestions] = useState([]);
@@ -50,7 +53,7 @@ const QuizPlay = () => {
   const [isFinished, setIsFinished] = useState(false);
   const [resultData, setResultData] = useState(null);
 
-  // Timer Logic (Data)
+  // Timer Logic
   const startTime = useRef(Date.now());
   const [duration, setDuration] = useState(0);
 
@@ -58,17 +61,25 @@ const QuizPlay = () => {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevelData, setNewLevelData] = useState(0);
 
+  // Helper Format Waktu (MM:SS)
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
   // 1. Fetch Soal
   useEffect(() => {
     quizAPI
       .getQuestions(quizId)
       .then((res) => {
         setQuestions(res.data.data);
-        startTime.current = Date.now(); // Set waktu mulai
+        startTime.current = Date.now(); 
         
-        // Jalankan Visual Timer
+        // Jalankan Timer
         timerIntervalRef.current = setInterval(() => {
-            setElapsedTime(Math.floor((Date.now() - startTime.current) / 1000));
+            const currentElapsed = Math.floor((Date.now() - startTime.current) / 1000);
+            setElapsedTime(currentElapsed);
         }, 1000);
       })
       .catch(() => {
@@ -79,6 +90,19 @@ const QuizPlay = () => {
 
     return () => clearInterval(timerIntervalRef.current);
   }, [quizId, navigate]);
+
+  // [BARU] Effect untuk Cek Time Limit
+  useEffect(() => {
+    if (timeLimit > 0 && !isFinished && !submitting) {
+        // Jika waktu yang berlalu >= batas waktu
+        if (elapsedTime >= timeLimit) {
+            clearInterval(timerIntervalRef.current);
+            toast.error("Waktu Habis! Mengirim jawaban otomatis...");
+            handleSubmit(); // Auto submit
+        }
+    }
+  }, [elapsedTime, timeLimit, isFinished, submitting]); 
+  // Note: handleSubmit ada di dependency scr implisit krn didefinisikan di scope component
 
   const handleOptionClick = (option) => {
     const currentQId = questions[currentIndex].ID;
@@ -101,19 +125,16 @@ const QuizPlay = () => {
     }
   };
 
-  // const formatTime = (seconds) => {
-  //   const m = Math.floor(seconds / 60);
-  //   const s = seconds % 60;
-  //   return `${m}m ${s}s`;
-  // };
-
   const handleSubmit = async () => {
-    clearInterval(timerIntervalRef.current); // Stop timer visual
+    clearInterval(timerIntervalRef.current);
     setSubmitting(true);
 
-    // 1. Hitung Durasi & Skor Lokal
     const endTime = Date.now();
-    const timeTaken = Math.floor((endTime - startTime.current) / 1000);
+    // Gunakan Math.min agar durasi tidak melebihi limit (kalo auto submit)
+    let timeTaken = Math.floor((endTime - startTime.current) / 1000);
+    if (timeLimit > 0 && timeTaken > timeLimit) {
+        timeTaken = timeLimit; 
+    }
 
     let correctCount = 0;
     questions.forEach((q) => {
@@ -121,7 +142,6 @@ const QuizPlay = () => {
     });
     const finalScore = Math.round((correctCount / questions.length) * 100);
 
-    // Judul Submission (Pakai Tag [DUEL] jika challenge)
     const submissionTitle = isChallenge ? `[DUEL] ${quizTitle}` : quizTitle;
 
     const payload = {
@@ -130,14 +150,13 @@ const QuizPlay = () => {
       score: finalScore,
       total_soal: questions.length,
       snapshot: answers,
-      time_taken: timeTaken, // PENTING: Kirim waktu pengerjaan
+      time_taken: timeTaken,
     };
 
     try {
       const currentLevel = user?.level || 1;
       await quizAPI.submitScore(payload);
 
-      // Trigger Confetti jika skor bagus
       if (finalScore >= 70) {
         confetti({
             particleCount: 150,
@@ -146,7 +165,6 @@ const QuizPlay = () => {
         });
       }
 
-      // Update XP User
       const userRes = await authAPI.authMe();
       const updatedUser = userRes.data.data.user;
       setUser(updatedUser);
@@ -243,7 +261,9 @@ const QuizPlay = () => {
               <div className="text-center">
                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">Waktu</div>
                 <div className="font-bold text-slate-700 flex justify-center items-center gap-1">
-                  <Clock size={14} /> {duration}s
+                  <Clock size={14} /> 
+                  {/* Tampilkan durasi format MM:SS jika > 60s */}
+                  {duration > 60 ? formatTime(duration) : `${duration}s`}
                 </div>
               </div>
               <div className="text-center border-l border-r border-slate-200">
@@ -303,8 +323,13 @@ const QuizPlay = () => {
   const currentQ = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
+  // [BARU] Hitung Sisa Waktu & Status Warna Timer
+  const remainingTime = timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
+  const isUrgent = timeLimit > 0 && remainingTime < 30; // Merah jika < 30 detik
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 pt-6 pb-10">
+    <div className={`min-h-screen flex flex-col items-center justify-center px-4 pt-6 pb-10 transition-colors duration-500 
+        ${isUrgent ? "bg-red-50" : "bg-slate-50"}`}>
       
       {/* Top Bar (Timer & Info) */}
       <div className="w-full max-w-2xl flex justify-between items-center mb-6">
@@ -321,12 +346,25 @@ const QuizPlay = () => {
              </div>
          </div>
 
-         {/* Timer Badge */}
-         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs border shadow-sm
-            ${isRealtime ? "bg-red-50 text-red-600 border-red-100" : "bg-white text-slate-600 border-slate-200"}
+         {/* [UPDATED] Timer Badge */}
+         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs border shadow-sm transition-all duration-300
+            ${isUrgent 
+                ? "bg-red-600 text-white border-red-600 animate-pulse scale-110" 
+                : isRealtime 
+                    ? "bg-blue-50 text-blue-600 border-blue-100" 
+                    : "bg-white text-slate-600 border-slate-200"
+            }
          `}>
-             {isRealtime ? <Zap size={14} className={isRealtime ? "animate-pulse" : ""}/> : <Clock size={14}/>}
-             <span className="tabular-nums">{elapsedTime}s</span>
+             {/* Icon */}
+             {isUrgent ? <AlertTriangle size={14} /> : (isRealtime ? <Zap size={14} /> : <Clock size={14}/>)}
+             
+             {/* Text Waktu */}
+             <span className="tabular-nums">
+                {timeLimit > 0 
+                    ? formatTime(remainingTime) // Countdown (MM:SS)
+                    : `${elapsedTime}s`         // Countup
+                }
+             </span>
          </div>
       </div>
 
@@ -334,7 +372,7 @@ const QuizPlay = () => {
         {/* Progress Bar */}
         <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8 overflow-hidden">
           <motion.div
-            className="bg-indigo-600 h-full rounded-full"
+            className={`h-full rounded-full ${isUrgent ? "bg-red-500" : "bg-indigo-600"}`}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}

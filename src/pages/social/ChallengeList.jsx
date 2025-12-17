@@ -471,7 +471,7 @@ const ChallengeList = () => {
             const isBattleRoyale = duel.mode === "battleroyale";
             const isMyCreated = duel.creator_id === user.ID;
             const is2v2 = duel.mode === "2v2";
-
+            const timeLimit = duel.time_limit; // in seconds
             // Sorting
             const sortedParticipants = [...participants].sort((a, b) => {
               if (a.score !== -1 && b.score === -1) return -1;
@@ -704,7 +704,7 @@ const ChallengeList = () => {
                             )
                         ) : (
                           isActive ? (
-                            <Link to={`/play/${duel.quiz_id}`} state={{ title: duel.quiz?.title, isChallenge: true }} className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse">
+                            <Link to={`/play/${duel.quiz_id}`} state={{ title: duel.quiz?.title, isChallenge: true, isRealtime: isRealtime, timeLimit: timeLimit }} className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse">
                               <PlayCircle size={20} /> MAINKAN SEKARANG
                             </Link>
                           ) : isBattleRoyale && !allAccepted ? (
