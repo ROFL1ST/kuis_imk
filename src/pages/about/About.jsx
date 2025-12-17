@@ -12,6 +12,8 @@ import {
   CheckCircle,
   Swords,
   BrainCircuit,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { useEffect } from "react";
 
@@ -40,7 +42,7 @@ const About = () => {
           transition={{ delay: 0.2 }}
         >
           <span className="inline-block py-1 px-3 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-100">
-            Versi 1.0.0 (Beta)
+            Versi 1.2.0 (Beta)
           </span>
           <h1 className="text-4xl md:text-6xl font-black text-slate-800 mb-6 leading-tight">
             Belajar Jadi Lebih <br />
@@ -176,6 +178,30 @@ const About = () => {
           />{" "}
           oleh Tim QuizApp
         </p>
+      </div>
+
+      <div className="mt-8 pt-8 border-t border-slate-100">
+        <h3 className="font-bold text-slate-800 mb-4">Informasi Lainnya</h3>
+        <Link
+          to="/whats-new"
+          className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg group-hover:scale-110 transition-transform">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <p className="font-bold text-slate-800">What's New</p>
+              <p className="text-xs text-slate-500">
+                Cek fitur terbaru di versi 1.2.0
+              </p>
+            </div>
+          </div>
+          <ChevronRight
+            size={18}
+            className="text-slate-400 group-hover:text-indigo-600"
+          />
+        </Link>
       </div>
     </motion.div>
   );
