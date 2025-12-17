@@ -66,7 +66,7 @@ const History = () => {
                   <div>
                     <h3 className="text-lg font-bold text-slate-800 group-hover:text-indigo-600 transition-colors flex items-center gap-2">
                       {isDuel && <Swords size={16} className="text-orange-500" />}
-                      {cleanTitle}
+                      {!isDuel ? cleanTitle : item.quiz_title}
                     </h3>
                     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 mt-1">
                       <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded text-xs font-medium">

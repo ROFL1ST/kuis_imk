@@ -30,7 +30,7 @@ const ReviewPage = () => {
 
   const { quiz_title, score, questions, snapshot } = detail;
   const isDuel = quiz_title.includes("[DUEL]");
-  const cleanTitle = quiz_title.replace("[DUEL]", "").trim();
+  // const cleanTitle = quiz_title.replace("[DUEL]", "").trim();
   const isPass = score >= 70;
 
   // Hitung ulang benar/salah manual jika API tidak menyediakan count
@@ -70,7 +70,7 @@ const ReviewPage = () => {
           )}
         </h2>
 
-        <h1 className="text-2xl font-bold text-slate-800 mb-6">{cleanTitle}</h1>
+        <h1 className="text-2xl font-bold text-slate-800 mb-6">{detail.quiz_title}</h1>
 
         <div className="flex justify-center items-center mb-6">
           <div
