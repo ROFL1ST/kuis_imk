@@ -33,7 +33,7 @@ const PlayerRow = ({
   getRankIcon,
 }) => {
   const hasPlayed = p.score !== -1;
-  
+
   return (
     <div
       className={`flex items-center justify-between p-3 rounded-xl border shadow-sm mb-2 last:mb-0 ${
@@ -94,7 +94,9 @@ const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost }) => {
   useEffect(() => {
     if (!isOpen || !challengeId) return;
 
-    const sseUrl = `${import.meta.env.VITE_API_URL}/challenges/${challengeId}/lobby-stream`;
+    const sseUrl = `${
+      import.meta.env.VITE_API_URL
+    }/challenges/${challengeId}/lobby-stream`;
     const token = localStorage.getItem("token");
     const eventSource = new EventSource(`${sseUrl}?token=${token}`);
 
@@ -133,6 +135,8 @@ const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost }) => {
             isRealtime: true,
             lobbyId: challengeId,
             title: data.quiz_title || quizTitle,
+            timeLimit: data.time_limit || 0,
+            challengeID: challengeId,
           },
         });
       } catch (err) {
@@ -364,6 +368,7 @@ const ChallengeList = () => {
         lobbyId: duel.ID,
         title: duel.quiz?.title,
         rejoining: true,
+        challengeID: duel.ID,
       },
     });
   };
@@ -488,28 +493,40 @@ const ChallengeList = () => {
             // Filter Teams
             const teamA = participants.filter((p) => p.team === "A");
             const teamB = participants.filter((p) => p.team === "B");
-            const scoreA = teamA.reduce((acc, curr) => acc + (curr.score > -1 ? curr.score : 0), 0);
-            const scoreB = teamB.reduce((acc, curr) => acc + (curr.score > -1 ? curr.score : 0), 0);
+            const scoreA = teamA.reduce(
+              (acc, curr) => acc + (curr.score > -1 ? curr.score : 0),
+              0
+            );
+            const scoreB = teamB.reduce(
+              (acc, curr) => acc + (curr.score > -1 ? curr.score : 0),
+              0
+            );
 
             // --- [BARU] LOGIC TEXT PEMENANG ---
             let winnerText = null;
-            let winnerColorClass = "bg-slate-100 text-slate-500 border-slate-200";
+            let winnerColorClass =
+              "bg-slate-100 text-slate-500 border-slate-200";
 
             if (isFinished) {
               if (is2v2) {
                 if (duel.winning_team === "A") winnerText = "TEAM A WINS!";
                 else if (duel.winning_team === "B") winnerText = "TEAM B WINS!";
-                else if (duel.winning_team === "DRAW") winnerText = "DRAW MATCH";
+                else if (duel.winning_team === "DRAW")
+                  winnerText = "DRAW MATCH";
 
                 if (myParticipant?.team === duel.winning_team) {
-                  winnerColorClass = "bg-yellow-100 text-yellow-700 border-yellow-300";
+                  winnerColorClass =
+                    "bg-yellow-100 text-yellow-700 border-yellow-300";
                 }
               } else {
                 if (duel.winner_id === user.ID) {
                   winnerText = "YOU WIN!";
-                  winnerColorClass = "bg-yellow-100 text-yellow-700 border-yellow-300";
+                  winnerColorClass =
+                    "bg-yellow-100 text-yellow-700 border-yellow-300";
                 } else if (duel.winner_id) {
-                  const winnerP = participants.find(p => p.user_id === duel.winner_id);
+                  const winnerP = participants.find(
+                    (p) => p.user_id === duel.winner_id
+                  );
                   winnerText = `${winnerP?.user?.name || "Lawan"} WINS!`;
                 } else {
                   winnerText = "DRAW";
@@ -523,8 +540,9 @@ const ChallengeList = () => {
                 className={`relative overflow-hidden rounded-3xl shadow-sm border-2 transition-all duration-300 hover:shadow-md
                   ${
                     isFinished
-                       // Jika 2v2 dan tim kita menang, ATAU 1v1 dan kita menang
-                      ? (is2v2 && duel.winning_team === myParticipant?.team) || (duel.winner_id === user.ID)
+                      ? // Jika 2v2 dan tim kita menang, ATAU 1v1 dan kita menang
+                        (is2v2 && duel.winning_team === myParticipant?.team) ||
+                        duel.winner_id === user.ID
                         ? "bg-gradient-to-br from-yellow-50/80 to-white border-yellow-300"
                         : "bg-white border-slate-200"
                       : isRejected
@@ -571,10 +589,12 @@ const ChallengeList = () => {
                     </div>
                     <div>
                       {isFinished ? (
-                         // --- [BARU] BADGE PEMENANG DINAMIS ---
-                         <div className={`px-3 py-1.5 rounded-full text-xs font-black border flex items-center gap-1 shadow-sm ${winnerColorClass}`}>
-                            <Crown size={12} /> {winnerText || "SELESAI"}
-                         </div>
+                        // --- [BARU] BADGE PEMENANG DINAMIS ---
+                        <div
+                          className={`px-3 py-1.5 rounded-full text-xs font-black border flex items-center gap-1 shadow-sm ${winnerColorClass}`}
+                        >
+                          <Crown size={12} /> {winnerText || "SELESAI"}
+                        </div>
                       ) : isRejected ? (
                         <span className="flex items-center gap-1 text-red-600 font-bold bg-red-100 px-3 py-1.5 rounded-full text-xs border border-red-200">
                           <XCircle size={14} /> DIBATALKAN
@@ -599,15 +619,17 @@ const ChallengeList = () => {
                     // --- TAMPILAN KHUSUS 2v2 ---
                     <div className="flex flex-col gap-4">
                       {/* TIM A */}
-                      <div className={`p-3 rounded-xl border relative overflow-hidden transition-all ${
-                        duel.winning_team === 'A' 
-                          ? 'bg-yellow-50/50 border-yellow-300 ring-1 ring-yellow-200' 
-                          : 'bg-blue-50/50 border-blue-100'
-                      }`}>
-                         {duel.winning_team === 'A' && (
-                            <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[9px] font-black px-2 py-0.5 rounded-bl-lg z-10 shadow-sm">
-                                WINNER
-                            </div>
+                      <div
+                        className={`p-3 rounded-xl border relative overflow-hidden transition-all ${
+                          duel.winning_team === "A"
+                            ? "bg-yellow-50/50 border-yellow-300 ring-1 ring-yellow-200"
+                            : "bg-blue-50/50 border-blue-100"
+                        }`}
+                      >
+                        {duel.winning_team === "A" && (
+                          <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[9px] font-black px-2 py-0.5 rounded-bl-lg z-10 shadow-sm">
+                            WINNER
+                          </div>
                         )}
                         <div className="flex justify-between mb-2 text-xs font-bold text-blue-800 uppercase tracking-wider">
                           <span>Team A (Host)</span>
@@ -615,8 +637,14 @@ const ChallengeList = () => {
                         </div>
                         {teamA.map((p, idx) => (
                           <PlayerRow
-                            key={p.ID} p={p} idx={idx} totalPlayers={teamA.length} isMe={p.user_id === user.ID}
-                            isFinished={isFinished} getRankStyle={getRankStyle} getRankIcon={getRankIcon}
+                            key={p.ID}
+                            p={p}
+                            idx={idx}
+                            totalPlayers={teamA.length}
+                            isMe={p.user_id === user.ID}
+                            isFinished={isFinished}
+                            getRankStyle={getRankStyle}
+                            getRankIcon={getRankIcon}
                           />
                         ))}
                       </div>
@@ -632,15 +660,17 @@ const ChallengeList = () => {
                       </div>
 
                       {/* TIM B */}
-                      <div className={`p-3 rounded-xl border relative overflow-hidden transition-all ${
-                        duel.winning_team === 'B' 
-                          ? 'bg-yellow-50/50 border-yellow-300 ring-1 ring-yellow-200' 
-                          : 'bg-red-50/50 border-red-100'
-                      }`}>
-                         {duel.winning_team === 'B' && (
-                            <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[9px] font-black px-2 py-0.5 rounded-bl-lg z-10 shadow-sm">
-                                WINNER
-                            </div>
+                      <div
+                        className={`p-3 rounded-xl border relative overflow-hidden transition-all ${
+                          duel.winning_team === "B"
+                            ? "bg-yellow-50/50 border-yellow-300 ring-1 ring-yellow-200"
+                            : "bg-red-50/50 border-red-100"
+                        }`}
+                      >
+                        {duel.winning_team === "B" && (
+                          <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[9px] font-black px-2 py-0.5 rounded-bl-lg z-10 shadow-sm">
+                            WINNER
+                          </div>
                         )}
                         <div className="flex justify-between mb-2 text-xs font-bold text-red-800 uppercase tracking-wider">
                           <span>Team B (Challengers)</span>
@@ -648,8 +678,14 @@ const ChallengeList = () => {
                         </div>
                         {teamB.map((p, idx) => (
                           <PlayerRow
-                            key={p.ID} p={p} idx={idx} totalPlayers={teamB.length} isMe={p.user_id === user.ID}
-                            isFinished={isFinished} getRankStyle={getRankStyle} getRankIcon={getRankIcon}
+                            key={p.ID}
+                            p={p}
+                            idx={idx}
+                            totalPlayers={teamB.length}
+                            isMe={p.user_id === user.ID}
+                            isFinished={isFinished}
+                            getRankStyle={getRankStyle}
+                            getRankIcon={getRankIcon}
                           />
                         ))}
                       </div>
@@ -659,8 +695,14 @@ const ChallengeList = () => {
                     <div className="flex flex-col gap-2">
                       {sortedParticipants.map((p, idx) => (
                         <PlayerRow
-                          key={p.ID} p={p} idx={idx} totalPlayers={sortedParticipants.length} isMe={p.user_id === user.ID}
-                          isFinished={isFinished} getRankStyle={getRankStyle} getRankIcon={getRankIcon}
+                          key={p.ID}
+                          p={p}
+                          idx={idx}
+                          totalPlayers={sortedParticipants.length}
+                          isMe={p.user_id === user.ID}
+                          isFinished={isFinished}
+                          getRankStyle={getRankStyle}
+                          getRankIcon={getRankIcon}
                         />
                       ))}
                     </div>
@@ -674,14 +716,27 @@ const ChallengeList = () => {
                     {myStatus === "pending" && (
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleAccept(duel.ID, isRealtime, duel.quiz?.title, duel.creator_id)}
+                          onClick={() =>
+                            handleAccept(
+                              duel.ID,
+                              isRealtime,
+                              duel.quiz?.title,
+                              duel.creator_id
+                            )
+                          }
                           className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg transition flex items-center justify-center gap-2"
                         >
-                          <CheckCircle2 size={18} /> 
+                          <CheckCircle2 size={18} />
                           {is2v2 ? "Gabung Tim" : "Terima Tantangan"}
                         </button>
                         <button
-                          onClick={() => setConfirmModal({ isOpen: true, challengeId: duel.ID, challengerName: duel.creator?.name })}
+                          onClick={() =>
+                            setConfirmModal({
+                              isOpen: true,
+                              challengeId: duel.ID,
+                              challengerName: duel.creator?.name,
+                            })
+                          }
                           className="px-5 py-3 bg-white border-2 border-red-100 text-red-500 rounded-xl font-bold hover:bg-red-50 transition"
                         >
                           Tolak
@@ -694,26 +749,56 @@ const ChallengeList = () => {
                       <>
                         {isRealtime ? (
                           isActive ? (
-                              <button onClick={() => handleRejoinGame(duel)} className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-green-200 flex items-center justify-center gap-2 transition-all animate-pulse">
-                                <RefreshCw size={20} className="animate-spin-slow" /> GAME BERLANGSUNG! MASUK KEMBALI
-                              </button>
-                            ) : (
-                              <button onClick={() => handleEnterLobby(duel.ID, duel.quiz?.title, duel.creator_id)} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg flex items-center justify-center gap-2 transition-all">
-                                <LogIn size={20} /> {isMyCreated ? "BUKA LOBBY (HOST)" : "MASUK LOBBY"}
-                              </button>
-                            )
-                        ) : (
-                          isActive ? (
-                            <Link to={`/play/${duel.quiz_id}`} state={{ title: duel.quiz?.title, isChallenge: true, isRealtime: isRealtime, timeLimit: timeLimit }} className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse">
-                              <PlayCircle size={20} /> MAINKAN SEKARANG
-                            </Link>
-                          ) : isBattleRoyale && !allAccepted ? (
-                            <div className="w-full py-3 bg-orange-50 text-orange-600 border border-orange-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
-                              <Hourglass size={16} /> Menunggu semua pemain menerima...
-                            </div>
+                            <button
+                              onClick={() => handleRejoinGame(duel)}
+                              className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-green-200 flex items-center justify-center gap-2 transition-all animate-pulse"
+                            >
+                              <RefreshCw
+                                size={20}
+                                className="animate-spin-slow"
+                              />{" "}
+                              GAME BERLANGSUNG! MASUK KEMBALI
+                            </button>
                           ) : (
-                            <div className="text-center text-slate-400 text-xs">Menunggu konfirmasi server...</div>
+                            <button
+                              onClick={() =>
+                                handleEnterLobby(
+                                  duel.ID,
+                                  duel.quiz?.title,
+                                  duel.creator_id
+                                )
+                              }
+                              className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg flex items-center justify-center gap-2 transition-all"
+                            >
+                              <LogIn size={20} />{" "}
+                              {isMyCreated
+                                ? "BUKA LOBBY (HOST)"
+                                : "MASUK LOBBY"}
+                            </button>
                           )
+                        ) : isActive ? (
+                          <Link
+                            to={`/play/${duel.quiz_id}`}
+                            state={{
+                              title: duel.quiz?.title,
+                              isChallenge: true,
+                              isRealtime: isRealtime,
+                              timeLimit: timeLimit,
+                              challengeID: duel.ID,
+                            }}
+                            className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse"
+                          >
+                            <PlayCircle size={20} /> MAINKAN SEKARANG
+                          </Link>
+                        ) : isBattleRoyale && !allAccepted ? (
+                          <div className="w-full py-3 bg-orange-50 text-orange-600 border border-orange-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                            <Hourglass size={16} /> Menunggu semua pemain
+                            menerima...
+                          </div>
+                        ) : (
+                          <div className="text-center text-slate-400 text-xs">
+                            Menunggu konfirmasi server...
+                          </div>
                         )}
                       </>
                     )}
@@ -751,17 +836,34 @@ const ChallengeList = () => {
       )}
 
       {/* Modal Konfirmasi Tolak */}
-      <Modal isOpen={confirmModal.isOpen} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} maxWidth="max-w-sm">
+      <Modal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        maxWidth="max-w-sm"
+      >
         <div className="flex items-center gap-3 text-red-600 mb-4">
           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
             <AlertTriangle size={24} />
           </div>
           <h2 className="text-lg font-bold text-slate-800">Tolak Tantangan?</h2>
         </div>
-        <p className="text-slate-600 mb-6 text-sm">Yakin ingin menolak tantangan dari <span className="font-bold">{confirmModal.challengerName}</span>?</p>
+        <p className="text-slate-600 mb-6 text-sm">
+          Yakin ingin menolak tantangan dari{" "}
+          <span className="font-bold">{confirmModal.challengerName}</span>?
+        </p>
         <div className="flex gap-3">
-          <button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className="flex-1 px-4 py-2 bg-slate-100 font-bold rounded-lg text-slate-700">Batal</button>
-          <button onClick={handleRefuse} className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg">Tolak</button>
+          <button
+            onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+            className="flex-1 px-4 py-2 bg-slate-100 font-bold rounded-lg text-slate-700"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleRefuse}
+            className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg"
+          >
+            Tolak
+          </button>
         </div>
       </Modal>
 
@@ -771,7 +873,14 @@ const ChallengeList = () => {
         challengeId={lobbyModal.challengeId}
         quizTitle={lobbyModal.title}
         isHost={lobbyModal.isHost}
-        onClose={() => setLobbyModal({ isOpen: false, challengeId: null, title: "", isHost: false })}
+        onClose={() =>
+          setLobbyModal({
+            isOpen: false,
+            challengeId: null,
+            title: "",
+            isHost: false,
+          })
+        }
       />
     </div>
   );
