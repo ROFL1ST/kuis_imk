@@ -4,11 +4,11 @@ import { userAPI, socialAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
+import UserAvatar from "../../components/ui/UserAvatar"; // [BARU] Import UserAvatar
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
   Mail,
-  Lock,
   Edit3,
   Award,
   BookOpen,
@@ -18,19 +18,17 @@ import {
   Star,
   TrendingUp,
   Crown,
-  Clock,
   Shield,
   ChevronRight,
-  Sparkles,
   Target as TargetIcon,
   BrainCircuit,
   UserPlus,
-  UserCheck, // Icon Teman
-  Hourglass, // Icon Pending
-  Flag, // Icon Report
+  UserCheck,
+  Hourglass,
+  Flag,
   Target,
   BarChart2,
-  Share2, // [BARU] Import icon Share
+  Share2,
 } from "lucide-react";
 
 const Profile = () => {
@@ -43,8 +41,6 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isImageHover, setIsImageHover] = useState(false);
-
-  
 
   // State khusus Friend Status ("none", "pending", "friend")
   const [friendStatus, setFriendStatus] = useState("none");
@@ -76,6 +72,11 @@ const Profile = () => {
 
         data = profileRes.data.data;
         achData = achRes.data.data || [];
+
+        // [PENTING] Gabungkan equipped_items ke dalam user object agar UserAvatar membacanya
+        if (data.equipped_items && data.user) {
+            data.user.equipped_items = data.equipped_items;
+        }
 
         setForm({
           name: data.user.name,
@@ -120,9 +121,11 @@ const Profile = () => {
             username: publicData.username,
             xp: publicData.stats.xp,
             level: publicData.stats.level,
-            streak_count: publicData.stats.streak_count || 0, // Tampilkan streak jika ada
+            streak_count: publicData.stats.streak_count || 0,
             CreatedAt: publicData.stats.joined_at,
             last_activity_date: null,
+            // [BARU] Masukkan equipped_items dari public data
+            equipped_items: publicData.equipped_items || [], 
           },
           stats: {
             total_quizzes: publicData.stats.total_quizzes,
@@ -160,7 +163,7 @@ const Profile = () => {
     fetchData();
   }, [username, isOwnProfile]);
 
-  // --- [BARU] UPDATE METADATA SAAT PROFIL DIMUAT ---
+  // Update Metadata
   useEffect(() => {
     if (!profileData) return;
     const { user } = profileData;
@@ -168,7 +171,6 @@ const Profile = () => {
     const title = `${user.name} (@${user.username}) | QuizApp`;
     document.title = title;
 
-    // Helper untuk update meta tag
     const updateMeta = (name, content) => {
       let el =
         document.querySelector(`meta[name="${name}"]`) ||
@@ -183,7 +185,6 @@ const Profile = () => {
       el.setAttribute("content", content);
     };
 
-    // Update Meta Deskripsi & Open Graph (Untuk Share Preview)
     const desc = `Lihat profil ${user.name} di QuizApp! Level ${user.level} • ${user.xp} XP.`;
     updateMeta("description", desc);
     updateMeta("og:title", title);
@@ -199,7 +200,7 @@ const Profile = () => {
       const res = await userAPI.updateProfile(form);
       const freshRes = await userAPI.getProfile();
       const freshData = freshRes.data.data;
-      // console.log(freshData);
+      
       toast.success("Profil berhasil diperbarui!");
       setProfileData((prev) => ({ ...prev, user: freshData.user }));
       if (form.username !== cleanUrlUsername) {
@@ -207,9 +208,6 @@ const Profile = () => {
       }
       setAuthUser(res.data.data);
       setIsEditOpen(false);
-      if (form.username !== cleanUrlUsername) {
-        navigate(`/@${form.username}`, { replace: true });
-      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Gagal update profil");
     }
@@ -219,14 +217,14 @@ const Profile = () => {
   const handleAddFriend = async () => {
     try {
       await socialAPI.addFriend(profileData.user.username);
-      setFriendStatus("pending"); // Update UI langsung agar responsif
+      setFriendStatus("pending");
       toast.success("Permintaan pertemanan dikirim!");
     } catch (err) {
       toast.error("Gagal mengirim request");
     }
   };
 
-  // --- [BARU] HANDLER SHARE ---
+  // Handler Share
   const handleShare = async () => {
     if (!profileData) return;
 
@@ -236,7 +234,6 @@ const Profile = () => {
       url: window.location.href,
     };
 
-    // Gunakan Web Share API jika didukung (Native Mobile Share)
     if (navigator.share) {
       try {
         await navigator.share(shareData);
@@ -244,7 +241,6 @@ const Profile = () => {
         console.log("Share dibatalkan");
       }
     } else {
-      // Fallback: Copy Link
       navigator.clipboard
         .writeText(shareData.url)
         .then(() => {
@@ -307,10 +303,16 @@ const Profile = () => {
               className="relative"
             >
               <div className="relative">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500 blur-md opacity-50"></div>
-                <div className="relative w-32 h-32 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center text-5xl font-black text-indigo-600 border-8 border-white shadow-2xl">
-                  {user.name?.charAt(0).toUpperCase()}
-                </div>
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500 blur-md opacity-20"></div>
+                
+                {/* [UPDATE] MENGGUNAKAN COMPONENT UserAvatar (SUPPORT FRAME) */}
+                <UserAvatar 
+                    user={user} 
+                    size="2xl" 
+                    className="shadow-2xl bg-white rounded-full" 
+                />
+
+                {/* Level Badge (Tetap Absolute) */}
                 <motion.div
                   animate={isImageHover ? { scale: 1.1 } : { scale: 1 }}
                   className="absolute z-20 -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-sm font-bold px-3 py-1.5 rounded-full border-4 border-white shadow-lg flex items-center gap-1"
@@ -321,7 +323,7 @@ const Profile = () => {
 
               {/* XP Progress (Hanya Own Profile) */}
               {isOwnProfile && (
-                <div className="absolute -inset-4">
+                <div className="absolute -inset-4 pointer-events-none">
                   <svg className="w-full h-full" viewBox="0 0 100 100">
                     <circle
                       cx="50"
@@ -365,8 +367,14 @@ const Profile = () => {
             <div className="flex-1 text-center lg:text-left w-full">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center justify-center lg:justify-start gap-2">
                     {user.name}
+                    {/* Tampilkan Title/Gelar jika ada */}
+                    {user.equipped_items?.find(i => i.type === 'title') && (
+                        <span className="text-sm bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full border border-yellow-200 font-bold shadow-sm">
+                            {user.equipped_items.find(i => i.type === 'title').name}
+                        </span>
+                    )}
                   </h1>
                   <p className="text-slate-500 font-medium mt-1 flex items-center justify-center lg:justify-start gap-2">
                     <User size={16} />@{user.username}
@@ -375,7 +383,7 @@ const Profile = () => {
 
                 {/* TOMBOL AKSI */}
                 <div className="flex gap-2 justify-center lg:justify-end items-center">
-                  {/* [BARU] Tombol Share - Hanya muncul di profil sendiri */}
+                  {/* Tombol Share */}
                   {isOwnProfile && (
                     <motion.button
                       whileHover={{ scale: 1.05 }}
@@ -437,7 +445,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Stats Bar (Tampil di Own & Public) */}
+              {/* Stats Bar */}
               <div className="mt-6 flex flex-wrap gap-3 justify-center lg:justify-start">
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
@@ -451,7 +459,6 @@ const Profile = () => {
                   </span>
                 </motion.div>
 
-                {/* Streak tampil jika ada > 0 atau profil sendiri */}
                 {(user.streak_count > 0 || isOwnProfile) && (
                   <motion.div
                     initial={{ x: -20, opacity: 0 }}
@@ -467,7 +474,7 @@ const Profile = () => {
                 )}
               </div>
 
-              {/* Progress Bar (Hanya Own Profile) */}
+              {/* Progress Bar (Own Profile) */}
               {isOwnProfile && (
                 <div className="mt-8">
                   <div className="flex justify-between text-sm mb-2">
@@ -495,9 +502,8 @@ const Profile = () => {
         </div>
       </motion.div>
 
-      {/* 2. KONTEN DETAIL */}
+      {/* 2. KONTEN DETAIL (Own Profile vs Public Profile) */}
       {isOwnProfile ? (
-        // === TAMPILAN OWN PROFILE (TETAP SEPERTI DESAIN AWAL) ===
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
@@ -670,13 +676,13 @@ const Profile = () => {
           </div>
         </>
       ) : (
-        // === TAMPILAN PUBLIC (DIPERBAIKI AGAR MIRIP DUOLINGO) ===
+        // === TAMPILAN PUBLIC ===
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          {/* 1. Statistic Grid (Duolingo Style) */}
+          {/* 1. Statistic Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="p-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center gap-3 mb-2">
@@ -794,7 +800,7 @@ const Profile = () => {
         </motion.div>
       )}
 
-      {/* EDIT MODAL (Hanya Tampil Jika Own Profile) */}
+      {/* EDIT MODAL */}
       <AnimatePresence>
         {isEditOpen && isOwnProfile && (
           <Modal

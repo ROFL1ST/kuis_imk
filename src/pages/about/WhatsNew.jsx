@@ -1,6 +1,17 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Star, Zap, Bug, Calendar, GitCommit } from "lucide-react";
-import { useEffect, version } from "react";
+import {
+  ArrowLeft,
+  Star,
+  Zap,
+  Bug,
+  Calendar,
+  GitCommit,
+  Coins,
+  Trophy,
+  Palette,
+  Rocket,
+} from "lucide-react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const WhatsNew = () => {
@@ -9,13 +20,72 @@ const WhatsNew = () => {
     document.title = "Apa yang Baru? | QuizApp";
   }, []);
 
-  // Data pembaruan aplikasi
+  const roadmap = [
+    {
+      title: "Challenge Rewards",
+      description:
+        "Menang duel lawan teman atau player lain akan memberikan hadiah Koin. Buktikan siapa yang paling pintar!",
+      icon: <Coins className="text-yellow-500" size={24} />,
+      bg: "bg-yellow-50",
+      border: "border-yellow-200",
+    },
+    {
+      title: "Improvement Achievement System",
+      description:
+        "Selesaikan misi unik dan raih Achievement Badge. Setiap achievement yang terbuka memberikan bonus XP dan Koin.",
+      icon: <Trophy className="text-purple-500" size={24} />,
+      bg: "bg-purple-50",
+      border: "border-purple-200",
+    },
+    {
+      title: "Theme Customization",
+      description:
+        "Bosan dengan tampilan standar? Nantinya Anda bisa mengganti tema aplikasi (Dark Mode, Light Mode, dan tema spesial lainnya).",
+      icon: <Palette className="text-pink-500" size={24} />,
+      bg: "bg-pink-50",
+      border: "border-pink-200",
+    },
+  ];
+
   const updates = [
+    {
+      version: "1.3.0",
+      date: "18 Des 2025",
+      title: "Social Search, Streak & 3D Avatar",
+      highlight: true,
+      changes: [
+        {
+          type: "new",
+          text: "Global Search: Cari teman baru, cek status (Pending/Friend) & Add Friend instan.",
+        },
+        {
+          type: "new",
+          text: "Daily Streak: Login harian berturut-turut untuk bonus Koin melimpah.",
+        },
+         {
+          type: "new",
+          text: "Sistem coin untuk melakukan pembelian item di shop.",
+        },
+        {
+          type: "new",
+          text: "Shop dan inventory untuk menambah item frame avatar dan title.",
+        },
+        {
+          type: "improvement",
+          text: "Rombak visual social hub agar lebih menarik dan interaktif.",
+        },
+        {
+          type: "improvement",
+          text: "Update status pemain setelah selesai duel realtime.",
+        },
+        { type: "fix", text: "Perbaikan bug setelah selesai quizz dan duel." },
+      ],
+    },
     {
       version: "1.2.1",
       date: "18 Des 2025",
       title: "Pembaruan Minor & Proggress lawan realtime",
-      highlight: true,
+      highlight: false,
       changes: [
         {
           type: "improvement",
@@ -126,6 +196,34 @@ const WhatsNew = () => {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Roadmap */}
+        <div className="mb-20">
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <Rocket className="text-indigo-600" />
+            <h2 className="text-2xl font-bold text-slate-800">Coming Soon</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {roadmap.map((item, index) => (
+              <div
+                key={index}
+                className={`p-6 rounded-2xl border ${item.border} ${item.bg} hover:shadow-md transition-shadow`}
+              >
+                <div className="bg-white w-12 h-12 rounded-xl flex items-center justify-center shadow-sm mb-4">
+                  {item.icon}
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Timeline Pembaruan */}
         <div className="relative pl-4 sm:pl-8 border-l-2 border-slate-200 space-y-12">
           {updates.map((update, idx) => (
             <motion.div

@@ -16,28 +16,23 @@ import {
   ChevronDown,
   X,
   Bell,
+  Coins,
+  ShoppingBag,
+  Package,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Modal from "../ui/Modal";
-// Pastikan import notificationAPI
-
+import UserAvatar from "../ui/UserAvatar";
 
 const Navbar = () => {
   const { user, logout, unreadCount } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation(); // Untuk mendeteksi perubahan halaman
-  
+
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  
-  // State untuk jumlah notifikasi belum dibaca
-
 
   const dropdownRef = useRef(null);
-
-  // --- LOGIKA BADGE NOTIFIKASI ---
-  
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -93,25 +88,30 @@ const Navbar = () => {
             >
               <History size={18} /> Riwayat
             </Link>
+             <Link
+              to="/shop"
+              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+            >
+              <ShoppingBag size={18} /> Shop
+            </Link>
           </div>
 
           {/* === BAGIAN KANAN (STATS & PROFIL DESKTOP) === */}
           <div className="hidden sm:flex items-center gap-4 border-l pl-4 ml-4">
-            
             {/* [UPDATE] Tombol Notifikasi dengan Badge */}
             <Link
-                to="/notifications"
-                className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"
-                title="Notifikasi"
+              to="/notifications"
+              className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"
+              title="Notifikasi"
             >
-                <Bell size={20} />
-                
-                {/* Badge Merah */}
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 ring-2 ring-white text-[10px] font-bold text-white">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
+              <Bell size={20} />
+
+              {/* Badge Merah */}
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 ring-2 ring-white text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </Link>
 
             {/* Stats Badges */}
@@ -127,6 +127,12 @@ const Navbar = () => {
             >
               <Star size={14} fill="currentColor" /> Lvl {user?.level || 1}
             </div>
+            <div
+              className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold border border-yellow-200"
+              title="Your Coins"
+            >
+              <Coins size={14} fill="currentColor" /> {user?.coins || 0}
+            </div>
 
             {/* Dropdown Profile */}
             <div className="relative" ref={dropdownRef}>
@@ -139,9 +145,7 @@ const Navbar = () => {
                     {user?.name}
                   </div>
                 </div>
-                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm ring-2 ring-white">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </div>
+                <UserAvatar user={user} size="md" />
                 <ChevronDown
                   size={16}
                   className={`text-slate-400 transition-transform duration-200 ${
@@ -167,9 +171,17 @@ const Navbar = () => {
                   >
                     <User size={16} /> Profil Saya
                   </Link>
-
+                 
+                  <Link
+                    to="/inventory"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
+                    <Package size={16} /> Inventory
+                  </Link>
                   <Link
                     to="/settings"
+                    onClick={() => setDropdownOpen(false)}
                     className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
                     <Settings size={16} /> Pengaturan
@@ -177,6 +189,7 @@ const Navbar = () => {
 
                   <Link
                     to="/about"
+                    onClick={() => setDropdownOpen(false)}
                     className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
                     <Info size={16} /> Tentang Aplikasi
@@ -206,7 +219,7 @@ const Navbar = () => {
             {open ? <X size={24} /> : <Menu size={24} />}
             {/* Badge Mobile di Menu Burger (Opsional) */}
             {!open && unreadCount > 0 && (
-               <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
             )}
           </button>
         </div>
@@ -223,6 +236,12 @@ const Navbar = () => {
                 </div>
                 <div className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-3 rounded-xl border border-indigo-100 font-bold text-sm shadow-sm">
                   <Star size={18} fill="currentColor" /> Lvl {user?.level || 1}
+                </div>
+                <div
+                  className="flex items-center gap-2 bg-yellow-50 text-yellow-700 px-3 py-3 rounded-full text-xs font-bold border border-yellow-200"
+                  title="Your Coins"
+                >
+                  <Coins size={14} fill="currentColor" /> {user?.coins || 0}
                 </div>
               </div>
             </div>
@@ -257,7 +276,7 @@ const Navbar = () => {
               >
                 <History size={20} /> Riwayat
               </Link>
-              
+
               {/* [UPDATE] Menu Notifikasi Mobile dengan Badge */}
               <Link
                 to="/notifications"
@@ -265,15 +284,28 @@ const Navbar = () => {
                 className="flex items-center justify-between px-4 py-3.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium"
               >
                 <div className="flex items-center gap-3">
-                    <Bell size={20} /> Notifikasi
+                  <Bell size={20} /> Notifikasi
                 </div>
                 {unreadCount > 0 && (
-                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 )}
               </Link>
-
+              <Link
+                to="/shop"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-3.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium"
+              >
+                <ShoppingBag size={20} /> Shop
+              </Link>
+              <Link
+                to="/inventory"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-3.5 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition font-medium"
+              >
+                <Package size={20} /> Inventory
+              </Link>
               <Link
                 to="/about"
                 onClick={() => setOpen(false)}
@@ -293,9 +325,7 @@ const Navbar = () => {
             {/* 3. Profile & Actions Area */}
             <div className="mt-auto bg-slate-50 p-4 border-t border-slate-100">
               <div className="flex items-center gap-3 mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </div>
+                <UserAvatar user={user} size="md" />
                 <div className="overflow-hidden">
                   <p className="font-bold text-slate-800 truncate">
                     {user?.name}

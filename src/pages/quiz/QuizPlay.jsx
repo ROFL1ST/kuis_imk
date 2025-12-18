@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"; // Hapus 'use' yang tidak perlu
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { authAPI, quizAPI, socialAPI } from "../../services/api";
 import toast from "react-hot-toast";
@@ -11,13 +11,12 @@ import {
   Clock,
   Trophy,
   Home,
-  RefreshCcw,
-  ListChecks,
   Swords,
   Zap,
   Loader2,
   ArrowRight,
-  AlertTriangle, // Import icon Alert
+  AlertTriangle,
+  Flag, // Icon baru untuk finish
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
@@ -33,10 +32,9 @@ const QuizPlay = () => {
   const quizTitle = location.state?.title || "Kuis";
   const isChallenge = location.state?.isChallenge || false;
   const isRealtime = location.state?.isRealtime || false;
-  // [BARU] Ambil Time Limit (dalam detik)
   const timeLimit = location.state?.timeLimit || 0;
   const challengeID = location.state?.challengeID || null;
-
+  console.log("QuizPlay timeLimit:", timeLimit);
   // State Data
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -63,13 +61,19 @@ const QuizPlay = () => {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevelData, setNewLevelData] = useState(0);
 
-  // progress bar
+  // Realtime Logic States
   const [opponentsProgress, setOpponentsProgress] = useState({});
+  const [playersMap, setPlayersMap] = useState({});
+  // [BARU] State untuk menyimpan siapa saja yang sudah selesai
+  const [finishedPlayers, setFinishedPlayers] = useState({});
 
+  const [historyId, setHistoryId] = useState(null);
+
+  // logic realtime dengan SSE
   useEffect(() => {
     if (!isRealtime || !challengeID) return;
+
     const token = getToken();
-    // Setup EventSource (Pastikan URL sesuai endpoint stream kamu)
     const eventSource = new EventSource(
       `${
         import.meta.env.VITE_API_URL
@@ -77,42 +81,79 @@ const QuizPlay = () => {
     );
 
     eventSource.onmessage = (event) => {
-      // Handle keepalive
       if (event.data === ":keepalive") return;
-
-      // Parsing data manual karena format SSE
-      // (Implementasi tergantung library SSE backend kamu)
     };
 
-    // [BARU] Listen event spesifik 'opponent_progress'
-    eventSource.addEventListener("opponent_progress", (e) => {
+    // A. Listen: Daftar Pemain
+    eventSource.addEventListener("player_update", (e) => {
       try {
-      const data = JSON.parse(e.data);
-      // Format data: { user_id: 1, username: "player_name", progress: 50, index: 5 }
-      console.log("Progress lawan diterima:", data);
-      // Jangan update diri sendiri (opsional, biar UI tidak glitch)
-      if (data.user_id !== user.ID) {
-        setOpponentsProgress((prev) => ({
-        ...prev,
-        [data.user_id]: { progress: data.progress, username: data.username },
-        }));
-      }
+        const data = JSON.parse(e.data);
+        const map = {};
+        if (data.players) {
+          data.players.forEach((p) => {
+            map[p.user_id] = {
+              name: p.name,
+              team: p.team || "solo",
+            };
+          });
+        }
+        setPlayersMap(map);
       } catch (err) {
-      console.error("Error parsing SSE data", err);
+        console.error("Parse player update error:", err);
       }
     });
 
-    return () => eventSource.close();
+    // B. Listen: Progress Lawan
+    eventSource.addEventListener("opponent_progress", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.user_id !== user.ID) {
+          setOpponentsProgress((prev) => ({
+            ...prev,
+            [data.user_id]: data.progress,
+          }));
+        }
+      } catch (err) {
+        console.error("Error parsing progress", err);
+      }
+    });
+
+    // [BARU] C. Listen: Player Finished
+    eventSource.addEventListener("player_finished", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        // data = { user_id: 1, username: "Jordy", score: 100, status: "finished" }
+
+        // Simpan ke state finishedPlayers
+        setFinishedPlayers((prev) => ({
+          ...prev,
+          [data.user_id]: {
+            score: data.score,
+            username: data.username,
+          },
+        }));
+
+        // Opsional: Paksa progress bar jadi 100%
+        if (data.user_id !== user.ID) {
+          setOpponentsProgress((prev) => ({ ...prev, [data.user_id]: 100 }));
+          toast.success(`${data.username} telah selesai!`, { icon: "🏁" });
+        }
+      } catch (err) {
+        console.error("Error parsing finished event", err);
+      }
+    });
+
+    return () => {
+      eventSource.close();
+    };
   }, [isRealtime, challengeID, user.ID]);
 
-  // Helper Format Waktu (MM:SS)
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  // 1. Fetch Soal
   useEffect(() => {
     quizAPI
       .getQuestions(quizId)
@@ -120,7 +161,6 @@ const QuizPlay = () => {
         setQuestions(res.data.data);
         startTime.current = Date.now();
 
-        // Jalankan Timer
         timerIntervalRef.current = setInterval(() => {
           const currentElapsed = Math.floor(
             (Date.now() - startTime.current) / 1000
@@ -137,22 +177,32 @@ const QuizPlay = () => {
     return () => clearInterval(timerIntervalRef.current);
   }, [quizId, navigate]);
 
-  // [BARU] Effect untuk Cek Time Limit
   useEffect(() => {
     if (timeLimit > 0 && !isFinished && !submitting) {
-      // Jika waktu yang berlalu >= batas waktu
       if (elapsedTime >= timeLimit) {
         clearInterval(timerIntervalRef.current);
         toast.error("Waktu Habis! Mengirim jawaban otomatis...");
-        handleSubmit(); // Auto submit
+        handleSubmit();
       }
     }
   }, [elapsedTime, timeLimit, isFinished, submitting]);
-  // Note: handleSubmit ada di dependency scr implisit krn didefinisikan di scope component
 
   const handleOptionClick = (option) => {
     const currentQId = questions[currentIndex].ID;
     setAnswers({ ...answers, [currentQId]: option });
+  };
+
+  const sendProgress = async (index) => {
+    if (isRealtime && challengeID) {
+      try {
+        await socialAPI.postProgress(challengeID, {
+          current_index: index,
+          total_soal: questions.length,
+        });
+      } catch (err) {
+        console.error("Gagal kirim progress", err);
+      }
+    }
   };
 
   const handleNext = async () => {
@@ -160,17 +210,7 @@ const QuizPlay = () => {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
       setShowHint(false);
-      console.log(opponentsProgress);
-      if (isRealtime && challengeID) {
-        try {
-          await socialAPI.postProgress(challengeID, {
-            current_index: nextIndex,
-            total_soal: questions.length,
-          });
-        } catch (err) {
-          console.error("Gagal kirim progress", err);
-        }
-      }
+      await sendProgress(nextIndex);
     } else {
       await handleSubmit();
     }
@@ -178,19 +218,10 @@ const QuizPlay = () => {
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
+      const prevIndex = currentIndex - 1;
+      setCurrentIndex(prevIndex);
       setShowHint(false);
-
-      if (isRealtime && challengeID) {
-        authAPI
-          .post(`/challenges/${challengeID}/progress`, {
-            current_index: currentIndex - 1,
-            total_soal: questions.length,
-          })
-          .catch((err) => {
-            console.error("Gagal kirim progress", err);
-          });
-      }
+      sendProgress(prevIndex);
     }
   };
 
@@ -199,7 +230,6 @@ const QuizPlay = () => {
     setSubmitting(true);
 
     const endTime = Date.now();
-    // Gunakan Math.min agar durasi tidak melebihi limit (kalo auto submit)
     let timeTaken = Math.floor((endTime - startTime.current) / 1000);
     if (timeLimit > 0 && timeTaken > timeLimit) {
       timeTaken = timeLimit;
@@ -212,7 +242,7 @@ const QuizPlay = () => {
     const finalScore = Math.round((correctCount / questions.length) * 100);
 
     const submissionTitle = isChallenge ? `[DUEL] ${quizTitle}` : quizTitle;
-
+    console.log(submissionTitle, isChallenge)
     const payload = {
       quiz_id: parseInt(quizId),
       quiz_title: submissionTitle,
@@ -220,18 +250,19 @@ const QuizPlay = () => {
       total_soal: questions.length,
       snapshot: answers,
       time_taken: timeTaken,
+      // [BARU] Kirim ID Challenge agar backend bisa broadcast 'player_finished'
+      challenge_id: challengeID,
     };
 
     try {
       const currentLevel = user?.level || 1;
-      await quizAPI.submitScore(payload);
+      await quizAPI.submitScore(payload).then((res) => {
+        setHistoryId(res.data.data.ID);
+        console.log("Submitted history ID:", res);
+      });
 
       if (finalScore >= 70) {
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       }
 
       const userRes = await authAPI.authMe();
@@ -266,6 +297,29 @@ const QuizPlay = () => {
     document.title = `Bermain: ${quizTitle} | QuizApp`;
   }, [quizTitle]);
 
+  const isTeammate = (oppId) => {
+    const myTeam = playersMap[user.ID]?.team;
+    const oppTeam = playersMap[oppId]?.team;
+    if (!myTeam || myTeam === "solo") return false;
+    return myTeam === oppTeam;
+  };
+
+  const checkAllFinished = () => {
+    if (Object.keys(playersMap).length === 0) return false;
+    const totalOpponents = Object.keys(playersMap).length - 1;
+
+    let finishedOpponents = 0;
+    Object.keys(finishedPlayers).forEach((fid) => {
+      if (parseInt(fid) !== user.ID) finishedOpponents++;
+    });
+
+    return totalOpponents > 0 && finishedOpponents >= totalOpponents;
+  };
+
+    const goToReview = (historyId) => {
+    navigate(`/history/review/${historyId}`);
+  };
+
   if (loading)
     return (
       <div className="h-screen flex items-center justify-center font-medium text-slate-500 gap-2">
@@ -276,10 +330,11 @@ const QuizPlay = () => {
     return <div className="text-center mt-20 text-slate-500">Soal kosong.</div>;
 
   // ============================================================
-  // TAMPILAN 1: HASIL AKHIR (RESULT SCREEN)
+  // TAMPILAN 1: HASIL AKHIR
   // ============================================================
   if (isFinished && resultData) {
     const isPass = resultData.score >= 70;
+    const allDone = checkAllFinished();
 
     return (
       <div className="min-h-screen bg-slate-50 py-12 px-4 flex items-center justify-center">
@@ -295,7 +350,6 @@ const QuizPlay = () => {
               }
             `}
           >
-            {/* Header Badge */}
             {isChallenge && (
               <div className="absolute top-4 left-0 w-full flex justify-center">
                 <span className="px-3 py-1 bg-orange-100 text-orange-600 text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1 border border-orange-200">
@@ -321,7 +375,6 @@ const QuizPlay = () => {
                 <span className="text-xs font-bold tracking-widest opacity-60 mt-1">
                   POIN
                 </span>
-
                 {isPass && (
                   <motion.div
                     initial={{ scale: 0 }}
@@ -350,15 +403,14 @@ const QuizPlay = () => {
               Kamu telah menyelesaikan kuis ini.
             </p>
 
-            {/* Stats Grid */}
+            {/* Stats */}
             <div className="grid grid-cols-3 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
               <div className="text-center">
                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">
                   Waktu
                 </div>
                 <div className="font-bold text-slate-700 flex justify-center items-center gap-1">
-                  <Clock size={14} />
-                  {/* Tampilkan durasi format MM:SS jika > 60s */}
+                  <Clock size={14} />{" "}
                   {duration > 60 ? formatTime(duration) : `${duration}s`}
                 </div>
               </div>
@@ -380,15 +432,32 @@ const QuizPlay = () => {
               </div>
             </div>
 
-            {/* MESSAGE KHUSUS REALTIME */}
+            {/* [BARU] Status Menunggu Lawan */}
             {isRealtime && (
-              <div className="bg-blue-50 border border-blue-100 text-blue-600 p-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-6 animate-pulse">
-                <Loader2 size={14} className="animate-spin" />
-                Menunggu lawan lain selesai...
+              <div
+                className={`border p-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-6 transition-colors
+                  ${
+                    allDone
+                      ? "bg-green-50 border-green-200 text-green-700"
+                      : "bg-blue-50 border-blue-100 text-blue-600 animate-pulse"
+                  }
+              `}
+              >
+                {allDone ? (
+                  <>
+                    {" "}
+                    <CheckCircle2 size={14} /> Semua pemain selesai!{" "}
+                  </>
+                ) : (
+                  <>
+                    {" "}
+                    <Loader2 size={14} className="animate-spin" /> Menunggu
+                    lawan lain selesai...{" "}
+                  </>
+                )}
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex flex-col gap-3">
               {isChallenge ? (
                 <button
@@ -405,8 +474,7 @@ const QuizPlay = () => {
                   <Home size={18} /> Kembali ke Dashboard
                 </Link>
               )}
-
-              <button className="text-slate-400 text-sm font-bold hover:text-slate-600 py-2">
+              <button onClick={() => goToReview(historyId)} className="text-slate-400 text-sm font-bold hover:text-slate-600 py-2">
                 Review Jawaban
               </button>
             </div>
@@ -421,18 +489,16 @@ const QuizPlay = () => {
   // ============================================================
   const currentQ = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
-
-  // [BARU] Hitung Sisa Waktu & Status Warna Timer
   const remainingTime =
     timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
-  const isUrgent = timeLimit > 0 && remainingTime < 30; // Merah jika < 30 detik
+  const isUrgent = timeLimit > 0 && remainingTime < 30;
 
   return (
     <div
       className={`min-h-screen flex flex-col items-center justify-center px-4 pt-6 pb-10 transition-colors duration-500 
         ${isUrgent ? "bg-red-50" : "bg-slate-50"}`}
     >
-      {/* Top Bar (Timer & Info) */}
+      {/* Top Bar */}
       <div className="w-full max-w-2xl flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <button
@@ -443,7 +509,7 @@ const QuizPlay = () => {
           </button>
           <div>
             <h2 className="font-bold text-slate-700 text-sm leading-tight flex items-center gap-1">
-              {isChallenge && <Swords size={14} className="text-orange-500" />}
+              {isChallenge && <Swords size={14} className="text-orange-500" />}{" "}
               {quizTitle}
             </h2>
             <p className="text-xs text-slate-400 font-medium">
@@ -451,8 +517,6 @@ const QuizPlay = () => {
             </p>
           </div>
         </div>
-
-        {/* [UPDATED] Timer Badge */}
         <div
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs border shadow-sm transition-all duration-300
             ${
@@ -464,7 +528,6 @@ const QuizPlay = () => {
             }
          `}
         >
-          {/* Icon */}
           {isUrgent ? (
             <AlertTriangle size={14} />
           ) : isRealtime ? (
@@ -472,20 +535,13 @@ const QuizPlay = () => {
           ) : (
             <Clock size={14} />
           )}
-
-          {/* Text Waktu */}
           <span className="tabular-nums">
-            {
-              timeLimit > 0
-                ? formatTime(remainingTime) // Countdown (MM:SS)
-                : `${elapsedTime}s` // Countup
-            }
+            {timeLimit > 0 ? formatTime(remainingTime) : `${elapsedTime}s`}
           </span>
         </div>
       </div>
 
       <div className="w-full max-w-2xl">
-        {/* Progress Bar */}
         <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8 overflow-hidden">
           <motion.div
             className={`h-full rounded-full ${
@@ -497,7 +553,6 @@ const QuizPlay = () => {
           />
         </div>
 
-        {/* Hint Area */}
         <AnimatePresence>
           {showHint && (
             <motion.div
@@ -522,7 +577,6 @@ const QuizPlay = () => {
           )}
         </AnimatePresence>
 
-        {/* Question Card */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQ.ID}
@@ -545,7 +599,6 @@ const QuizPlay = () => {
                 </button>
               )}
             </div>
-
             <div className="grid gap-3">
               {currentQ.options.map((opt, idx) => {
                 const isSelected = answers[currentQ.ID] === opt;
@@ -558,7 +611,8 @@ const QuizPlay = () => {
                         isSelected
                           ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold shadow-sm"
                           : "border-slate-100 hover:border-indigo-200 bg-white text-slate-600 hover:bg-slate-50 font-medium"
-                      }`}
+                      }
+                    `}
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -583,38 +637,87 @@ const QuizPlay = () => {
             </div>
           </motion.div>
         </AnimatePresence>
-       
-          {isRealtime && Object.keys(opponentsProgress).length > 0 && (
-            <div className="w-full max-w-2xl mt-6 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-xs font-bold text-slate-400 uppercase mb-3">
-                Progress Lawan
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(opponentsProgress).map(([oppID, prog]) => (
-            <div key={oppID} className="flex items-center gap-3">
-              {/* Avatar Lawan (Placeholder) */}
-              <div className="w-8 h-8 rounded-full capitalize bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                {prog.username.charAt(0)}
-              </div>
 
-              {/* Bar */}
-              <div className="w-full items-center bg-slate-200 rounded-full h-3 overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full bg-red-500`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${prog.progress}%` }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
-              <span className="text-xs font-bold text-slate-600 w-8 text-right">
-                {prog.progress}%
-              </span>
+        {/* --- AREA PROGRESS LAWAN (SMART UI) --- */}
+        {isRealtime && Object.keys(opponentsProgress).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-2xl mt-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm"
+          >
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+              Live Arena
+            </h3>
+
+            <div className="space-y-3">
+              {Object.entries(opponentsProgress).map(([oppID, prog]) => {
+                const playerInfo = playersMap[oppID];
+                const displayName = playerInfo
+                  ? playerInfo.name
+                  : `Player ${oppID}`;
+                const isFriend = isTeammate(oppID);
+                const playerFinished = finishedPlayers[oppID]; // Cek apakah sudah finish
+
+                return (
+                  <div key={oppID} className="flex items-center gap-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 capitalize
+                        ${
+                          isFriend
+                            ? "bg-blue-50 text-blue-600 border-blue-200"
+                            : "bg-red-50 text-red-600 border-red-200"
+                        }
+                    `}
+                    >
+                      {displayName.charAt(0)}
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <span
+                          className={`text-[10px] font-bold uppercase
+                                ${isFriend ? "text-blue-600" : "text-slate-500"}
+                            `}
+                        >
+                          {displayName} {isFriend && "(Rekan)"}
+                        </span>
+                      </div>
+
+                      {/* Jika Selesai, tampilkan Badge. Jika Belum, progress bar */}
+                      {playerFinished ? (
+                        <div className="h-5 bg-green-100 text-green-700 text-[10px] font-bold px-2 rounded-md flex items-center gap-1 w-fit border border-green-200">
+                          <Flag size={10} fill="currentColor" /> SELESAI (
+                          {playerFinished.score} Poin)
+                        </div>
+                      ) : (
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden relative">
+                          <motion.div
+                            className={`h-full shadow-sm ${
+                              isFriend
+                                ? "bg-blue-500"
+                                : "bg-gradient-to-r from-orange-400 to-red-500"
+                            }`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${prog}%` }}
+                            transition={{ type: "spring", stiffness: 50 }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {!playerFinished && (
+                      <span className="text-xs font-bold text-slate-600 w-9 text-right tabular-nums">
+                        {prog}%
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {/* Footer Navigation */}
+          </motion.div>
+        )}
+
         <div className="flex justify-between items-center mt-8">
           <button
             onClick={handlePrevious}
@@ -623,7 +726,6 @@ const QuizPlay = () => {
           >
             Sebelumnya
           </button>
-
           <button
             onClick={handleNext}
             disabled={!answers[currentQ.ID] || submitting}
@@ -631,21 +733,23 @@ const QuizPlay = () => {
           >
             {submitting ? (
               <>
-                <Loader2 size={18} className="animate-spin" /> Memproses...
+                {" "}
+                <Loader2 size={18} className="animate-spin" /> Memproses...{" "}
               </>
             ) : currentIndex === questions.length - 1 ? (
               <>
-                Selesai <CheckCircle2 size={18} />
+                {" "}
+                Selesai <CheckCircle2 size={18} />{" "}
               </>
             ) : (
               <>
-                Lanjut <ArrowRight size={18} />
+                {" "}
+                Lanjut <ArrowRight size={18} />{" "}
               </>
             )}
           </button>
         </div>
       </div>
-
       <LevelUpModal
         isOpen={showLevelUp}
         onClose={() => setShowLevelUp(false)}

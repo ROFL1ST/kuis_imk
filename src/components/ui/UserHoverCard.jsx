@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Trophy, Calendar, Star } from "lucide-react";
+import { Trophy, Calendar, Star, User } from "lucide-react";
+import UserAvatar from "./UserAvatar";
 
 const UserHoverCard = ({ user, children }) => {
   if (!user) return <>{children}</>;
@@ -52,12 +53,13 @@ const UserHoverCard = ({ user, children }) => {
           <div className="px-4 pb-4 relative">
              {/* Avatar (Floating Over Banner) */}
              {/* Perbaikan posisi top: -top-10 agar pas setengah di banner */}
-             <div className="absolute -top-20 left-4 p-1 bg-white rounded-full shadow-sm">
-                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-2xl font-black text-slate-600 border border-slate-200">
-                  {name.charAt(0).toUpperCase()}
-                </div>
+             <div className="absolute -top-20 left-4  bg-white rounded-full shadow-sm">
+                <UserAvatar
+                  user={user} 
+                  size="lg" 
+                />
                 {/* Online Indicator */}
-                <div className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                <div className="absolute bottom-0 z-20 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
              </div>
 
              <div className="mt-8 mb-3">

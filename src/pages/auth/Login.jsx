@@ -3,12 +3,24 @@ import { useAuth } from "../../hooks/useAuth";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import { Brain, LogIn, User, Lock, Sparkles, ArrowRight } from "lucide-react";
+import {
+  Brain,
+  LogIn,
+  User,
+  Lock,
+  Sparkles,
+  ArrowRight,
+  Coins,
+  Flame,
+} from "lucide-react";
+import Modal from "../../components/ui/Modal";
 
 const Login = () => {
   const { login, loading } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", password: "" });
+  const [rewardData, setRewardData] = useState(null);
+  const [showRewardModal, setShowRewardModal] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,11 +30,24 @@ const Login = () => {
     }
     const result = await login(form);
     if (result.success) {
-      toast.success("Login Berhasil!");
-      navigate("/");
+      if (result.coins_gained > 0) {
+        setRewardData({
+          coins: result.coins_gained,
+          message: result.streak_message,
+        });
+        setShowRewardModal(true);
+      } else {
+        toast.success("Login Berhasil!");
+        navigate("/");
+      }
     } else {
       toast.error(result.message);
     }
+  };
+
+  const handleCloseReward = () => {
+    setShowRewardModal(false);
+    navigate("/");
   };
 
   useEffect(() => {
@@ -182,6 +207,31 @@ const Login = () => {
           Bergabung dengan ribuan pengguna QuizzApp
         </motion.p>
       </motion.div>
+      <Modal isOpen={showRewardModal} onClose={handleCloseReward}>
+        <div className="text-center py-4">
+          <div className="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
+            <Coins className="h-10 w-10 text-yellow-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">
+            Daily Reward!
+          </h2>
+          <p className="text-slate-600 mb-6">{rewardData?.message}</p>
+
+          <div className="flex justify-center items-center gap-2 bg-yellow-50 border border-yellow-200 p-3 rounded-xl mb-6">
+            <span className="text-3xl font-bold text-yellow-600">
+              +{rewardData?.coins}
+            </span>
+            <span className="text-sm font-medium text-yellow-700">Coins</span>
+          </div>
+
+          <button
+            onClick={handleCloseReward}
+            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-3 rounded-xl hover:shadow-lg transition transform hover:scale-105"
+          >
+            Klaim Hadiah 🎁
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };

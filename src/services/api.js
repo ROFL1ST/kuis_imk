@@ -88,6 +88,8 @@ export const socialAPI = {
 
 // User Profile Endpoints
 export const userAPI = {
+  searchUsers: (query) => api.get(`/users/search?q=${query}`),
+
   getProfile: () => api.get("/users/me"),
   updateProfile: (data) => api.put("/users/me", data),
   getUserProfile: (username) => api.get(`/users/${username}`),
@@ -124,6 +126,13 @@ export const notificationAPI = {
   getList: () => api.get("/notifications"),
   markRead: (id) => api.put(`/notifications/${id}/read`),
   clearAll: () => api.delete("/notifications"),
+};
+
+export const shopAPI = {
+  getItems: () => api.get("/shop/items"),
+  buyItem: (itemId) => api.post("/shop/buy", { item_id: itemId }),
+  getInventory: () => api.get("/shop/inventory"),
+  equipItem: (itemId) => api.post("/shop/equip", { item_id: itemId }),
 };
 
 export default api;

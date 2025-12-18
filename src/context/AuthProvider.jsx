@@ -14,8 +14,8 @@ import { useNavigate } from "react-router-dom";
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getUser());
   const [token, setTokenState] = useState(getToken());
-  // [BARU] State untuk jumlah notifikasi belum dibaca
-  const [unreadCount, setUnreadCount] = useState(0); 
+
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
@@ -35,14 +35,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let eventSource = null;
     const savedSettings = localStorage.getItem("settings_notifications");
-    const isNotifEnabled = savedSettings !== null ? JSON.parse(savedSettings) : true;
+    const isNotifEnabled =
+      savedSettings !== null ? JSON.parse(savedSettings) : true;
 
     if (token) {
       // Load awal saat token tersedia
-      fetchUnreadCount(); 
+      fetchUnreadCount();
 
       if (isNotifEnabled) {
-        const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const baseURL =
+          import.meta.env.VITE_API_URL || "http://localhost:8000/api";
         const url = `${baseURL}/notifications/stream?token=${token}`;
 
         eventSource = new EventSource(url);
@@ -60,17 +62,26 @@ export const AuthProvider = ({ children }) => {
                 <div
                   onClick={() => {
                     toast.dismiss(t.id);
-                    if (data.link) navigate(data.link); // Gunakan data.link dari backend
+                    if (data.link)
+                      navigate(data.link); // Gunakan data.link dari backend
                     else navigate("/notifications");
                   }}
                   className="cursor-pointer flex items-center gap-3 w-full"
                 >
                   <span className="text-xl">
-                    {data.type === "success" ? "🎉" : data.type === "warning" ? "⚠️" : "🔔"}
+                    {data.type === "success"
+                      ? "🎉"
+                      : data.type === "warning"
+                      ? "⚠️"
+                      : "🔔"}
                   </span>
                   <div className="flex-1">
-                    <p className="font-bold text-sm text-slate-800">{data.title || "Notifikasi Baru"}</p>
-                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{data.message}</p>
+                    <p className="font-bold text-sm text-slate-800">
+                      {data.title || "Notifikasi Baru"}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                      {data.message}
+                    </p>
                   </div>
                 </div>
               ),
@@ -131,12 +142,24 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await authAPI.login(credentials);
-      const { token: newToken, user: newUser } = res.data.data;
+
+      const {
+        token: newToken,
+        user: newUser,
+        streak_message,
+        coins_gained,
+      } = res.data.data;
+
       setTokenState(newToken);
       setUser(newUser);
       setToken(newToken);
       saveUser(newUser);
-      return { success: true };
+
+      return {
+        success: true,
+        streakMessage: streak_message,
+        coinsGained: coins_gained,
+      };
     } catch (error) {
       return {
         success: false,
