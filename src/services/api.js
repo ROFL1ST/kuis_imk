@@ -82,6 +82,8 @@ export const socialAPI = {
   refuseChallenge: (challengeId) =>
     api.post(`/challenges/${challengeId}/refuse`), //
   startGame: (challengeId) => api.post(`/challenges/${challengeId}/start`),
+  postProgress: (challengeId, progressData) =>
+    api.post(`/challenges/${challengeId}/progress`, progressData),
 };
 
 // User Profile Endpoints
