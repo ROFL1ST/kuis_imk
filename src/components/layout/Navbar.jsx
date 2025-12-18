@@ -174,12 +174,14 @@ const Navbar = () => {
                  
                   <Link
                     to="/inventory"
+                    onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
                     <Package size={16} /> Inventory
                   </Link>
                   <Link
                     to="/settings"
+                    onClick={() => setDropdownOpen(false)}
                     className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
                     <Settings size={16} /> Pengaturan
@@ -187,6 +189,7 @@ const Navbar = () => {
 
                   <Link
                     to="/about"
+                    onClick={() => setDropdownOpen(false)}
                     className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
                     <Info size={16} /> Tentang Aplikasi
