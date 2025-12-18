@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Star, Zap, Bug, Calendar, GitCommit } from "lucide-react";
-import { useEffect, version } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const WhatsNew = () => {
@@ -8,14 +8,36 @@ const WhatsNew = () => {
   useEffect(() => {
     document.title = "Apa yang Baru? | QuizApp";
   }, []);
-
-  // Data pembaruan aplikasi
   const updates = [
+    {
+      version: "1.3.0",
+      date: "19 Des 2025",
+      title: "Social Search, Streak & 3D Avatar",
+      highlight: true, 
+      changes: [
+        { 
+          type: "new", 
+          text: "Global Search: Cari teman baru, cek status (Pending/Friend) & Add Friend instan." 
+        },
+        { 
+          type: "new", 
+          text: "Daily Streak: Login harian berturut-turut untuk bonus Koin melimpah." 
+        },
+        { 
+          type: "improvement", 
+          text: "Visual Upgrade: Frame Avatar 'Wooden' kini tampil 3D & lebih estetik." 
+        },
+        { 
+          type: "improvement", 
+          text: "Performance: Inventory & Item Avatar dimuat otomatis saat login (Preload)." 
+        },
+      ],
+    },
     {
       version: "1.2.1",
       date: "18 Des 2025",
       title: "Pembaruan Minor & Proggress lawan realtime",
-      highlight: true,
+      highlight: false,
       changes: [
         {
           type: "improvement",
