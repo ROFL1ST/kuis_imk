@@ -36,6 +36,7 @@ const Shop = () => {
         shopAPI.getItems(),
         shopAPI.getInventory(),
       ]);
+      console.log("Shop Items:", invRes.data.data);
       setItems(itemsRes.data.data);
       setInventory(invRes.data.data.map((inv) => inv.item_id)); // Simpan ID saja biar mudah cek
     } catch (error) {
@@ -58,7 +59,7 @@ const Shop = () => {
       return;
     }
     setConfirmLoading(true);
-    console.log("Membeli item:", item);
+   
     try {
       const res = await shopAPI.buyItem(item.ID);
 
@@ -126,10 +127,11 @@ const Shop = () => {
       {/* Grid Items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {filteredItems.map((item) => {
-          const isOwned = inventory.includes(item.id);
+          const isOwned = inventory.includes(item.ID);
+         
           return (
             <motion.div
-              key={item.id}
+              key={item.ID}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className={`bg-white rounded-2xl p-4 shadow-sm border ${
