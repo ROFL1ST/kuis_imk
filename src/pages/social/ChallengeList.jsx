@@ -83,7 +83,7 @@ const PlayerRow = ({
 };
 
 // --- KOMPONEN LOBBY & COUNTDOWN (SSE) ---
-const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost }) => {
+const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost, timeLimit }) => {
   const [lobbyPlayers, setLobbyPlayers] = useState([]);
   const [countdown, setCountdown] = useState(null);
   const [status, setStatus] = useState("waiting");
@@ -135,7 +135,7 @@ const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost }) => {
             isRealtime: true,
             lobbyId: challengeId,
             title: data.quiz_title || quizTitle,
-            timeLimit: data.time_limit || 0,
+            timeLimit: timeLimit || 0,
             challengeID: challengeId,
             isChallenge: true,
           },
@@ -319,6 +319,7 @@ const ChallengeList = () => {
     challengeId: null,
     title: "",
     isHost: false,
+    timeLimit: 0,
   });
 
   const fetchData = () => {
@@ -333,7 +334,7 @@ const ChallengeList = () => {
     fetchData();
   }, []);
 
-  const handleAccept = async (id, isRealtime, title, creatorId) => {
+  const handleAccept = async (id, isRealtime, title, creatorId, timeLimit) => {
     try {
       await socialAPI.acceptChallenge(id);
       toast.success("Tantangan diterima!");
@@ -345,6 +346,7 @@ const ChallengeList = () => {
           challengeId: id,
           title: title,
           isHost: user.ID === creatorId,
+          timeLimit: timeLimit,
         });
       }
     } catch (err) {
@@ -353,12 +355,13 @@ const ChallengeList = () => {
     }
   };
 
-  const handleEnterLobby = (id, title, creatorId) => {
+  const handleEnterLobby = (id, title, creatorId, timeLimit) => {
     setLobbyModal({
       isOpen: true,
       challengeId: id,
       title: title,
       isHost: user.ID === creatorId,
+      timeLimit: timeLimit,
     });
   };
 
@@ -368,6 +371,7 @@ const ChallengeList = () => {
         isRealtime: true,
         lobbyId: duel.ID,
         title: duel.quiz?.title,
+        timeLimit: duel.time_limit || 0,
         rejoining: true,
         challengeID: duel.ID,
         isChallenge: true,
@@ -478,7 +482,7 @@ const ChallengeList = () => {
             const isBattleRoyale = duel.mode === "battleroyale";
             const isMyCreated = duel.creator_id === user.ID;
             const is2v2 = duel.mode === "2v2";
-            const timeLimit = duel.time_limit; // in seconds
+            // const timeLimit = duel.time_limit; // in seconds
             // Sorting
             const sortedParticipants = [...participants].sort((a, b) => {
               if (a.score !== -1 && b.score === -1) return -1;
@@ -576,6 +580,11 @@ const ChallengeList = () => {
                           <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
                             <Zap size={10} className="inline mr-1" />
                             REALTIME
+                          </span>
+                        )}
+                        {duel.time_limit > 0 && (
+                          <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded flex items-center gap-1">
+                            <Hourglass size={10} /> {duel.time_limit}s
                           </span>
                         )}
                       </div>
@@ -723,7 +732,8 @@ const ChallengeList = () => {
                               duel.ID,
                               isRealtime,
                               duel.quiz?.title,
-                              duel.creator_id
+                              duel.creator_id,
+                              duel.time_limit || 0
                             )
                           }
                           className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg transition flex items-center justify-center gap-2"
@@ -767,7 +777,8 @@ const ChallengeList = () => {
                                 handleEnterLobby(
                                   duel.ID,
                                   duel.quiz?.title,
-                                  duel.creator_id
+                                  duel.creator_id,
+                                  duel.time_limit || 0
                                 )
                               }
                               className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg flex items-center justify-center gap-2 transition-all"
@@ -785,7 +796,7 @@ const ChallengeList = () => {
                               title: duel.quiz?.title,
                               isChallenge: true,
                               isRealtime: isRealtime,
-                              timeLimit: timeLimit,
+                              timeLimit: duel.time_limit || 0,
                               challengeID: duel.ID,
                             }}
                             className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse"
@@ -875,12 +886,14 @@ const ChallengeList = () => {
         challengeId={lobbyModal.challengeId}
         quizTitle={lobbyModal.title}
         isHost={lobbyModal.isHost}
+        timeLimit={lobbyModal.timeLimit}
         onClose={() =>
           setLobbyModal({
             isOpen: false,
             challengeId: null,
             title: "",
             isHost: false,
+            timeLimit: 0,
           })
         }
       />

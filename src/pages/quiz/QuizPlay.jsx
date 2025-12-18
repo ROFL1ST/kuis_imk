@@ -34,7 +34,7 @@ const QuizPlay = () => {
   const isRealtime = location.state?.isRealtime || false;
   const timeLimit = location.state?.timeLimit || 0;
   const challengeID = location.state?.challengeID || null;
-
+  console.log("QuizPlay timeLimit:", timeLimit);
   // State Data
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
