@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Star, Zap, Bug, Calendar, GitCommit } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, version } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const WhatsNew = () => {
@@ -12,10 +12,23 @@ const WhatsNew = () => {
   // Data pembaruan aplikasi
   const updates = [
     {
+      version: "1.2.1",
+      date: "18 Des 2025",
+      title: "Pembaruan Minor & Proggress lawan realtime",
+      highlight: true,
+      changes: [
+        {
+          type: "improvement",
+          text: "Tampilkan progress lawan di mode Realtime Challenge.",
+        },
+        { type: "fix", text: "Perbaikan bug minor lainnya." },
+      ],
+    },
+    {
       version: "1.2.0",
       date: "17 Des 2025",
       title: "Realtime Challenge & Mode Duel",
-      highlight: true, // Versi besar
+      highlight: false, // Versi besar
       changes: [
         { type: "new", text: "Fitur Challenge: Tantang teman 1v1 atau 2v2." },
         {
@@ -26,7 +39,7 @@ const WhatsNew = () => {
           type: "improvement",
           text: "Notifikasi Realtime dengan Badge di Navbar.",
         },
-         {
+        {
           type: "improvement",
           text: "Scroll to top otomatis saat navigasi.",
         },
