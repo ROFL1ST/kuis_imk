@@ -137,6 +137,7 @@ const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost }) => {
             title: data.quiz_title || quizTitle,
             timeLimit: data.time_limit || 0,
             challengeID: challengeId,
+            isChallenge: true,
           },
         });
       } catch (err) {
@@ -369,6 +370,7 @@ const ChallengeList = () => {
         title: duel.quiz?.title,
         rejoining: true,
         challengeID: duel.ID,
+        isChallenge: true,
       },
     });
   };
