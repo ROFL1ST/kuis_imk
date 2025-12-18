@@ -87,18 +87,18 @@ const QuizPlay = () => {
     // [BARU] Listen event spesifik 'opponent_progress'
     eventSource.addEventListener("opponent_progress", (e) => {
       try {
-        const data = JSON.parse(e.data);
-        // Format data: { user_id: 1, progress: 50, index: 5 }
-        console.log("Progress lawan diterima:", data);
-        // Jangan update diri sendiri (opsional, biar UI tidak glitch)
-        if (data.user_id !== user.ID) {
-          setOpponentsProgress((prev) => ({
-            ...prev,
-            [data.user_id]: data.progress, // Update persentase lawan tersebut
-          }));
-        }
+      const data = JSON.parse(e.data);
+      // Format data: { user_id: 1, username: "player_name", progress: 50, index: 5 }
+      console.log("Progress lawan diterima:", data);
+      // Jangan update diri sendiri (opsional, biar UI tidak glitch)
+      if (data.user_id !== user.ID) {
+        setOpponentsProgress((prev) => ({
+        ...prev,
+        [data.user_id]: { progress: data.progress, username: data.username },
+        }));
+      }
       } catch (err) {
-        console.error("Error parsing SSE data", err);
+      console.error("Error parsing SSE data", err);
       }
     });
 
@@ -583,38 +583,38 @@ const QuizPlay = () => {
             </div>
           </motion.div>
         </AnimatePresence>
-        {/* Hanya tampil di mode Realtime Challenge */}
-        {isRealtime && Object.keys(opponentsProgress).length > 0 && (
-          <div className="w-full max-w-2xl mt-6 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3">
-              Progress Lawan
-            </h3>
-            <div className="space-y-3">
-              {Object.entries(opponentsProgress).map(([oppID, prog]) => (
-                <div key={oppID} className="flex items-center gap-3">
-                  {/* Avatar Lawan (Placeholder) */}
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                    P{oppID}
-                  </div>
+       
+          {isRealtime && Object.keys(opponentsProgress).length > 0 && (
+            <div className="w-full max-w-2xl mt-6 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-400 uppercase mb-3">
+                Progress Lawan
+              </h3>
+              <div className="space-y-3">
+                {Object.entries(opponentsProgress).map(([oppID, prog]) => (
+            <div key={oppID} className="flex items-center gap-3">
+              {/* Avatar Lawan (Placeholder) */}
+              <div className="w-8 h-8 rounded-full capitalize bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
+                {prog.username.charAt(0)}
+              </div>
 
-                  {/* Bar */}
-                  <div className="w-full items-center bg-slate-200 rounded-full h-3  overflow-hidden">
-                    <motion.div
-                      className={`h-full rounded-full bg-red-500`}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${prog}%` }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-slate-600 w-8 text-right">
-                    {prog}%
-                  </span>
-                </div>
-              ))}
+              {/* Bar */}
+              <div className="w-full items-center bg-slate-200 rounded-full h-3 overflow-hidden">
+                <motion.div
+                  className={`h-full rounded-full bg-red-500`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${prog.progress}%` }}
+                  transition={{ duration: 0.5 }}
+                />
+              </div>
+              <span className="text-xs font-bold text-slate-600 w-8 text-right">
+                {prog.progress}%
+              </span>
             </div>
-          </div>
-        )}
-        {/* Footer Navigation */}
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Footer Navigation */}
         <div className="flex justify-between items-center mt-8">
           <button
             onClick={handlePrevious}
