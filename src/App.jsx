@@ -25,6 +25,8 @@ import EmailAlert from "./components/ui/EmailAlert";
 import Notifications from "./pages/dashboard/Notifications";
 import WhatsNew from "./pages/about/WhatsNew";
 import ScrollToTop from "./components/layout/ScrollToTop";
+import Shop from "./pages/shop/Shop";
+import Inventory from "./pages/shop/Inventory";
 
 const MainLayout = ({ children }) => (
   <>
@@ -139,6 +141,23 @@ function App() {
               element={
                 <MainLayout>
                   <Settings />
+                </MainLayout>
+              }
+            />
+
+            <Route
+              path="/shop"
+              element={
+                <MainLayout>
+                  <Shop />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/inventory"
+              element={
+                <MainLayout>
+                  <Inventory />
                 </MainLayout>
               }
             />
