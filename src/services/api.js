@@ -76,7 +76,8 @@ export const socialAPI = {
 
   getFeed: () => api.get("/feed"), // Activity Feed
   createChallenge: (data) => api.post("/challenges", data), // Buat Tantangan
-  getMyChallenges: () => api.get("/challenges"), // Lihat list Tantangan
+  getMyChallenges: (page = 1, limit = 10) =>
+    api.get(`/challenges?page=${page}&limit=${limit}`), // Lihat list Tantangan
   acceptChallenge: (challengeId) =>
     api.post(`/challenges/${challengeId}/accept`), //
   refuseChallenge: (challengeId) =>
