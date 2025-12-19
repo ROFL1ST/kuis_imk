@@ -205,7 +205,7 @@ const About = () => {
       </div>
     </motion.div>
   );
-};
+};  
 
 const FeatureCard = ({ icon, title, desc, color, delay }) => (
   <motion.div

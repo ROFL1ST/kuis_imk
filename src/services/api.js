@@ -90,7 +90,7 @@ export const socialAPI = {
 // User Profile Endpoints
 export const userAPI = {
   searchUsers: (query) => api.get(`/users/search?q=${query}`),
-
+  shareProfile: () => api.post(`/users/share`),
   getProfile: () => api.get("/users/me"),
   updateProfile: (data) => api.put("/users/me", data),
   getUserProfile: (username) => api.get(`/users/${username}`),

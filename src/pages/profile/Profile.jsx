@@ -75,7 +75,7 @@ const Profile = () => {
 
         // [PENTING] Gabungkan equipped_items ke dalam user object agar UserAvatar membacanya
         if (data.equipped_items && data.user) {
-            data.user.equipped_items = data.equipped_items;
+          data.user.equipped_items = data.equipped_items;
         }
 
         setForm({
@@ -125,7 +125,7 @@ const Profile = () => {
             CreatedAt: publicData.stats.joined_at,
             last_activity_date: null,
             // [BARU] Masukkan equipped_items dari public data
-            equipped_items: publicData.equipped_items || [], 
+            equipped_items: publicData.equipped_items || [],
           },
           stats: {
             total_quizzes: publicData.stats.total_quizzes,
@@ -200,7 +200,7 @@ const Profile = () => {
       const res = await userAPI.updateProfile(form);
       const freshRes = await userAPI.getProfile();
       const freshData = freshRes.data.data;
-      
+
       toast.success("Profil berhasil diperbarui!");
       setProfileData((prev) => ({ ...prev, user: freshData.user }));
       if (form.username !== cleanUrlUsername) {
@@ -220,33 +220,31 @@ const Profile = () => {
       setFriendStatus("pending");
       toast.success("Permintaan pertemanan dikirim!");
     } catch (err) {
+      console.error(err);
       toast.error("Gagal mengirim request");
     }
   };
 
   // Handler Share
   const handleShare = async () => {
-    if (!profileData) return;
+    try {
+      await userAPI.shareProfile();
 
-    const shareData = {
-      title: `Profil ${profileData.user.name}`,
-      text: `Cek profil ${profileData.user.name} (@${profileData.user.username}) di QuizApp!`,
-      url: window.location.href,
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        console.log("Share dibatalkan");
+      // Fitur Share Native Browser
+      if (navigator.share) {
+        await navigator.share({
+          title: "QuizApp Profile",
+          text: `Lihat profil ${user.name} di QuizApp!`,
+          url: window.location.href,
+        });
+      } else {
+        // Fallback Copy Clipboard
+        navigator.clipboard.writeText(window.location.href);
+        toast.success("Link profil disalin! (+Misi Share)");
       }
-    } else {
-      navigator.clipboard
-        .writeText(shareData.url)
-        .then(() => {
-          toast.success("Link profil disalin!");
-        })
-        .catch(() => toast.error("Gagal menyalin link"));
+    } catch (error) {
+      console.error("Share failed", error);
+      toast.error("Gagal membagikan profil");
     }
   };
 
@@ -304,12 +302,12 @@ const Profile = () => {
             >
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500 blur-md opacity-20"></div>
-                
+
                 {/* [UPDATE] MENGGUNAKAN COMPONENT UserAvatar (SUPPORT FRAME) */}
-                <UserAvatar 
-                    user={user} 
-                    size="2xl" 
-                    className="shadow-2xl bg-white rounded-full" 
+                <UserAvatar
+                  user={user}
+                  size="2xl"
+                  className="shadow-2xl bg-white rounded-full"
                 />
 
                 {/* Level Badge (Tetap Absolute) */}
@@ -370,10 +368,13 @@ const Profile = () => {
                   <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center justify-center lg:justify-start gap-2">
                     {user.name}
                     {/* Tampilkan Title/Gelar jika ada */}
-                    {user.equipped_items?.find(i => i.type === 'title') && (
-                        <span className="text-sm bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full border border-yellow-200 font-bold shadow-sm">
-                            {user.equipped_items.find(i => i.type === 'title').name}
-                        </span>
+                    {user.equipped_items?.find((i) => i.type === "title") && (
+                      <span className="text-sm bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full border border-yellow-200 font-bold shadow-sm">
+                        {
+                          user.equipped_items.find((i) => i.type === "title")
+                            .name
+                        }
+                      </span>
                     )}
                   </h1>
                   <p className="text-slate-500 font-medium mt-1 flex items-center justify-center lg:justify-start gap-2">
