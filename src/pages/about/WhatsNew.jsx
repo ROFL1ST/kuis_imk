@@ -1,3 +1,5 @@
+// src/pages/about/WhatsNew.jsx
+
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -10,9 +12,11 @@ import {
   Trophy,
   Palette,
   Rocket,
+  LayoutList,
+  BarChart2
 } from "lucide-react";
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const WhatsNew = () => {
   const navigate = useNavigate();
@@ -30,7 +34,7 @@ const WhatsNew = () => {
       border: "border-yellow-200",
     },
     {
-      title: "Improvement Achievement System",
+      title: "Advanced Achievement System",
       description:
         "Selesaikan misi unik dan raih Achievement Badge. Setiap achievement yang terbuka memberikan bonus XP dan Koin.",
       icon: <Trophy className="text-purple-500" size={24} />,
@@ -49,10 +53,42 @@ const WhatsNew = () => {
 
   const updates = [
     {
+        version: "1.4.0",
+        date: "19 Des 2025",
+        title: "Daily Reward, Daily Missions, Infinite Scroll & Randomized Quiz",
+        highlight: true,
+        changes: [
+          {
+            type: "new",
+            text: "Daily Rewards dan Daily Missions: Dapatkan bonus Koin setiap hari dengan login dan menyelesaikan misi harian.",
+          },
+          {
+            type: "improvement",
+            text: "Tampilan Baru di Dashboard: Desain card topik yang lebih segar dan informatif.",
+          },
+          {
+            type: "improvement",
+            text: "Infinite Scroll pada Duel Arena: Load data lebih ringan dan cepat tanpa perlu klik halaman.",
+          },
+          {
+            type: "improvement",
+            text: "Statistik Duel Akurat: Data kemenangan dan total duel kini dihitung langsung dari server.",
+          },
+          {
+            type: "improvement",
+            text: "Acak Jawaban Kuis: Posisi opsi jawaban (A, B, C, D) kini diacak otomatis setiap kali bermain.",
+          },
+          {
+            type: "fix",
+            text: "Perbaikan bug pada perhitungan win rate di mode 2v2.",
+          },
+        ],
+      },
+    {
       version: "1.3.0",
       date: "18 Des 2025",
       title: "Social Search, Streak & 3D Avatar",
-      highlight: true,
+      highlight: false,
       changes: [
         {
           type: "new",
@@ -62,75 +98,47 @@ const WhatsNew = () => {
           type: "new",
           text: "Daily Streak: Login harian berturut-turut untuk bonus Koin melimpah.",
         },
-         {
-          type: "new",
-          text: "Sistem coin untuk melakukan pembelian item di shop.",
-        },
         {
           type: "new",
-          text: "Shop dan inventory untuk menambah item frame avatar dan title.",
+          text: "Sistem Coin & Shop: Beli item frame avatar dan title keren dengan koin hasil bermain.",
         },
         {
           type: "improvement",
-          text: "Rombak visual social hub agar lebih menarik dan interaktif.",
+          text: "Rombak visual Social Hub agar lebih menarik dan interaktif.",
         },
         {
           type: "improvement",
-          text: "Update status pemain setelah selesai duel realtime.",
+          text: "Update status pemain secara realtime setelah selesai duel.",
         },
-        { type: "fix", text: "Perbaikan bug setelah selesai quizz dan duel." },
       ],
     },
     {
       version: "1.2.1",
       date: "18 Des 2025",
-      title: "Pembaruan Minor & Proggress lawan realtime",
+      title: "Realtime Progress Update",
       highlight: false,
       changes: [
         {
           type: "improvement",
-          text: "Tampilkan progress lawan di mode Realtime Challenge.",
+          text: "Tampilkan progress bar lawan secara realtime saat duel berlangsung.",
         },
-        { type: "fix", text: "Perbaikan bug minor lainnya." },
+        { type: "fix", text: "Perbaikan sinkronisasi timer antar pemain." },
       ],
     },
     {
       version: "1.2.0",
       date: "17 Des 2025",
       title: "Realtime Challenge & Mode Duel",
-      highlight: false, // Versi besar
+      highlight: false,
       changes: [
         { type: "new", text: "Fitur Challenge: Tantang teman 1v1 atau 2v2." },
         {
           type: "new",
-          text: "Mode Realtime: Sinkronisasi waktu mulai & hasil duel.",
+          text: "Mode Realtime: Sinkronisasi waktu mulai & hasil duel menggunakan Server-Sent Events (SSE).",
         },
         {
           type: "improvement",
           text: "Notifikasi Realtime dengan Badge di Navbar.",
-        },
-        {
-          type: "improvement",
-          text: "Scroll to top otomatis saat navigasi.",
-        },
-        { type: "fix", text: "Perbaikan timer pada halaman Quiz Play." },
-        { type: "fix", text: "Perbaikan bug minor lainnya." },
-      ],
-    },
-    {
-      version: "1.1.0",
-      date: "10 Des 2025",
-      title: "Social Update",
-      highlight: false,
-      changes: [
-        { type: "new", text: "Sistem Teman: Tambah, Terima, dan Hapus teman." },
-        {
-          type: "new",
-          text: "Leaderboard Global: Lihat peringkat pemain terbaik.",
-        },
-        {
-          type: "improvement",
-          text: "Tampilan profil pengguna yang lebih interaktif.",
         },
       ],
     },
@@ -141,8 +149,7 @@ const WhatsNew = () => {
       highlight: false,
       changes: [
         { type: "new", text: "Rilis perdana QuizApp!" },
-        { type: "new", text: "Dasar sistem Kuis, Kategori, dan History." },
-        { type: "new", text: "Sistem Level & XP dasar." },
+        { type: "new", text: "Sistem Kuis Dasar, Kategori, dan History." },
       ],
     },
   ];
