@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
-import { authAPI, notificationAPI } from "../services/api"; // Import notificationAPI
+import { authAPI, notificationAPI } from "../services/api";
 import {
   getToken,
   setToken,
@@ -19,16 +19,30 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
-  // [BARU] Fungsi fetch notifikasi
+  // Fungsi fetch notifikasi
   const fetchUnreadCount = async () => {
     if (!token) return;
     try {
       const res = await notificationAPI.getList();
-      // Hitung manual client-side (atau buat endpoint khusus count di backend)
+      // Hitung manual client-side
       const count = res.data.data.filter((n) => !n.is_read).length;
       setUnreadCount(count);
     } catch (error) {
       console.error("Gagal load notifikasi:", error);
+    }
+  };
+
+  // [BARU] Fungsi untuk refresh data profile (Coin, Level, XP)
+  const refreshProfile = async () => {
+    try {
+      const res = await authAPI.authMe();
+      const { user: updatedUser } = res.data.data;
+      
+      // Update state & local storage
+      setUser(updatedUser);
+      saveUser(updatedUser);
+    } catch (error) {
+      console.error("Gagal refresh profile:", error);
     }
   };
 
@@ -41,6 +55,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       // Load awal saat token tersedia
       fetchUnreadCount();
+      refreshProfile(); // [Opsional] Pastikan data user fresh saat reload
 
       if (isNotifEnabled) {
         const baseURL =
@@ -53,7 +68,7 @@ export const AuthProvider = ({ children }) => {
           try {
             const data = JSON.parse(event.data);
 
-            // [BARU] Update Counter Realtime (+1)
+            // Update Counter Realtime (+1)
             setUnreadCount((prev) => prev + 1);
 
             // Tampilkan Toast
@@ -63,7 +78,7 @@ export const AuthProvider = ({ children }) => {
                   onClick={() => {
                     toast.dismiss(t.id);
                     if (data.link)
-                      navigate(data.link); // Gunakan data.link dari backend
+                      navigate(data.link);
                     else navigate("/notifications");
                   }}
                   className="cursor-pointer flex items-center gap-3 w-full"
@@ -87,7 +102,7 @@ export const AuthProvider = ({ children }) => {
               ),
               {
                 duration: 5000,
-                position: "top-center", // Posisi lebih standar
+                position: "top-center",
                 style: {
                   background: "#fff",
                   color: "#333",
@@ -147,7 +162,6 @@ export const AuthProvider = ({ children }) => {
         token: newToken,
         user: newUser,
         streak_message,
-        coins_gained,
       } = res.data.data;
 
       setTokenState(newToken);
@@ -158,7 +172,6 @@ export const AuthProvider = ({ children }) => {
       return {
         success: true,
         streakMessage: streak_message,
-        coinsGained: coins_gained,
       };
     } catch (error) {
       return {
@@ -190,8 +203,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     loading,
     isAuthenticated: !!token,
-    unreadCount, // [BARU] Expose count ke global
-    refreshNotifications: fetchUnreadCount, // [BARU] Fungsi untuk refresh manual (dipakai saat mark read)
+    unreadCount,
+    refreshNotifications: fetchUnreadCount,
+    refreshProfile, 
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

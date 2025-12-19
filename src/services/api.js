@@ -135,4 +135,13 @@ export const shopAPI = {
   equipItem: (itemId) => api.post("/shop/equip", { item_id: itemId }),
 };
 
+export const dailyAPI = {
+  getInfo: () => api.get("/daily/info"),
+
+  claimLogin: () => api.post("/daily/claim-login"),
+
+  claimMission: (missionId) =>
+    api.post("/daily/claim-mission", { mission_id: missionId }),
+};
+
 export default api;
