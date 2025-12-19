@@ -193,7 +193,7 @@ const About = () => {
             <div>
               <p className="font-bold text-slate-800">What's New</p>
               <p className="text-xs text-slate-500">
-                Cek fitur terbaru di versi 1.3.0
+                Cek fitur terbaru di versi 1.4.0
               </p>
             </div>
           </div>
