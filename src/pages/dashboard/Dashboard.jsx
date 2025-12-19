@@ -91,6 +91,10 @@ const Dashboard = () => {
     }
   };
 
+  useEffect(() => {
+    document.title = "Dashboard | QuizApp";
+  }, []);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
