@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+// src/pages/social/ChallengeList.jsx
+
+import { useEffect, useState, useRef, useMemo } from "react";
 import { socialAPI } from "../../services/api";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -18,6 +20,9 @@ import {
   Gamepad2,
   RefreshCw,
   LogIn,
+  Trophy,
+  Target,
+  Flame
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
@@ -334,6 +339,32 @@ const ChallengeList = () => {
     fetchData();
   }, []);
 
+  // --- STATISTIK RINGKAS ---
+  const stats = useMemo(() => {
+    const total = challenges.length;
+    let wins = 0;
+    
+    challenges.forEach(duel => {
+        if (duel.status !== 'finished') return;
+        
+        // Cek Pemenang
+        const participants = duel.participants || [];
+        const myP = participants.find(p => p.user_id === user.ID);
+        
+        if (!myP) return;
+
+        if (duel.mode === '2v2') {
+            if (duel.winning_team === myP.team) wins++;
+        } else {
+            if (duel.winner_id === user.ID) wins++;
+        }
+    });
+
+    const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+    return { total, wins, winRate };
+  }, [challenges, user.ID]);
+
+
   const handleAccept = async (id, isRealtime, title, creatorId, timeLimit) => {
     try {
       await socialAPI.acceptChallenge(id);
@@ -436,27 +467,63 @@ const ChallengeList = () => {
 
   if (loading)
     return (
-      <div className="text-center py-12 text-slate-500">
-        Memuat arena duel...
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
 
   return (
-    <div className="max-w-4xl mx-auto pb-20">
-      <h1 className="text-3xl font-black text-slate-800 mb-2 flex items-center gap-3">
-        <Swords className="text-orange-600" size={32} /> Arena Duel
-      </h1>
-      <p className="text-slate-500 mb-8">Riwayat dan tantangan aktifmu.</p>
+    <div className="max-w-5xl mx-auto pb-20 space-y-8">
+      
+      {/* --- HEADER MODERN (REVAMP) --- */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+             <Swords className="text-orange-600" /> Arena Duel
+           </h1>
+           <p className="text-slate-500 mt-1">
+             Tantang temanmu dan buktikan siapa yang paling jenius!
+           </p>
+        </div>
 
+        {/* Quick Stats */}
+        {!loading && challenges.length > 0 && (
+          <div className="flex gap-3">
+             <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                   <Target size={18} />
+                </div>
+                <div>
+                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Duel</p>
+                   <p className="text-sm font-bold text-slate-800">{stats.total} Main</p>
+                </div>
+             </div>
+             <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg">
+                   <Trophy size={18} />
+                </div>
+                <div>
+                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Menang</p>
+                   <p className="text-sm font-bold text-slate-800">{stats.wins}x ({stats.winRate}%)</p>
+                </div>
+             </div>
+          </div>
+        )}
+      </div>
+
+      {/* --- LIST CARD (DESIGN UTUH SESUAI REQUEST) --- */}
       {challenges.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl shadow-sm border-2 border-dashed border-slate-200">
-          <Swords size={48} className="mx-auto text-slate-300 mb-4" />
+        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
+          <div className="inline-flex bg-slate-50 p-4 rounded-full mb-4">
+            <Swords size={32} className="text-slate-300" />
+          </div>
           <h3 className="text-lg font-bold text-slate-700">
             Belum ada duel aktif
           </h3>
+          <p className="text-slate-500 text-sm mb-4">Buat tantangan baru atau tunggu teman mengajakmu.</p>
           <Link
             to="/"
-            className="inline-block mt-4 bg-indigo-600 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg transition"
+            className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg transition text-sm"
           >
             Cari Lawan
           </Link>
