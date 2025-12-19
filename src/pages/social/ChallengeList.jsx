@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+// src/pages/social/ChallengeList.jsx
+
+import { useEffect, useState, useRef, useCallback } from "react";
 import { socialAPI } from "../../services/api";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -18,6 +20,8 @@ import {
   Gamepad2,
   RefreshCw,
   LogIn,
+  Trophy,
+  Target
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
@@ -303,16 +307,36 @@ const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost, timeLimit
   );
 };
 
-// --- UTAMA: LIST CHALLENGE ---
+// --- UTAMA: LIST CHALLENGE (INFINITE SCROLL) ---
 const ChallengeList = () => {
   const [challenges, setChallenges] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // [BARU] State untuk Statistik & Pagination
+  const [stats, setStats] = useState({ total: 0, wins: 0, win_rate: 0 });
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // [BARU] Observer untuk Infinite Scroll
+  const observer = useRef();
+  const lastElementRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore]
+  );
+
   const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = "Arena Duel | QuizApp";
-  }, []);
 
   const [lobbyModal, setLobbyModal] = useState({
     isOpen: false,
@@ -322,23 +346,63 @@ const ChallengeList = () => {
     timeLimit: 0,
   });
 
-  const fetchData = () => {
-    socialAPI
-      .getMyChallenges()
-      .then((res) => setChallenges(res.data.data || []))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  };
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    challengeId: null,
+    challengerName: "",
+  });
 
   useEffect(() => {
-    fetchData();
+    document.title = "Arena Duel | QuizApp";
   }, []);
+
+  // [BARU] Fetch Data dengan Pagination
+  const fetchData = async (pageNum, reset = false) => {
+    setLoading(true);
+    try {
+      const res = await socialAPI.getMyChallenges(pageNum, 10);
+      const { list, stats: serverStats, has_more } = res.data.data;
+
+      // Update List: Append jika scroll, Replace jika reset
+      setChallenges((prev) => {
+        if (reset) return list || [];
+        // Cegah duplikat ID
+        const existingIds = new Set(prev.map((c) => c.ID));
+        const uniqueList = (list || []).filter((c) => !existingIds.has(c.ID));
+        return [...prev, ...uniqueList];
+      });
+
+      // Update Stats (Hanya ambil dari page 1 agar konsisten)
+      if (pageNum === 1 && serverStats) {
+        setStats(serverStats);
+      }
+
+      setHasMore(has_more);
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal memuat data duel");
+    } finally {
+      setLoading(false);
+      setInitialLoading(false);
+    }
+  };
+
+  // Trigger saat Page Berubah
+  useEffect(() => {
+    fetchData(page, page === 1);
+  }, [page]);
+
+  // Fungsi Refresh Manual (reset ke page 1)
+  const handleRefresh = () => {
+    setPage(1);
+    fetchData(1, true);
+  };
 
   const handleAccept = async (id, isRealtime, title, creatorId, timeLimit) => {
     try {
       await socialAPI.acceptChallenge(id);
       toast.success("Tantangan diterima!");
-      fetchData();
+      handleRefresh();
 
       if (isRealtime) {
         setLobbyModal({
@@ -379,17 +443,11 @@ const ChallengeList = () => {
     });
   };
 
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    challengeId: null,
-    challengerName: "",
-  });
-
   const handleRefuse = async () => {
     try {
       await socialAPI.refuseChallenge(confirmModal.challengeId);
       toast.success("Tantangan ditolak.");
-      fetchData();
+      handleRefresh();
     } catch (err) {
       console.log(err);
       toast.error("Gagal menolak tantangan");
@@ -434,36 +492,82 @@ const ChallengeList = () => {
     );
   };
 
-  if (loading)
+  if (initialLoading)
     return (
-      <div className="text-center py-12 text-slate-500">
-        Memuat arena duel...
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
 
   return (
-    <div className="max-w-4xl mx-auto pb-20">
-      <h1 className="text-3xl font-black text-slate-800 mb-2 flex items-center gap-3">
-        <Swords className="text-orange-600" size={32} /> Arena Duel
-      </h1>
-      <p className="text-slate-500 mb-8">Riwayat dan tantangan aktifmu.</p>
+    <div className="max-w-5xl mx-auto pb-20 space-y-8">
+      {/* --- HEADER & STATS (Dari Server) --- */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+            <Swords className="text-orange-600" /> Arena Duel
+          </h1>
+          <p className="text-slate-500 mt-1">
+            Tantang temanmu dan buktikan siapa yang paling jenius!
+          </p>
+        </div>
 
+        {/* Quick Stats (Menggunakan Data dari Backend) */}
+        <div className="flex gap-3">
+          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+              <Target size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                Total Duel
+              </p>
+              <p className="text-sm font-bold text-slate-800">
+                {stats.total} Main
+              </p>
+            </div>
+          </div>
+          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg">
+              <Trophy size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                Menang
+              </p>
+              <p className="text-sm font-bold text-slate-800">
+                {stats.wins}x ({stats.win_rate}%)
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- LIST CARD --- */}
       {challenges.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl shadow-sm border-2 border-dashed border-slate-200">
-          <Swords size={48} className="mx-auto text-slate-300 mb-4" />
+        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
+          <div className="inline-flex bg-slate-50 p-4 rounded-full mb-4">
+            <Swords size={32} className="text-slate-300" />
+          </div>
           <h3 className="text-lg font-bold text-slate-700">
             Belum ada duel aktif
           </h3>
+          <p className="text-slate-500 text-sm mb-4">
+            Buat tantangan baru atau tunggu teman mengajakmu.
+          </p>
           <Link
             to="/"
-            className="inline-block mt-4 bg-indigo-600 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg transition"
+            className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg transition text-sm"
           >
             Cari Lawan
           </Link>
         </div>
       ) : (
         <div className="grid gap-6">
-          {challenges.map((duel) => {
+          {challenges.map((duel, index) => {
+            // [BARU] Ref untuk elemen terakhir agar trigger load more
+            const isLastElement = index === challenges.length - 1;
+
             const participants = duel.participants || [];
             const myParticipant = participants.find(
               (p) => p.user_id === user.ID
@@ -508,7 +612,7 @@ const ChallengeList = () => {
               0
             );
 
-            // --- [BARU] LOGIC TEXT PEMENANG ---
+            // LOGIC TEXT PEMENANG
             let winnerText = null;
             let winnerColorClass =
               "bg-slate-100 text-slate-500 border-slate-200";
@@ -543,6 +647,8 @@ const ChallengeList = () => {
             return (
               <div
                 key={duel.ID}
+                // [BARU] Pasang Ref di elemen terakhir
+                ref={isLastElement ? lastElementRef : null}
                 className={`relative overflow-hidden rounded-3xl shadow-sm border-2 transition-all duration-300 hover:shadow-md
                   ${
                     isFinished
@@ -600,7 +706,6 @@ const ChallengeList = () => {
                     </div>
                     <div>
                       {isFinished ? (
-                        // --- [BARU] BADGE PEMENANG DINAMIS ---
                         <div
                           className={`px-3 py-1.5 rounded-full text-xs font-black border flex items-center gap-1 shadow-sm ${winnerColorClass}`}
                         >
@@ -845,6 +950,18 @@ const ChallengeList = () => {
               </div>
             );
           })}
+
+          {/* LOADING INDICATOR SAAT SCROLL */}
+          {loading && (
+            <div className="py-4 text-center text-slate-400 flex items-center justify-center gap-2">
+              <Loader2 className="animate-spin" size={20} /> Memuat data...
+            </div>
+          )}
+          {!hasMore && challenges.length > 0 && (
+            <div className="py-4 text-center text-slate-400 text-sm">
+              Semua data telah dimuat.
+            </div>
+          )}
         </div>
       )}
 

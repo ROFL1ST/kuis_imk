@@ -76,7 +76,8 @@ export const socialAPI = {
 
   getFeed: () => api.get("/feed"), // Activity Feed
   createChallenge: (data) => api.post("/challenges", data), // Buat Tantangan
-  getMyChallenges: () => api.get("/challenges"), // Lihat list Tantangan
+  getMyChallenges: (page = 1, limit = 10) =>
+    api.get(`/challenges?page=${page}&limit=${limit}`), // Lihat list Tantangan
   acceptChallenge: (challengeId) =>
     api.post(`/challenges/${challengeId}/accept`), //
   refuseChallenge: (challengeId) =>
@@ -133,6 +134,15 @@ export const shopAPI = {
   buyItem: (itemId) => api.post("/shop/buy", { item_id: itemId }),
   getInventory: () => api.get("/shop/inventory"),
   equipItem: (itemId) => api.post("/shop/equip", { item_id: itemId }),
+};
+
+export const dailyAPI = {
+  getInfo: () => api.get("/daily/info"),
+
+  claimLogin: () => api.post("/daily/claim-login"),
+
+  claimMission: (missionId) =>
+    api.post("/daily/claim-mission", { mission_id: missionId }),
 };
 
 export default api;
