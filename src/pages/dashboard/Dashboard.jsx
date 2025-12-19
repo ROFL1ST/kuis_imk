@@ -289,7 +289,7 @@ const Dashboard = () => {
 
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">
-                    {topic.name}
+                    {topic.title}
                   </h3>
                   <p className="text-slate-500 text-sm line-clamp-2">
                     {topic.description ||
