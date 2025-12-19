@@ -76,7 +76,8 @@ const Dashboard = () => {
   const handleClaimMission = async (missionId) => {
     try {
       const res = await dailyAPI.claimMission(missionId);
-      toast.success(`Misi Selesai! +${res.data.data.coins_gained} Koin`);
+      console.log("Claim mission response:", res);
+      toast.success(`Misi Selesai! +${res.data.data.reward} Koin`);
 
       // Update UI lokal: Ubah status misi jadi 'claimed'
       setDailyData((prev) => ({
@@ -281,7 +282,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {topics.map((topic) => (
               <Link
-                key={topic.id}
+                key={topic.ID}
                 to={`/topic/${topic.slug}`}
                 className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 flex flex-col h-full"
               >

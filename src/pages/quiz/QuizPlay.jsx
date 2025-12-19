@@ -1,3 +1,5 @@
+// src/pages/quiz/QuizPlay.jsx
+
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { authAPI, quizAPI, socialAPI } from "../../services/api";
@@ -16,11 +18,21 @@ import {
   Loader2,
   ArrowRight,
   AlertTriangle,
-  Flag, // Icon baru untuk finish
+  Flag,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
 import { getToken } from "../../services/auth";
+
+// Helper: Shuffle Array (Fisher-Yates Algorithm)
+const shuffleArray = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
 
 const QuizPlay = () => {
   const { quizId } = useParams();
@@ -34,7 +46,7 @@ const QuizPlay = () => {
   const isRealtime = location.state?.isRealtime || false;
   const timeLimit = location.state?.timeLimit || 0;
   const challengeID = location.state?.challengeID || null;
-  console.log("QuizPlay timeLimit:", timeLimit);
+
   // State Data
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -64,37 +76,30 @@ const QuizPlay = () => {
   // Realtime Logic States
   const [opponentsProgress, setOpponentsProgress] = useState({});
   const [playersMap, setPlayersMap] = useState({});
-  // [BARU] State untuk menyimpan siapa saja yang sudah selesai
   const [finishedPlayers, setFinishedPlayers] = useState({});
 
   const [historyId, setHistoryId] = useState(null);
 
-  // logic realtime dengan SSE
+  // Logic Realtime dengan SSE
   useEffect(() => {
     if (!isRealtime || !challengeID) return;
 
     const token = getToken();
     const eventSource = new EventSource(
-      `${
-        import.meta.env.VITE_API_URL
-      }/challenges/${challengeID}/lobby-stream?token=${token}`
+      `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream?token=${token}`
     );
 
     eventSource.onmessage = (event) => {
       if (event.data === ":keepalive") return;
     };
 
-    // A. Listen: Daftar Pemain
     eventSource.addEventListener("player_update", (e) => {
       try {
         const data = JSON.parse(e.data);
         const map = {};
         if (data.players) {
           data.players.forEach((p) => {
-            map[p.user_id] = {
-              name: p.name,
-              team: p.team || "solo",
-            };
+            map[p.user_id] = { name: p.name, team: p.team || "solo" };
           });
         }
         setPlayersMap(map);
@@ -103,7 +108,6 @@ const QuizPlay = () => {
       }
     });
 
-    // B. Listen: Progress Lawan
     eventSource.addEventListener("opponent_progress", (e) => {
       try {
         const data = JSON.parse(e.data);
@@ -118,22 +122,14 @@ const QuizPlay = () => {
       }
     });
 
-    // [BARU] C. Listen: Player Finished
     eventSource.addEventListener("player_finished", (e) => {
       try {
         const data = JSON.parse(e.data);
-        // data = { user_id: 1, username: "Jordy", score: 100, status: "finished" }
-
-        // Simpan ke state finishedPlayers
         setFinishedPlayers((prev) => ({
           ...prev,
-          [data.user_id]: {
-            score: data.score,
-            username: data.username,
-          },
+          [data.user_id]: { score: data.score, username: data.username },
         }));
 
-        // Opsional: Paksa progress bar jadi 100%
         if (data.user_id !== user.ID) {
           setOpponentsProgress((prev) => ({ ...prev, [data.user_id]: 100 }));
           toast.success(`${data.username} telah selesai!`, { icon: "🏁" });
@@ -154,11 +150,20 @@ const QuizPlay = () => {
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
+  // Fetch Questions & Shuffle Options
   useEffect(() => {
     quizAPI
       .getQuestions(quizId)
       .then((res) => {
-        setQuestions(res.data.data);
+        const rawQuestions = res.data.data || [];
+        
+        // [BARU] Acak urutan opsi jawaban untuk setiap pertanyaan
+        const shuffledQuestions = rawQuestions.map((q) => ({
+          ...q,
+          options: shuffleArray(q.options),
+        }));
+
+        setQuestions(shuffledQuestions);
         startTime.current = Date.now();
 
         timerIntervalRef.current = setInterval(() => {
@@ -242,7 +247,7 @@ const QuizPlay = () => {
     const finalScore = Math.round((correctCount / questions.length) * 100);
 
     const submissionTitle = isChallenge ? `[DUEL] ${quizTitle}` : quizTitle;
-    console.log(submissionTitle, isChallenge)
+    
     const payload = {
       quiz_id: parseInt(quizId),
       quiz_title: submissionTitle,
@@ -250,7 +255,6 @@ const QuizPlay = () => {
       total_soal: questions.length,
       snapshot: answers,
       time_taken: timeTaken,
-      // [BARU] Kirim ID Challenge agar backend bisa broadcast 'player_finished'
       challenge_id: challengeID,
     };
 
@@ -258,7 +262,6 @@ const QuizPlay = () => {
       const currentLevel = user?.level || 1;
       await quizAPI.submitScore(payload).then((res) => {
         setHistoryId(res.data.data.ID);
-        console.log("Submitted history ID:", res);
       });
 
       if (finalScore >= 70) {
@@ -316,7 +319,7 @@ const QuizPlay = () => {
     return totalOpponents > 0 && finishedOpponents >= totalOpponents;
   };
 
-    const goToReview = (historyId) => {
+  const goToReview = (historyId) => {
     navigate(`/history/review/${historyId}`);
   };
 
@@ -432,7 +435,7 @@ const QuizPlay = () => {
               </div>
             </div>
 
-            {/* [BARU] Status Menunggu Lawan */}
+            {/* Status Menunggu Lawan */}
             {isRealtime && (
               <div
                 className={`border p-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-6 transition-colors
@@ -445,14 +448,12 @@ const QuizPlay = () => {
               >
                 {allDone ? (
                   <>
-                    {" "}
-                    <CheckCircle2 size={14} /> Semua pemain selesai!{" "}
+                    <CheckCircle2 size={14} /> Semua pemain selesai!
                   </>
                 ) : (
                   <>
-                    {" "}
                     <Loader2 size={14} className="animate-spin" /> Menunggu
-                    lawan lain selesai...{" "}
+                    lawan lain selesai...
                   </>
                 )}
               </div>
@@ -474,7 +475,10 @@ const QuizPlay = () => {
                   <Home size={18} /> Kembali ke Dashboard
                 </Link>
               )}
-              <button onClick={() => goToReview(historyId)} className="text-slate-400 text-sm font-bold hover:text-slate-600 py-2">
+              <button
+                onClick={() => goToReview(historyId)}
+                className="text-slate-400 text-sm font-bold hover:text-slate-600 py-2"
+              >
                 Review Jawaban
               </button>
             </div>
@@ -602,6 +606,9 @@ const QuizPlay = () => {
             <div className="grid gap-3">
               {currentQ.options.map((opt, idx) => {
                 const isSelected = answers[currentQ.ID] === opt;
+                // Gunakan label (A, B, C, D) berdasarkan index setelah shuffle
+                const label = String.fromCharCode(65 + idx);
+                
                 return (
                   <button
                     key={idx}
@@ -624,7 +631,7 @@ const QuizPlay = () => {
                              }
                         `}
                       >
-                        {String.fromCharCode(65 + idx)}
+                        {label}
                       </div>
                       {opt}
                     </div>
@@ -657,7 +664,7 @@ const QuizPlay = () => {
                   ? playerInfo.name
                   : `Player ${oppID}`;
                 const isFriend = isTeammate(oppID);
-                const playerFinished = finishedPlayers[oppID]; // Cek apakah sudah finish
+                const playerFinished = finishedPlayers[oppID];
 
                 return (
                   <div key={oppID} className="flex items-center gap-3">
@@ -677,14 +684,15 @@ const QuizPlay = () => {
                       <div className="flex justify-between items-center mb-1">
                         <span
                           className={`text-[10px] font-bold uppercase
-                                ${isFriend ? "text-blue-600" : "text-slate-500"}
+                                ${
+                                  isFriend ? "text-blue-600" : "text-slate-500"
+                                }
                             `}
                         >
                           {displayName} {isFriend && "(Rekan)"}
                         </span>
                       </div>
 
-                      {/* Jika Selesai, tampilkan Badge. Jika Belum, progress bar */}
                       {playerFinished ? (
                         <div className="h-5 bg-green-100 text-green-700 text-[10px] font-bold px-2 rounded-md flex items-center gap-1 w-fit border border-green-200">
                           <Flag size={10} fill="currentColor" /> SELESAI (
@@ -733,18 +741,15 @@ const QuizPlay = () => {
           >
             {submitting ? (
               <>
-                {" "}
-                <Loader2 size={18} className="animate-spin" /> Memproses...{" "}
+                <Loader2 size={18} className="animate-spin" /> Memproses...
               </>
             ) : currentIndex === questions.length - 1 ? (
               <>
-                {" "}
-                Selesai <CheckCircle2 size={18} />{" "}
+                Selesai <CheckCircle2 size={18} />
               </>
             ) : (
               <>
-                {" "}
-                Lanjut <ArrowRight size={18} />{" "}
+                Lanjut <ArrowRight size={18} />
               </>
             )}
           </button>
