@@ -62,6 +62,9 @@ const WhatsNew = () => {
             type: "new",
             text: "Daily Rewards dan Daily Missions: Dapatkan bonus Koin setiap hari dengan login dan menyelesaikan misi harian.",
           },
+          {type: "improvement",
+            text: "Tampilan Baru navigation bar mobile untuk akses lebih mudah ke fitur utama.",
+          },
           {
             type: "improvement",
             text: "Tampilan Baru di Dashboard: Desain card topik yang lebih segar dan informatif.",
