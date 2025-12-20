@@ -45,7 +45,7 @@ export const authAPI = {
 
 // Topic & Quiz Endpoints
 export const topicAPI = {
-  getAllTopics: () => api.get("/topics"), //
+  getAllTopics: () => api.get("/topics"), // 
   getQuizzesBySlug: (slug) => api.get(`/topics/${slug}/quizzes`), //
 };
 
@@ -53,7 +53,8 @@ export const topicAPI = {
 export const quizAPI = {
   getQuestions: (quizId) => api.get(`/quizzes/${quizId}/questions`), //
   submitScore: (historyData) => api.post("/history", historyData), //
-  getMyHistory: () => api.get("/history"), //
+  getMyHistory: (page = 1, limit = 10) =>
+    api.get(`/history?page=${page}&limit=${limit}`), //
   getHistoryById: (historyId) => api.get(`/history/${historyId}`), //
 };
 
