@@ -10,6 +10,7 @@ import {
 } from "../services/auth";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { EventSourcePolyfill } from "event-source-polyfill"; // Pastikan import ini ada
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getUser());
@@ -19,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
-  // Fungsi fetch notifikasi
+  // Fungsi fetch notifikasi (Initial Load)
   const fetchUnreadCount = async () => {
     if (!token) return;
     try {
@@ -32,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // [BARU] Fungsi untuk refresh data profile (Coin, Level, XP)
+  // Fungsi refresh profile
   const refreshProfile = async () => {
     try {
       const res = await authAPI.authMe();
@@ -46,6 +47,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // --- LOGIC STREAM NOTIFIKASI ---
   useEffect(() => {
     let eventSource = null;
     const savedSettings = localStorage.getItem("settings_notifications");
@@ -53,19 +55,28 @@ export const AuthProvider = ({ children }) => {
       savedSettings !== null ? JSON.parse(savedSettings) : true;
 
     if (token) {
-      // Load awal saat token tersedia
+      // Load data awal
       fetchUnreadCount();
-      refreshProfile(); // [Opsional] Pastikan data user fresh saat reload
+      refreshProfile();
 
       if (isNotifEnabled) {
-        document.cookie = `token=${token}; path=/; max-age=3600; SameSite=None; Secure`;
         const baseURL =
           import.meta.env.VITE_API_URL || "http://localhost:8000/api";
         const url = `${baseURL}/notifications/stream`;
 
-        eventSource = new EventSource(url, { withCredentials: true });
+        // [UPDATE] Gunakan EventSourcePolyfill & Header Authorization
+        // Tidak perlu document.cookie lagi
+        eventSource = new EventSourcePolyfill(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          heartbeatTimeout: 120000, // Timeout 2 menit
+        });
 
         eventSource.onmessage = (event) => {
+          // Abaikan keepalive ping
+          if (event.data === ":keepalive") return;
+
           try {
             const data = JSON.parse(event.data);
 
@@ -118,7 +129,11 @@ export const AuthProvider = ({ children }) => {
           }
         };
 
-        eventSource.onerror = () => {
+        eventSource.onerror = (err) => {
+          // Silent error agar tidak spam console jika koneksi putus/token expired
+          if (err?.status === 401) {
+             // Opsional: logout() jika token expired
+          }
           eventSource.close();
         };
       }
@@ -182,7 +197,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setTokenState(null);
     setUser(null);
-    setUnreadCount(0); // Reset notifikasi
+    setUnreadCount(0);
     removeToken();
   };
 
