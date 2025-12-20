@@ -19,6 +19,8 @@ import {
   ArrowRight,
   AlertTriangle,
   Flag,
+  Type as TypeIcon,
+  CheckSquare,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
@@ -26,6 +28,7 @@ import { getToken } from "../../services/auth";
 
 // Helper: Shuffle Array (Fisher-Yates Algorithm)
 const shuffleArray = (array) => {
+  if (!array || array.length === 0) return [];
   const newArray = [...array];
   for (let i = newArray.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -40,17 +43,17 @@ const QuizPlay = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Tangkap Data dari Link
+  // Tangkap Data dari Link State
   const quizTitle = location.state?.title || "Kuis";
   const isChallenge = location.state?.isChallenge || false;
   const isRealtime = location.state?.isRealtime || false;
   const timeLimit = location.state?.timeLimit || 0;
   const challengeID = location.state?.challengeID || null;
 
-  // State Data
+  // State Data Soal & Jawaban
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState({}); // Bisa string (MCQ/Short) atau array (Multi)
 
   // State UI
   const [loading, setLoading] = useState(true);
@@ -64,12 +67,11 @@ const QuizPlay = () => {
   // State Result
   const [isFinished, setIsFinished] = useState(false);
   const [resultData, setResultData] = useState(null);
-
-  // Timer Logic
   const startTime = useRef(Date.now());
   const [duration, setDuration] = useState(0);
+  const [historyId, setHistoryId] = useState(null);
 
-  // Level Up
+  // Level Up Modal
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevelData, setNewLevelData] = useState(0);
 
@@ -78,9 +80,9 @@ const QuizPlay = () => {
   const [playersMap, setPlayersMap] = useState({});
   const [finishedPlayers, setFinishedPlayers] = useState({});
 
-  const [historyId, setHistoryId] = useState(null);
-
-  // Logic Realtime dengan SSE
+  // ----------------------------------------------------------------
+  // 1. LOGIC REALTIME (SSE)
+  // ----------------------------------------------------------------
   useEffect(() => {
     if (!isRealtime || !challengeID) return;
 
@@ -144,26 +146,38 @@ const QuizPlay = () => {
     };
   }, [isRealtime, challengeID, user.ID]);
 
+  // ----------------------------------------------------------------
+  // 2. FETCH SOAL & TIMER
+  // ----------------------------------------------------------------
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  // Fetch Questions & Shuffle Options
   useEffect(() => {
     quizAPI
       .getQuestions(quizId)
       .then((res) => {
         const rawQuestions = res.data.data || [];
         
-        // [BARU] Acak urutan opsi jawaban untuk setiap pertanyaan
-        const shuffledQuestions = rawQuestions.map((q) => ({
-          ...q,
-          options: shuffleArray(q.options),
-        }));
+        // Proses Soal: Shuffle opsi hanya jika MCQ atau Multi Select
+        const processedQuestions = rawQuestions.map((q) => {
+          const type = q.type || 'mcq';
+          let options = q.options;
 
-        setQuestions(shuffledQuestions);
+          if (type === 'mcq' || type === 'multi_select') {
+            options = shuffleArray(q.options);
+          }
+
+          return {
+            ...q,
+            type: type,
+            options: options,
+          };
+        });
+
+        setQuestions(processedQuestions);
         startTime.current = Date.now();
 
         timerIntervalRef.current = setInterval(() => {
@@ -173,7 +187,8 @@ const QuizPlay = () => {
           setElapsedTime(currentElapsed);
         }, 1000);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err);
         toast.error("Gagal memuat soal.");
         navigate("/");
       })
@@ -192,10 +207,41 @@ const QuizPlay = () => {
     }
   }, [elapsedTime, timeLimit, isFinished, submitting]);
 
+  // ----------------------------------------------------------------
+  // 3. HANDLERS INPUT JAWABAN
+  // ----------------------------------------------------------------
+
+  // Handler: Pilihan Ganda / Boolean
   const handleOptionClick = (option) => {
     const currentQId = questions[currentIndex].ID;
     setAnswers({ ...answers, [currentQId]: option });
   };
+
+  // Handler: Isian Singkat
+  const handleTextChange = (e) => {
+    const currentQId = questions[currentIndex].ID;
+    setAnswers({ ...answers, [currentQId]: e.target.value });
+  };
+
+  // Handler: Multi Select (Checkbox)
+  const handleMultiSelectClick = (option) => {
+    const currentQId = questions[currentIndex].ID;
+    const currentSelected = Array.isArray(answers[currentQId]) ? answers[currentQId] : [];
+    
+    let newSelected;
+    if (currentSelected.includes(option)) {
+      // Hapus (Uncheck)
+      newSelected = currentSelected.filter((item) => item !== option);
+    } else {
+      // Tambah (Check)
+      newSelected = [...currentSelected, option];
+    }
+    setAnswers({ ...answers, [currentQId]: newSelected });
+  };
+
+  // ----------------------------------------------------------------
+  // 4. LOGIC NAVIGASI & SUBMIT
+  // ----------------------------------------------------------------
 
   const sendProgress = async (index) => {
     if (isRealtime && challengeID) {
@@ -230,6 +276,42 @@ const QuizPlay = () => {
     }
   };
 
+  // Helper: Hitung Skor Lokal (Estimasi Frontend)
+  const calculateLocalScore = () => {
+    let correct = 0;
+    questions.forEach((q) => {
+      const userAns = answers[q.ID];
+      const correctAns = q.correct;
+
+      if (!userAns) return;
+
+      if (q.type === 'short_answer') {
+        // Case Insensitive
+        if (String(userAns).trim().toLowerCase() === String(correctAns).trim().toLowerCase()) {
+          correct++;
+        }
+      } else if (q.type === 'multi_select') {
+        // Array comparison
+        try {
+          const keyArray = JSON.parse(correctAns || "[]"); // Kunci jawaban dari DB biasanya string JSON
+          if (Array.isArray(userAns) && Array.isArray(keyArray)) {
+            if (userAns.length === keyArray.length) {
+              const sortedUser = [...userAns].sort().toString();
+              const sortedKey = [...keyArray].sort().toString();
+              if (sortedUser === sortedKey) correct++;
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing multi select key", e);
+        }
+      } else {
+        // Exact Match (MCQ / Boolean)
+        if (userAns === correctAns) correct++;
+      }
+    });
+    return correct;
+  };
+
   const handleSubmit = async () => {
     clearInterval(timerIntervalRef.current);
     setSubmitting(true);
@@ -240,31 +322,46 @@ const QuizPlay = () => {
       timeTaken = timeLimit;
     }
 
-    let correctCount = 0;
-    questions.forEach((q) => {
-      if (answers[q.ID] === q.correct) correctCount++;
+    // 1. Hitung Estimasi Skor Frontend
+    const localCorrectCount = calculateLocalScore();
+    const localScore = Math.round((localCorrectCount / questions.length) * 100);
+
+    // 2. Siapkan Snapshot (Convert Array MultiSelect ke JSON String)
+    const processedSnapshot = {};
+    Object.keys(answers).forEach((key) => {
+      const ans = answers[key];
+      if (Array.isArray(ans)) {
+        processedSnapshot[key] = JSON.stringify(ans); // ["A", "B"] -> '["A", "B"]'
+      } else {
+        processedSnapshot[key] = ans;
+      }
     });
-    const finalScore = Math.round((correctCount / questions.length) * 100);
 
     const submissionTitle = isChallenge ? `[DUEL] ${quizTitle}` : quizTitle;
     
     const payload = {
       quiz_id: parseInt(quizId),
       quiz_title: submissionTitle,
-      score: finalScore,
+      score: localScore, // Kirim skor estimasi (Backend akan validasi ulang)
       total_soal: questions.length,
-      snapshot: answers,
+      snapshot: processedSnapshot,
       time_taken: timeTaken,
       challenge_id: challengeID,
     };
 
     try {
       const currentLevel = user?.level || 1;
-      await quizAPI.submitScore(payload).then((res) => {
-        setHistoryId(res.data.data.ID);
-      });
+      
+      const res = await quizAPI.submitScore(payload);
+      const finalHistory = res.data.data;
+      
+      setHistoryId(finalHistory.ID);
+      
+      // Ambil skor resmi dari backend untuk ditampilkan
+      const backendScore = finalHistory.score; 
+      const officialCorrectCount = Math.round((backendScore / 100) * questions.length);
 
-      if (finalScore >= 70) {
+      if (backendScore >= 70) {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       }
 
@@ -282,9 +379,9 @@ const QuizPlay = () => {
 
       setDuration(timeTaken);
       setResultData({
-        score: finalScore,
-        correct: correctCount,
-        wrong: questions.length - correctCount,
+        score: backendScore,
+        correct: officialCorrectCount,
+        wrong: questions.length - officialCorrectCount,
         total: questions.length,
       });
       setIsFinished(true);
@@ -310,18 +407,145 @@ const QuizPlay = () => {
   const checkAllFinished = () => {
     if (Object.keys(playersMap).length === 0) return false;
     const totalOpponents = Object.keys(playersMap).length - 1;
-
     let finishedOpponents = 0;
     Object.keys(finishedPlayers).forEach((fid) => {
       if (parseInt(fid) !== user.ID) finishedOpponents++;
     });
-
     return totalOpponents > 0 && finishedOpponents >= totalOpponents;
   };
 
   const goToReview = (historyId) => {
     navigate(`/history/review/${historyId}`);
   };
+
+  // ----------------------------------------------------------------
+  // 5. RENDERER INPUT (Kunci Tampilan Variasi Soal)
+  // ----------------------------------------------------------------
+  const renderAnswerInput = (currentQ) => {
+    const currentAnswer = answers[currentQ.ID];
+
+    // TIPE 1: ISIAN SINGKAT
+    if (currentQ.type === 'short_answer') {
+      return (
+        <div className="mt-4">
+          <div className="relative">
+            <input
+              type="text"
+              value={currentAnswer || ""}
+              onChange={handleTextChange}
+              placeholder="Ketik jawabanmu di sini..."
+              className="w-full p-5 pl-12 rounded-xl border-2 border-slate-200 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none text-lg font-medium transition-all"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && currentAnswer?.trim() !== '') {
+                  handleNext();
+                }
+              }}
+            />
+            <TypeIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          </div>
+          <p className="text-xs text-slate-400 mt-3 ml-2 flex items-center gap-1">
+             <CheckCircle2 size={12} /> Jawaban tidak sensitif huruf besar/kecil (Case Insensitive)
+          </p>
+        </div>
+      );
+    }
+
+    // TIPE 2: MULTI SELECT
+    if (currentQ.type === 'multi_select') {
+      const currentSelected = Array.isArray(currentAnswer) ? currentAnswer : [];
+      return (
+        <div className="grid grid-cols-1 gap-3 mt-4">
+          <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1">
+            <CheckSquare size={16} /> Pilih semua jawaban yang benar:
+          </p>
+          {currentQ.options && currentQ.options.map((opt, idx) => {
+            const isSelected = currentSelected.includes(opt);
+            return (
+              <button
+                key={idx}
+                onClick={() => handleMultiSelectClick(opt)}
+                className={`
+                  relative p-4 rounded-xl border-2 transition-all flex items-center justify-between group text-left
+                  ${
+                    isSelected
+                      ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold shadow-md"
+                      : "border-slate-100 hover:border-indigo-300 bg-white text-slate-600 hover:bg-slate-50 font-medium"
+                  }
+                `}
+              >
+                <div className="flex items-center gap-4 w-full">
+                  <div
+                    className={`w-6 h-6 rounded-md flex items-center justify-center border-2 transition-colors shrink-0
+                         ${
+                           isSelected
+                             ? "bg-indigo-600 border-indigo-600 text-white"
+                             : "bg-white border-slate-300 group-hover:border-indigo-400"
+                         }
+                    `}
+                  >
+                    {isSelected && <CheckCircle2 size={16} />}
+                  </div>
+                  <span className="leading-snug">{opt}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // TIPE 3: PILIHAN GANDA & BOOLEAN
+    const isBoolean = currentQ.type === 'boolean';
+    return (
+      <div className={`grid gap-3 ${isBoolean ? 'grid-cols-2 mt-4' : 'grid-cols-1 mt-2'}`}>
+        {currentQ.options && currentQ.options.map((opt, idx) => {
+          const isSelected = currentAnswer === opt;
+          const label = String.fromCharCode(65 + idx);
+
+          return (
+            <button
+              key={idx}
+              onClick={() => handleOptionClick(opt)}
+              className={`
+                relative p-4 rounded-xl border-2 transition-all flex items-center group
+                ${
+                  isSelected
+                    ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold shadow-md transform scale-[1.01]"
+                    : "border-slate-100 hover:border-indigo-300 bg-white text-slate-600 hover:bg-slate-50 font-medium"
+                }
+                ${isBoolean ? 'justify-center text-center h-20 text-lg' : 'justify-between text-left'}
+              `}
+            >
+              <div className="flex items-center gap-4">
+                {!isBoolean && (
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors
+                         ${
+                           isSelected
+                             ? "bg-indigo-600 text-white border-indigo-600"
+                             : "bg-white text-slate-400 border-slate-200 group-hover:border-indigo-300"
+                         }
+                    `}
+                  >
+                    {label}
+                  </div>
+                )}
+                <span className="leading-snug">{opt}</span>
+              </div>
+              {!isBoolean && isSelected && (
+                <CheckCircle2 size={20} className="text-indigo-600" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // ----------------------------------------------------------------
+  // 6. RENDER MAIN VIEW
+  // ----------------------------------------------------------------
 
   if (loading)
     return (
@@ -332,9 +556,7 @@ const QuizPlay = () => {
   if (questions.length === 0)
     return <div className="text-center mt-20 text-slate-500">Soal kosong.</div>;
 
-  // ============================================================
-  // TAMPILAN 1: HASIL AKHIR
-  // ============================================================
+  // VIEW 1: HASIL AKHIR
   if (isFinished && resultData) {
     const isPass = resultData.score >= 70;
     const allDone = checkAllFinished();
@@ -395,11 +617,7 @@ const QuizPlay = () => {
               </div>
             </div>
 
-            <h1
-              className={`text-2xl font-black mb-1 ${
-                isPass ? "text-slate-800" : "text-slate-700"
-              }`}
-            >
+            <h1 className={`text-2xl font-black mb-1 ${isPass ? "text-slate-800" : "text-slate-700"}`}>
               {isPass ? "Kerja Bagus!" : "Jangan Menyerah!"}
             </h1>
             <p className="text-slate-400 text-sm font-medium mb-6">
@@ -419,7 +637,7 @@ const QuizPlay = () => {
               </div>
               <div className="text-center border-l border-r border-slate-200">
                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">
-                  Benar
+                  Benar (Est)
                 </div>
                 <div className="font-bold text-green-600 flex justify-center items-center gap-1">
                   <CheckCircle2 size={14} /> {resultData.correct}
@@ -427,7 +645,7 @@ const QuizPlay = () => {
               </div>
               <div className="text-center">
                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">
-                  Salah
+                  Salah (Est)
                 </div>
                 <div className="font-bold text-red-500 flex justify-center items-center gap-1">
                   <XCircle size={14} /> {resultData.wrong}
@@ -488,14 +706,20 @@ const QuizPlay = () => {
     );
   }
 
-  // ============================================================
-  // TAMPILAN 2: GAMEPLAY
-  // ============================================================
+  // VIEW 2: GAMEPLAY
   const currentQ = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
-  const remainingTime =
-    timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
+  const remainingTime = timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
   const isUrgent = timeLimit > 0 && remainingTime < 30;
+
+  // Cek apakah user sudah menjawab (untuk enable tombol Next)
+  const currentAnswer = answers[currentQ.ID];
+  let isAnswered = false;
+  if (Array.isArray(currentAnswer)) {
+    isAnswered = currentAnswer.length > 0;
+  } else {
+    isAnswered = typeof currentAnswer === 'string' && currentAnswer.trim().length > 0;
+  }
 
   return (
     <div
@@ -532,13 +756,7 @@ const QuizPlay = () => {
             }
          `}
         >
-          {isUrgent ? (
-            <AlertTriangle size={14} />
-          ) : isRealtime ? (
-            <Zap size={14} />
-          ) : (
-            <Clock size={14} />
-          )}
+          {isUrgent ? <AlertTriangle size={14} /> : isRealtime ? <Zap size={14} /> : <Clock size={14} />}
           <span className="tabular-nums">
             {timeLimit > 0 ? formatTime(remainingTime) : `${elapsedTime}s`}
           </span>
@@ -546,17 +764,17 @@ const QuizPlay = () => {
       </div>
 
       <div className="w-full max-w-2xl">
+        {/* Progress Bar */}
         <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8 overflow-hidden">
           <motion.div
-            className={`h-full rounded-full ${
-              isUrgent ? "bg-red-500" : "bg-indigo-600"
-            }`}
+            className={`h-full rounded-full ${isUrgent ? "bg-red-500" : "bg-indigo-600"}`}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
           />
         </div>
 
+        {/* Hint Area */}
         <AnimatePresence>
           {showHint && (
             <motion.div
@@ -565,10 +783,7 @@ const QuizPlay = () => {
               exit={{ opacity: 0, y: -10 }}
               className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mb-6 text-yellow-800 flex gap-3 shadow-sm"
             >
-              <Lightbulb
-                size={20}
-                className="shrink-0 mt-0.5 text-yellow-500"
-              />
+              <Lightbulb size={20} className="shrink-0 mt-0.5 text-yellow-500" />
               <div>
                 <p className="text-xs font-bold uppercase opacity-60 mb-1">
                   Bantuan
@@ -581,6 +796,7 @@ const QuizPlay = () => {
           )}
         </AnimatePresence>
 
+        {/* Question Card */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQ.ID}
@@ -589,63 +805,35 @@ const QuizPlay = () => {
             exit={{ x: -20, opacity: 0 }}
             className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-slate-100 mb-6"
           >
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex justify-between items-start mb-2">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
                 {currentQ.question}
               </h2>
               {currentQ.hint && (
                 <button
                   onClick={() => setShowHint(!showHint)}
-                  className="p-2 rounded-full bg-slate-50 hover:bg-yellow-50 text-slate-400 hover:text-yellow-500 transition"
+                  className="p-2 rounded-full bg-slate-50 hover:bg-yellow-50 text-slate-400 hover:text-yellow-500 transition shrink-0"
                   title="Lihat Hint"
                 >
                   <Lightbulb size={20} />
                 </button>
               )}
             </div>
-            <div className="grid gap-3">
-              {currentQ.options.map((opt, idx) => {
-                const isSelected = answers[currentQ.ID] === opt;
-                // Gunakan label (A, B, C, D) berdasarkan index setelah shuffle
-                const label = String.fromCharCode(65 + idx);
-                
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleOptionClick(opt)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group
-                      ${
-                        isSelected
-                          ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold shadow-sm"
-                          : "border-slate-100 hover:border-indigo-200 bg-white text-slate-600 hover:bg-slate-50 font-medium"
-                      }
-                    `}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border
-                             ${
-                               isSelected
-                                 ? "bg-indigo-600 text-white border-indigo-600"
-                                 : "bg-white text-slate-400 border-slate-200 group-hover:border-indigo-300"
-                             }
-                        `}
-                      >
-                        {label}
-                      </div>
-                      {opt}
-                    </div>
-                    {isSelected && (
-                      <CheckCircle2 size={20} className="text-indigo-600" />
-                    )}
-                  </button>
-                );
-              })}
+
+            {/* Label Jenis Soal */}
+            <div className="mb-4">
+               {currentQ.type === 'short_answer' && <span className="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">Isian Singkat</span>}
+               {currentQ.type === 'boolean' && <span className="text-[10px] uppercase font-bold text-purple-500 bg-purple-50 px-2 py-1 rounded">Benar / Salah</span>}
+               {currentQ.type === 'multi_select' && <span className="text-[10px] uppercase font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded">Pilih Banyak</span>}
             </div>
+            
+            {/* PANGGIL RENDERER INPUT */}
+            {renderAnswerInput(currentQ)}
+
           </motion.div>
         </AnimatePresence>
 
-        {/* --- AREA PROGRESS LAWAN (SMART UI) --- */}
+        {/* Area Progress Lawan (Realtime) */}
         {isRealtime && Object.keys(opponentsProgress).length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -656,69 +844,33 @@ const QuizPlay = () => {
               <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
               Live Arena
             </h3>
-
             <div className="space-y-3">
               {Object.entries(opponentsProgress).map(([oppID, prog]) => {
                 const playerInfo = playersMap[oppID];
-                const displayName = playerInfo
-                  ? playerInfo.name
-                  : `Player ${oppID}`;
+                const displayName = playerInfo ? playerInfo.name : `Player ${oppID}`;
                 const isFriend = isTeammate(oppID);
                 const playerFinished = finishedPlayers[oppID];
-
                 return (
                   <div key={oppID} className="flex items-center gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 capitalize
-                        ${
-                          isFriend
-                            ? "bg-blue-50 text-blue-600 border-blue-200"
-                            : "bg-red-50 text-red-600 border-red-200"
-                        }
-                    `}
-                    >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 capitalize ${isFriend ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-red-50 text-red-600 border-red-200"}`}>
                       {displayName.charAt(0)}
                     </div>
-
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
-                        <span
-                          className={`text-[10px] font-bold uppercase
-                                ${
-                                  isFriend ? "text-blue-600" : "text-slate-500"
-                                }
-                            `}
-                        >
+                        <span className={`text-[10px] font-bold uppercase ${isFriend ? "text-blue-600" : "text-slate-500"}`}>
                           {displayName} {isFriend && "(Rekan)"}
                         </span>
                       </div>
-
                       {playerFinished ? (
                         <div className="h-5 bg-green-100 text-green-700 text-[10px] font-bold px-2 rounded-md flex items-center gap-1 w-fit border border-green-200">
-                          <Flag size={10} fill="currentColor" /> SELESAI (
-                          {playerFinished.score} Poin)
+                          <Flag size={10} fill="currentColor" /> SELESAI ({playerFinished.score} Poin)
                         </div>
                       ) : (
                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden relative">
-                          <motion.div
-                            className={`h-full shadow-sm ${
-                              isFriend
-                                ? "bg-blue-500"
-                                : "bg-gradient-to-r from-orange-400 to-red-500"
-                            }`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${prog}%` }}
-                            transition={{ type: "spring", stiffness: 50 }}
-                          />
+                          <motion.div className={`h-full shadow-sm ${isFriend ? "bg-blue-500" : "bg-gradient-to-r from-orange-400 to-red-500"}`} initial={{ width: 0 }} animate={{ width: `${prog}%` }} transition={{ type: "spring", stiffness: 50 }} />
                         </div>
                       )}
                     </div>
-
-                    {!playerFinished && (
-                      <span className="text-xs font-bold text-slate-600 w-9 text-right tabular-nums">
-                        {prog}%
-                      </span>
-                    )}
                   </div>
                 );
               })}
@@ -726,6 +878,7 @@ const QuizPlay = () => {
           </motion.div>
         )}
 
+        {/* Tombol Navigasi */}
         <div className="flex justify-between items-center mt-8">
           <button
             onClick={handlePrevious}
@@ -736,7 +889,7 @@ const QuizPlay = () => {
           </button>
           <button
             onClick={handleNext}
-            disabled={!answers[currentQ.ID] || submitting}
+            disabled={!isAnswered || submitting}
             className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg shadow-indigo-200 flex items-center gap-2"
           >
             {submitting ? (
