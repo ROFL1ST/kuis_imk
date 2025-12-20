@@ -21,10 +21,11 @@ import {
   RefreshCw,
   LogIn,
   Trophy,
-  Target
+  Target,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 // --- HELPER COMPONENT: PLAYER ROW ---
 const PlayerRow = ({
@@ -87,7 +88,14 @@ const PlayerRow = ({
 };
 
 // --- KOMPONEN LOBBY & COUNTDOWN (SSE) ---
-const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost, timeLimit }) => {
+const LobbyModal = ({
+  isOpen,
+  onClose,
+  challengeId,
+  quizTitle,
+  isHost,
+  timeLimit,
+}) => {
   const [lobbyPlayers, setLobbyPlayers] = useState([]);
   const [countdown, setCountdown] = useState(null);
   const [status, setStatus] = useState("waiting");
@@ -102,8 +110,13 @@ const LobbyModal = ({ isOpen, onClose, challengeId, quizTitle, isHost, timeLimit
       import.meta.env.VITE_API_URL
     }/challenges/${challengeId}/lobby-stream`;
     const token = localStorage.getItem("token");
-    const eventSource = new EventSource(`${sseUrl}?token=${token}`);
 
+    const eventSource = new EventSourcePolyfill(sseUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`, // Kirim Token di Header
+      },
+      heartbeatTimeout: 120000,
+    });
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => console.log("✅ Terhubung ke Lobby Realtime");
