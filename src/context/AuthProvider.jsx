@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authAPI.authMe();
       const { user: updatedUser } = res.data.data;
-      
+
       // Update state & local storage
       setUser(updatedUser);
       saveUser(updatedUser);
@@ -58,11 +58,12 @@ export const AuthProvider = ({ children }) => {
       refreshProfile(); // [Opsional] Pastikan data user fresh saat reload
 
       if (isNotifEnabled) {
+        document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
         const baseURL =
           import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-        const url = `${baseURL}/notifications/stream?token=${token}`;
+        const url = `${baseURL}/notifications/stream`;
 
-        eventSource = new EventSource(url);
+        eventSource = new EventSource(url, { withCredentials: true });
 
         eventSource.onmessage = (event) => {
           try {
@@ -77,8 +78,7 @@ export const AuthProvider = ({ children }) => {
                 <div
                   onClick={() => {
                     toast.dismiss(t.id);
-                    if (data.link)
-                      navigate(data.link);
+                    if (data.link) navigate(data.link);
                     else navigate("/notifications");
                   }}
                   className="cursor-pointer flex items-center gap-3 w-full"
@@ -158,11 +158,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authAPI.login(credentials);
 
-      const {
-        token: newToken,
-        user: newUser,
-        streak_message,
-      } = res.data.data;
+      const { token: newToken, user: newUser, streak_message } = res.data.data;
 
       setTokenState(newToken);
       setUser(newUser);
@@ -205,7 +201,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!token,
     unreadCount,
     refreshNotifications: fetchUnreadCount,
-    refreshProfile, 
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

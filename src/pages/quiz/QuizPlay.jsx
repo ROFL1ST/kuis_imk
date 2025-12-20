@@ -87,8 +87,11 @@ const QuizPlay = () => {
     if (!isRealtime || !challengeID) return;
 
     const token = getToken();
+
+    document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
     const eventSource = new EventSource(
-      `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream?token=${token}`
+      `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream`,
+      { withCredentials: true }
     );
 
     eventSource.onmessage = (event) => {
@@ -160,13 +163,13 @@ const QuizPlay = () => {
       .getQuestions(quizId)
       .then((res) => {
         const rawQuestions = res.data.data || [];
-        
+
         // Proses Soal: Shuffle opsi hanya jika MCQ atau Multi Select
         const processedQuestions = rawQuestions.map((q) => {
-          const type = q.type || 'mcq';
+          const type = q.type || "mcq";
           let options = q.options;
 
-          if (type === 'mcq' || type === 'multi_select') {
+          if (type === "mcq" || type === "multi_select") {
             options = shuffleArray(q.options);
           }
 
@@ -226,8 +229,10 @@ const QuizPlay = () => {
   // Handler: Multi Select (Checkbox)
   const handleMultiSelectClick = (option) => {
     const currentQId = questions[currentIndex].ID;
-    const currentSelected = Array.isArray(answers[currentQId]) ? answers[currentQId] : [];
-    
+    const currentSelected = Array.isArray(answers[currentQId])
+      ? answers[currentQId]
+      : [];
+
     let newSelected;
     if (currentSelected.includes(option)) {
       // Hapus (Uncheck)
@@ -285,12 +290,15 @@ const QuizPlay = () => {
 
       if (!userAns) return;
 
-      if (q.type === 'short_answer') {
+      if (q.type === "short_answer") {
         // Case Insensitive
-        if (String(userAns).trim().toLowerCase() === String(correctAns).trim().toLowerCase()) {
+        if (
+          String(userAns).trim().toLowerCase() ===
+          String(correctAns).trim().toLowerCase()
+        ) {
           correct++;
         }
-      } else if (q.type === 'multi_select') {
+      } else if (q.type === "multi_select") {
         // Array comparison
         try {
           const keyArray = JSON.parse(correctAns || "[]"); // Kunci jawaban dari DB biasanya string JSON
@@ -338,7 +346,7 @@ const QuizPlay = () => {
     });
 
     const submissionTitle = isChallenge ? `[DUEL] ${quizTitle}` : quizTitle;
-    
+
     const payload = {
       quiz_id: parseInt(quizId),
       quiz_title: submissionTitle,
@@ -351,15 +359,17 @@ const QuizPlay = () => {
 
     try {
       const currentLevel = user?.level || 1;
-      
+
       const res = await quizAPI.submitScore(payload);
       const finalHistory = res.data.data;
-      
+
       setHistoryId(finalHistory.ID);
-      
+
       // Ambil skor resmi dari backend untuk ditampilkan
-      const backendScore = finalHistory.score; 
-      const officialCorrectCount = Math.round((backendScore / 100) * questions.length);
+      const backendScore = finalHistory.score;
+      const officialCorrectCount = Math.round(
+        (backendScore / 100) * questions.length
+      );
 
       if (backendScore >= 70) {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -425,7 +435,7 @@ const QuizPlay = () => {
     const currentAnswer = answers[currentQ.ID];
 
     // TIPE 1: ISIAN SINGKAT
-    if (currentQ.type === 'short_answer') {
+    if (currentQ.type === "short_answer") {
       return (
         <div className="mt-4">
           <div className="relative">
@@ -437,35 +447,40 @@ const QuizPlay = () => {
               className="w-full p-5 pl-12 rounded-xl border-2 border-slate-200 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none text-lg font-medium transition-all"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && currentAnswer?.trim() !== '') {
+                if (e.key === "Enter" && currentAnswer?.trim() !== "") {
                   handleNext();
                 }
               }}
             />
-            <TypeIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <TypeIcon
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+              size={20}
+            />
           </div>
           <p className="text-xs text-slate-400 mt-3 ml-2 flex items-center gap-1">
-             <CheckCircle2 size={12} /> Jawaban tidak sensitif huruf besar/kecil (Case Insensitive)
+            <CheckCircle2 size={12} /> Jawaban tidak sensitif huruf besar/kecil
+            (Case Insensitive)
           </p>
         </div>
       );
     }
 
     // TIPE 2: MULTI SELECT
-    if (currentQ.type === 'multi_select') {
+    if (currentQ.type === "multi_select") {
       const currentSelected = Array.isArray(currentAnswer) ? currentAnswer : [];
       return (
         <div className="grid grid-cols-1 gap-3 mt-4">
           <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1">
             <CheckSquare size={16} /> Pilih semua jawaban yang benar:
           </p>
-          {currentQ.options && currentQ.options.map((opt, idx) => {
-            const isSelected = currentSelected.includes(opt);
-            return (
-              <button
-                key={idx}
-                onClick={() => handleMultiSelectClick(opt)}
-                className={`
+          {currentQ.options &&
+            currentQ.options.map((opt, idx) => {
+              const isSelected = currentSelected.includes(opt);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleMultiSelectClick(opt)}
+                  className={`
                   relative p-4 rounded-xl border-2 transition-all flex items-center justify-between group text-left
                   ${
                     isSelected
@@ -473,72 +488,81 @@ const QuizPlay = () => {
                       : "border-slate-100 hover:border-indigo-300 bg-white text-slate-600 hover:bg-slate-50 font-medium"
                   }
                 `}
-              >
-                <div className="flex items-center gap-4 w-full">
-                  <div
-                    className={`w-6 h-6 rounded-md flex items-center justify-center border-2 transition-colors shrink-0
+                >
+                  <div className="flex items-center gap-4 w-full">
+                    <div
+                      className={`w-6 h-6 rounded-md flex items-center justify-center border-2 transition-colors shrink-0
                          ${
                            isSelected
                              ? "bg-indigo-600 border-indigo-600 text-white"
                              : "bg-white border-slate-300 group-hover:border-indigo-400"
                          }
                     `}
-                  >
-                    {isSelected && <CheckCircle2 size={16} />}
+                    >
+                      {isSelected && <CheckCircle2 size={16} />}
+                    </div>
+                    <span className="leading-snug">{opt}</span>
                   </div>
-                  <span className="leading-snug">{opt}</span>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
         </div>
       );
     }
 
     // TIPE 3: PILIHAN GANDA & BOOLEAN
-    const isBoolean = currentQ.type === 'boolean';
+    const isBoolean = currentQ.type === "boolean";
     return (
-      <div className={`grid gap-3 ${isBoolean ? 'grid-cols-2 mt-4' : 'grid-cols-1 mt-2'}`}>
-        {currentQ.options && currentQ.options.map((opt, idx) => {
-          const isSelected = currentAnswer === opt;
-          const label = String.fromCharCode(65 + idx);
+      <div
+        className={`grid gap-3 ${
+          isBoolean ? "grid-cols-2 mt-4" : "grid-cols-1 mt-2"
+        }`}
+      >
+        {currentQ.options &&
+          currentQ.options.map((opt, idx) => {
+            const isSelected = currentAnswer === opt;
+            const label = String.fromCharCode(65 + idx);
 
-          return (
-            <button
-              key={idx}
-              onClick={() => handleOptionClick(opt)}
-              className={`
+            return (
+              <button
+                key={idx}
+                onClick={() => handleOptionClick(opt)}
+                className={`
                 relative p-4 rounded-xl border-2 transition-all flex items-center group
                 ${
                   isSelected
                     ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold shadow-md transform scale-[1.01]"
                     : "border-slate-100 hover:border-indigo-300 bg-white text-slate-600 hover:bg-slate-50 font-medium"
                 }
-                ${isBoolean ? 'justify-center text-center h-20 text-lg' : 'justify-between text-left'}
+                ${
+                  isBoolean
+                    ? "justify-center text-center h-20 text-lg"
+                    : "justify-between text-left"
+                }
               `}
-            >
-              <div className="flex items-center gap-4">
-                {!isBoolean && (
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors
+              >
+                <div className="flex items-center gap-4">
+                  {!isBoolean && (
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors
                          ${
                            isSelected
                              ? "bg-indigo-600 text-white border-indigo-600"
                              : "bg-white text-slate-400 border-slate-200 group-hover:border-indigo-300"
                          }
                     `}
-                  >
-                    {label}
-                  </div>
+                    >
+                      {label}
+                    </div>
+                  )}
+                  <span className="leading-snug">{opt}</span>
+                </div>
+                {!isBoolean && isSelected && (
+                  <CheckCircle2 size={20} className="text-indigo-600" />
                 )}
-                <span className="leading-snug">{opt}</span>
-              </div>
-              {!isBoolean && isSelected && (
-                <CheckCircle2 size={20} className="text-indigo-600" />
-              )}
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
       </div>
     );
   };
@@ -617,7 +641,11 @@ const QuizPlay = () => {
               </div>
             </div>
 
-            <h1 className={`text-2xl font-black mb-1 ${isPass ? "text-slate-800" : "text-slate-700"}`}>
+            <h1
+              className={`text-2xl font-black mb-1 ${
+                isPass ? "text-slate-800" : "text-slate-700"
+              }`}
+            >
               {isPass ? "Kerja Bagus!" : "Jangan Menyerah!"}
             </h1>
             <p className="text-slate-400 text-sm font-medium mb-6">
@@ -709,7 +737,8 @@ const QuizPlay = () => {
   // VIEW 2: GAMEPLAY
   const currentQ = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
-  const remainingTime = timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
+  const remainingTime =
+    timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
   const isUrgent = timeLimit > 0 && remainingTime < 30;
 
   // Cek apakah user sudah menjawab (untuk enable tombol Next)
@@ -718,7 +747,8 @@ const QuizPlay = () => {
   if (Array.isArray(currentAnswer)) {
     isAnswered = currentAnswer.length > 0;
   } else {
-    isAnswered = typeof currentAnswer === 'string' && currentAnswer.trim().length > 0;
+    isAnswered =
+      typeof currentAnswer === "string" && currentAnswer.trim().length > 0;
   }
 
   return (
@@ -756,7 +786,13 @@ const QuizPlay = () => {
             }
          `}
         >
-          {isUrgent ? <AlertTriangle size={14} /> : isRealtime ? <Zap size={14} /> : <Clock size={14} />}
+          {isUrgent ? (
+            <AlertTriangle size={14} />
+          ) : isRealtime ? (
+            <Zap size={14} />
+          ) : (
+            <Clock size={14} />
+          )}
           <span className="tabular-nums">
             {timeLimit > 0 ? formatTime(remainingTime) : `${elapsedTime}s`}
           </span>
@@ -767,7 +803,9 @@ const QuizPlay = () => {
         {/* Progress Bar */}
         <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8 overflow-hidden">
           <motion.div
-            className={`h-full rounded-full ${isUrgent ? "bg-red-500" : "bg-indigo-600"}`}
+            className={`h-full rounded-full ${
+              isUrgent ? "bg-red-500" : "bg-indigo-600"
+            }`}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
@@ -783,7 +821,10 @@ const QuizPlay = () => {
               exit={{ opacity: 0, y: -10 }}
               className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mb-6 text-yellow-800 flex gap-3 shadow-sm"
             >
-              <Lightbulb size={20} className="shrink-0 mt-0.5 text-yellow-500" />
+              <Lightbulb
+                size={20}
+                className="shrink-0 mt-0.5 text-yellow-500"
+              />
               <div>
                 <p className="text-xs font-bold uppercase opacity-60 mb-1">
                   Bantuan
@@ -822,14 +863,25 @@ const QuizPlay = () => {
 
             {/* Label Jenis Soal */}
             <div className="mb-4">
-               {currentQ.type === 'short_answer' && <span className="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">Isian Singkat</span>}
-               {currentQ.type === 'boolean' && <span className="text-[10px] uppercase font-bold text-purple-500 bg-purple-50 px-2 py-1 rounded">Benar / Salah</span>}
-               {currentQ.type === 'multi_select' && <span className="text-[10px] uppercase font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded">Pilih Banyak</span>}
+              {currentQ.type === "short_answer" && (
+                <span className="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">
+                  Isian Singkat
+                </span>
+              )}
+              {currentQ.type === "boolean" && (
+                <span className="text-[10px] uppercase font-bold text-purple-500 bg-purple-50 px-2 py-1 rounded">
+                  Benar / Salah
+                </span>
+              )}
+              {currentQ.type === "multi_select" && (
+                <span className="text-[10px] uppercase font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded">
+                  Pilih Banyak
+                </span>
+              )}
             </div>
-            
+
             {/* PANGGIL RENDERER INPUT */}
             {renderAnswerInput(currentQ)}
-
           </motion.div>
         </AnimatePresence>
 
@@ -847,27 +899,49 @@ const QuizPlay = () => {
             <div className="space-y-3">
               {Object.entries(opponentsProgress).map(([oppID, prog]) => {
                 const playerInfo = playersMap[oppID];
-                const displayName = playerInfo ? playerInfo.name : `Player ${oppID}`;
+                const displayName = playerInfo
+                  ? playerInfo.name
+                  : `Player ${oppID}`;
                 const isFriend = isTeammate(oppID);
                 const playerFinished = finishedPlayers[oppID];
                 return (
                   <div key={oppID} className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 capitalize ${isFriend ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-red-50 text-red-600 border-red-200"}`}>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 capitalize ${
+                        isFriend
+                          ? "bg-blue-50 text-blue-600 border-blue-200"
+                          : "bg-red-50 text-red-600 border-red-200"
+                      }`}
+                    >
                       {displayName.charAt(0)}
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
-                        <span className={`text-[10px] font-bold uppercase ${isFriend ? "text-blue-600" : "text-slate-500"}`}>
+                        <span
+                          className={`text-[10px] font-bold uppercase ${
+                            isFriend ? "text-blue-600" : "text-slate-500"
+                          }`}
+                        >
                           {displayName} {isFriend && "(Rekan)"}
                         </span>
                       </div>
                       {playerFinished ? (
                         <div className="h-5 bg-green-100 text-green-700 text-[10px] font-bold px-2 rounded-md flex items-center gap-1 w-fit border border-green-200">
-                          <Flag size={10} fill="currentColor" /> SELESAI ({playerFinished.score} Poin)
+                          <Flag size={10} fill="currentColor" /> SELESAI (
+                          {playerFinished.score} Poin)
                         </div>
                       ) : (
                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden relative">
-                          <motion.div className={`h-full shadow-sm ${isFriend ? "bg-blue-500" : "bg-gradient-to-r from-orange-400 to-red-500"}`} initial={{ width: 0 }} animate={{ width: `${prog}%` }} transition={{ type: "spring", stiffness: 50 }} />
+                          <motion.div
+                            className={`h-full shadow-sm ${
+                              isFriend
+                                ? "bg-blue-500"
+                                : "bg-gradient-to-r from-orange-400 to-red-500"
+                            }`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${prog}%` }}
+                            transition={{ type: "spring", stiffness: 50 }}
+                          />
                         </div>
                       )}
                     </div>
