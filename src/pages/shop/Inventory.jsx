@@ -29,37 +29,53 @@ const Inventory = () => {
     }
   };
 
-  const handleEquip = async (userItem) => {
+  const handleEquip = async (targetUserItem) => {
     try {
-      await shopAPI.equipItem(userItem.item_id);
+      // 1. Panggil API untuk equip item
+      await shopAPI.equipItem(targetUserItem.item_id);
 
-      const updatedInv = inventory.map((inv) => {
-        if (inv.item.type === userItem.item.type) {
+      // 2. Update State Inventory Lokal (UI Only)
+      // Reset is_equipped untuk tipe yang sama, lalu set true untuk item yang dipilih
+      const updatedInventory = inventory.map((inv) => {
+        // Jika tipe item sama dengan yang mau dipakai, set false dulu (unequip yang lama)
+        if (inv.item.type === targetUserItem.item.type) {
           return { ...inv, is_equipped: false };
         }
         return inv;
       });
 
-      const finalInv = updatedInv.map((inv) =>
-        inv.item_id === userItem.item_id ? { ...inv, is_equipped: true } : inv
+      const finalInventory = updatedInventory.map((inv) =>
+        inv.item_id === targetUserItem.item_id
+          ? { ...inv, is_equipped: true }
+          : inv
       );
 
-      setInventory(finalInv);
+      setInventory(finalInventory);
 
-      const newEquippedItems = user.equipped_items
+      const currentEquipped = user.equipped_items
         ? [...user.equipped_items]
         : [];
 
-      const filteredItems = newEquippedItems.filter(
-        (i) => i.type !== userItem.item.type
+      const filteredEquipped = currentEquipped.filter(
+        (equipped) => equipped.item?.type !== targetUserItem.item.type
       );
 
-      filteredItems.push(userItem.item);
+      const newItemEntry = {
+        ...targetUserItem,
+        is_equipped: true,
+        item: targetUserItem.item,
+      };
 
-      setUser({ ...user, equipped_items: filteredItems });
+      filteredEquipped.push(newItemEntry);
 
-      toast.success(`${userItem.item.name} dipakai!`);
+      const updatedUser = { ...user, equipped_items: filteredEquipped };
+      setUser(updatedUser);
+
+      // localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      toast.success(`${targetUserItem.item.name} dipakai!`);
     } catch (error) {
+      console.error(error);
       toast.error(error.response?.data?.message || "Gagal memakai item");
     }
   };
@@ -102,9 +118,12 @@ const Inventory = () => {
               <p className="text-slate-500 text-sm">@{user.username}</p>
 
               {/* Tampilkan Title yang sedang dipakai */}
-              {user.equipped_items?.find((i) => i.type === "title") && (
+              {user.equipped_items?.find((i) => i.item.type === "title") && (
                 <div className="inline-block mt-2 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold border border-yellow-200">
-                  {user.equipped_items.find((i) => i.type === "title").name}
+                  {
+                    user.equipped_items.find((i) => i.item.type === "title")
+                      .item.name
+                  }
                 </div>
               )}
             </div>

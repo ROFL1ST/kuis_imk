@@ -53,10 +53,42 @@ const WhatsNew = () => {
 
   const updates = [
     {
+      version: "1.5.0",
+      date: "20 Des 2025",
+      title: "Variasi Soal, Admin Tools & Security Upgrade",
+      highlight: true,
+      changes: [
+        {
+          type: "new",
+          text: "Variasi Soal Lengkap: Kini mendukung tipe soal Isian Singkat, Benar/Salah, dan Multi Select (Jawaban > 1).",
+        },
+        {
+          type: "improvement",
+          text: "Admin Question Tools: Fitur filter soal per kuis, upload massal via CSV yang lebih cerdas, dan form input soal dinamis.",
+        },
+        {
+          type: "improvement",
+          text: "Keamanan Stream Realtime: Koneksi notifikasi dan lobi game kini menggunakan Cookie (bukan URL token) untuk keamanan maksimal.",
+        },
+        {
+          type: "improvement",
+          text: "Update Notifikasi: Penambahan fitur 'Tandai Semua Dibaca' dan perbaikan tampilan responsif di mobile.",
+        },
+        {
+          type: "fix",
+          text: "Perbaikan sinkronisasi item Inventory saat equip/unequip agar data lokal selalu akurat.",
+        },
+        {
+          type: "fix",
+          text: "Isolasi Skor Challenge: Mengerjakan kuis di mode latihan tidak akan lagi mengganggu progres/skor di Challenge yang sedang aktif.",
+        },
+      ],
+    },
+    {
         version: "1.4.0",
         date: "19 Des 2025",
         title: "Daily Reward, Daily Missions, Infinite Scroll & Randomized Quiz",
-        highlight: true,
+        highlight: false,
         changes: [
           {
             type: "new",
