@@ -42,7 +42,7 @@ const About = () => {
           transition={{ delay: 0.2 }}
         >
           <span className="inline-block py-1 px-3 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-100">
-            Versi 1.4.0 (Beta)
+            Versi 1.5.0 (Beta)
           </span>
           <h1 className="text-4xl md:text-6xl font-black text-slate-800 mb-6 leading-tight">
             Belajar Jadi Lebih <br />
@@ -193,7 +193,7 @@ const About = () => {
             <div>
               <p className="font-bold text-slate-800">What's New</p>
               <p className="text-xs text-slate-500">
-                Cek fitur terbaru di versi 1.4.0
+                Cek fitur terbaru di versi 1.5.0
               </p>
             </div>
           </div>
