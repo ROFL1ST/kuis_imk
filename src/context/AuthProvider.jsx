@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
       refreshProfile(); // [Opsional] Pastikan data user fresh saat reload
 
       if (isNotifEnabled) {
-        document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
+        document.cookie = `token=${token}; path=/; max-age=3600; SameSite=None; Secure`;
         const baseURL =
           import.meta.env.VITE_API_URL || "http://localhost:8000/api";
         const url = `${baseURL}/notifications/stream`;

@@ -88,7 +88,7 @@ const QuizPlay = () => {
 
     const token = getToken();
 
-    document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
+    document.cookie = `token=${token}; path=/; max-age=3600; SameSite=None; Secure`;
     const eventSource = new EventSource(
       `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream`,
       { withCredentials: true }
