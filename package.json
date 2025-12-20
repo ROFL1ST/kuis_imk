@@ -15,6 +15,7 @@
     "axios": "^1.13.2",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "event-source-polyfill": "^1.0.31",
     "framer-motion": "^12.23.25",
     "lucide-react": "^0.556.0",
     "react": "^19.2.0",

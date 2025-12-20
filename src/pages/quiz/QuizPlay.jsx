@@ -25,7 +25,7 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
 import { getToken } from "../../services/auth";
-
+import { EventSourcePolyfill } from "event-source-polyfill";
 // Helper: Shuffle Array (Fisher-Yates Algorithm)
 const shuffleArray = (array) => {
   if (!array || array.length === 0) return [];
@@ -88,10 +88,14 @@ const QuizPlay = () => {
 
     const token = getToken();
 
-    document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
-    const eventSource = new EventSource(
+    const eventSource = new EventSourcePolyfill(
       `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream`,
-      { withCredentials: true }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Kirim Token di Header
+        },
+        heartbeatTimeout: 120000,
+      }
     );
 
     eventSource.onmessage = (event) => {
