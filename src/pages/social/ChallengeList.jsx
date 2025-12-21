@@ -22,6 +22,7 @@ import {
   LogIn,
   Trophy,
   Target,
+  Coins,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
@@ -706,6 +707,16 @@ const ChallengeList = () => {
                             <Hourglass size={10} /> {duel.time_limit}s
                           </span>
                         )}
+                        {duel.wager_amount > 0 && (
+                          <span className="text-[10px] font-bold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded flex items-center gap-1 border border-yellow-200 animate-pulse">
+                            <Coins
+                              size={10}
+                              className="fill-yellow-500 text-yellow-600"
+                            />
+                            POT:{" "}
+                            {duel.wager_amount * (duel.mode === "2v2" ? 4 : 2)}
+                          </span>
+                        )}
                       </div>
                       <h3 className="text-xl font-extrabold text-slate-800 leading-tight">
                         {duel.quiz?.title}
@@ -843,34 +854,42 @@ const ChallengeList = () => {
                   <div className="px-5 pb-5 pt-2">
                     {/* KONDISI 1: Belum Terima (Pending) */}
                     {myStatus === "pending" && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() =>
-                            handleAccept(
-                              duel.ID,
-                              isRealtime,
-                              duel.quiz?.title,
-                              duel.creator_id,
-                              duel.time_limit || 0
-                            )
-                          }
-                          className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg transition flex items-center justify-center gap-2"
-                        >
-                          <CheckCircle2 size={18} />
-                          {is2v2 ? "Gabung Tim" : "Terima Tantangan"}
-                        </button>
-                        <button
-                          onClick={() =>
-                            setConfirmModal({
-                              isOpen: true,
-                              challengeId: duel.ID,
-                              challengerName: duel.creator?.name,
-                            })
-                          }
-                          className="px-5 py-3 bg-white border-2 border-red-100 text-red-500 rounded-xl font-bold hover:bg-red-50 transition"
-                        >
-                          Tolak
-                        </button>
+                      <div className="flex flex-col gap-2">
+                        {duel.wager_amount > 0 && (
+                          <p className="text-[10px] text-center text-yellow-700 bg-yellow-50 p-1.5 rounded font-medium border border-yellow-100">
+                            ⚠️ Menerima akan memotong{" "}
+                            <b>{duel.wager_amount} Koin</b> dari dompetmu.
+                          </p>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() =>
+                              handleAccept(
+                                duel.ID,
+                                isRealtime,
+                                duel.quiz?.title,
+                                duel.creator_id,
+                                duel.time_limit || 0
+                              )
+                            }
+                            className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg transition flex items-center justify-center gap-2"
+                          >
+                            <CheckCircle2 size={18} />
+                            {is2v2 ? "Gabung Tim" : "Terima Tantangan"}
+                          </button>
+                          <button
+                            onClick={() =>
+                              setConfirmModal({
+                                isOpen: true,
+                                challengeId: duel.ID,
+                                challengerName: duel.creator?.name,
+                              })
+                            }
+                            className="px-5 py-3 bg-white border-2 border-red-100 text-red-500 rounded-xl font-bold hover:bg-red-50 transition"
+                          >
+                            Tolak
+                          </button>
+                        </div>
                       </div>
                     )}
 

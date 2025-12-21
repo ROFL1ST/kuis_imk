@@ -27,6 +27,7 @@ import WhatsNew from "./pages/about/WhatsNew";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import Shop from "./pages/shop/Shop";
 import Inventory from "./pages/shop/Inventory";
+import Community from "./pages/community/Community";
 
 const MainLayout = ({ children }) => (
   <>
@@ -160,6 +161,18 @@ function App() {
                   <Inventory />
                 </MainLayout>
               }
+            />
+            <Route
+              path="/community"
+              element={
+                <MainLayout>
+                  <Community />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/play/remedial"
+              element={<QuizPlay isRemedial={true} />}
             />
           </Route>
 

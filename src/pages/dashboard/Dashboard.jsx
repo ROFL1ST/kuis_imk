@@ -1,47 +1,46 @@
 // src/pages/dashboard/Dashboard.jsx
 
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  Play,
   BookOpen,
   Trophy,
-  Calendar,
   CheckCircle,
   Gift,
   Zap,
   Coins,
   Hash,
+  Flame,
+  BrainCircuit,
+  Globe,
+  Play,
 } from "lucide-react";
-import { topicAPI, dailyAPI } from "../../services/api";
+import { topicAPI, dailyAPI, quizAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
-
 import toast from "react-hot-toast";
 
 const Dashboard = () => {
   const { user, refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // State untuk Daily Reward
   const [dailyData, setDailyData] = useState(null);
 
-  // --- 1. FETCH DATA (Topics & Daily) ---
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Load Topics
-        const topicRes = await topicAPI.getAllTopics();
-        setTopics(topicRes.data.data || []);
+        const [topicRes, dailyRes] = await Promise.allSettled([
+          topicAPI.getAllTopics(),
+          dailyAPI.getInfo(),
+        ]);
 
-        // Load Daily Info
-        try {
-          const dailyRes = await dailyAPI.getInfo();
-          // Simpan data "streak" dan "missions" ke state
-          setDailyData(dailyRes.data.data);
-        } catch (err) {
-          console.error("Failed to load daily", err);
+        if (topicRes.status === "fulfilled") {
+          setTopics(topicRes.value.data.data || []);
+        }
+
+        if (dailyRes.status === "fulfilled") {
+          setDailyData(dailyRes.value.data.data);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -49,26 +48,20 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // --- 2. HANDLE CLAIMS ---
   const handleClaimLogin = async () => {
     try {
       const res = await dailyAPI.claimLogin();
-      // Pastikan path response sesuai dengan backend (res.data.data.coins_gained)
-      console.log("Claim login response:", res);
       toast.success(`+${res.data.data.coins_gained} Koin!`);
 
-      // Update UI lokal: Ubah status streak jadi 'claimed'
       setDailyData((prev) => ({
         ...prev,
-        streak: { ...prev.streak, status: "claimed" }, // <--- FIX: Pakai 'streak'
+        streak: { ...prev.streak, status: "claimed" }, // Update status tombol klaim
       }));
       refreshProfile();
     } catch (error) {
-      console.error("Claim login error:", error);
       toast.error(error.response?.data?.message || "Gagal klaim");
     }
   };
@@ -76,10 +69,8 @@ const Dashboard = () => {
   const handleClaimMission = async (missionId) => {
     try {
       const res = await dailyAPI.claimMission(missionId);
-      console.log("Claim mission response:", res);
       toast.success(`Misi Selesai! +${res.data.data.reward} Koin`);
 
-      // Update UI lokal: Ubah status misi jadi 'claimed'
       setDailyData((prev) => ({
         ...prev,
         missions: prev.missions.map((m) =>
@@ -92,9 +83,38 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
-    document.title = "Dashboard | QuizApp";
-  }, []);
+  const startRemedial = async () => {
+    try {
+      await quizAPI.getRemedial();
+      navigate("/play/remedial");
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        toast.success("Kamu hebat! Tidak ada soal remedial saat ini.", {
+          icon: "🎉",
+        });
+      } else {
+        toast.error("Gagal memuat remedial.");
+      }
+    }
+  };
+
+  // --- LOGIC PEMISAHAN STATUS ---
+
+  // 1. QUIZ STREAK (Activity) - Untuk Icon Api
+  // Mengambil data 'quiz_streak' dari backend (hasil hitungan realtime)
+  const quizStreakCount = dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
+  
+  // Status pengerjaan hari ini (Boolean dari backend)
+  const isQuizDoneToday = dailyData?.streak?.is_quiz_done ?? false;
+
+  // 2. LOGIN STREAK (Daily Reward) - Untuk Card Hadiah
+  // Mengambil 'day' yang merupakan urutan hari klaim hadiah
+  const loginStreakDay = dailyData?.streak?.day ?? 1;
+  
+  // Status tombol klaim (claimable / cooldown)
+  const isLoginRewardClaimed =
+    dailyData?.streak?.status === "cooldown" ||
+    dailyData?.streak?.status === "claimed";
 
   if (loading) {
     return (
@@ -117,8 +137,6 @@ const Dashboard = () => {
             Siap untuk mengasah otak hari ini?
           </p>
         </div>
-
-        {/* Quick Stats */}
         <div className="flex gap-4">
           <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -136,60 +154,79 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* === SECTION DAILY REWARDS & MISSIONS === */}
-      {/* FIX: Cek dailyData.streak (bukan streak_info) */}
+      {/* DAILY SECTION */}
       {dailyData && dailyData.streak && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 1. Login Streak Card */}
+          
+          {/* Card 1: Streak (Belajar) & Daily Gift (Login) */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
 
+            {/* Bagian Atas: QUIZ STREAK (Activity) */}
             <div>
               <div className="flex items-center gap-2 mb-2 opacity-90">
-                <Calendar size={18} /> <span>Daily Streak</span>
+                {/* Api menyala jika streak > 0 ATAU hari ini sudah mengerjakan */}
+                <Flame
+                  size={18}
+                  className={
+                    quizStreakCount > 0 || isQuizDoneToday
+                      ? "fill-white text-orange-400"
+                      : "text-slate-300"
+                  }
+                />
+                <span className="font-bold">Mode Serius</span>
               </div>
-
-              {/* Judul berubah dinamis */}
-              <h2 className="text-3xl font-bold">
-                {dailyData.streak.status === "cooldown" ? "Next: " : ""}
-                Hari ke-{dailyData.streak.day}
+              
+              {/* Angka ini adalah QUIZ Streak */}
+              <h2 className="text-4xl font-black mb-1">
+                {quizStreakCount} Hari
               </h2>
-
-              <p className="opacity-80 text-sm mt-1">
-                {dailyData.streak.status === "cooldown"
-                  ? "Kamu sudah absen hari ini. Lanjut besok!"
-                  : "Login berturut-turut untuk bonus besar!"}
+              <p className="opacity-80 text-sm font-medium">
+                Streak Quiz Beruntun
               </p>
+
+              {/* Status Api (Sudah Latihan / Belum) */}
+              <div
+                className={`mt-4 text-xs p-2 rounded-lg backdrop-blur-sm inline-block font-bold ${
+                  isQuizDoneToday
+                    ? "bg-green-500/20 text-green-100"
+                    : "bg-orange-500/20 text-orange-100"
+                }`}
+              >
+                {isQuizDoneToday
+                  ? "🔥 Api aman! Kamu sudah latihan hari ini."
+                  : "❄️ Api hampir padam! Kerjakan kuis sekarang."}
+              </div>
             </div>
 
-            <div className="mt-6">
-              <div className="flex items-center justify-between bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/10">
-                <span className="font-bold flex items-center gap-2">
-                  <Gift size={18} className="text-yellow-300" />
-                  {dailyData.streak.reward} Koin
-                </span>
-
+            {/* Bagian Bawah: LOGIN STREAK (Hadiah Harian) */}
+            <div className="mt-6 pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-indigo-100 uppercase font-bold">
+                    Hadiah Login (Hari ke-{loginStreakDay})
+                  </span>
+                  <span className="font-bold flex items-center gap-1 text-sm">
+                    <Gift size={14} className="text-yellow-300" />
+                    {dailyData.streak.reward} Koin
+                  </span>
+                </div>
                 <button
                   onClick={handleClaimLogin}
-                  // Disable jika status bukan claimable
                   disabled={dailyData.streak.status !== "claimable"}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-md ${
                     dailyData.streak.status === "claimable"
-                      ? "bg-white text-indigo-600 hover:bg-indigo-50 shadow-md cursor-pointer"
+                      ? "bg-white text-indigo-600 hover:bg-indigo-50 cursor-pointer animate-bounce"
                       : "bg-black/20 text-white/70 cursor-not-allowed"
                   }`}
                 >
-                  {dailyData.streak.status === "cooldown"
-                    ? "Besok Lagi"
-                    : dailyData.streak.status === "claimed"
-                    ? "Terklaim"
-                    : "Klaim"}
+                  {isLoginRewardClaimed ? "TERAMBIL" : "KLAIM"}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* 2. Daily Missions List */}
+          {/* Card 2: Daily Missions */}
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
@@ -200,7 +237,6 @@ const Dashboard = () => {
                 Reset tiap 24 jam
               </span>
             </div>
-
             <div className="grid md:grid-cols-2 gap-4">
               {dailyData.missions?.map((mission) => (
                 <div
@@ -220,8 +256,6 @@ const Dashboard = () => {
                       <Coins size={10} /> {mission.reward}
                     </span>
                   </div>
-
-                  {/* Progress & Button */}
                   <div className="flex items-center gap-3 mt-3">
                     <div className="flex-1">
                       <div className="w-full bg-slate-200 rounded-full h-1.5">
@@ -244,15 +278,12 @@ const Dashboard = () => {
                         {mission.progress}/{mission.target}
                       </div>
                     </div>
-
                     <button
                       onClick={() => handleClaimMission(mission.id)}
                       disabled={mission.status !== "claimable"}
                       className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
                         mission.status === "claimable"
                           ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
-                          : mission.status === "claimed"
-                          ? "bg-slate-200 text-slate-400"
                           : "bg-slate-200 text-slate-400"
                       }`}
                     >
@@ -270,14 +301,62 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* === SECTION TOPICS GRID === */}
+      {/* MENU PINTAR (Remedial & Komunitas) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 1. Smart Remedial (Active) */}
+        <div className="bg-gradient-to-r from-rose-50 to-orange-50 rounded-2xl p-6 border border-rose-100 flex items-center justify-between shadow-sm relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-32 h-32 bg-rose-200/20 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2"></div>
+          <div className="relative z-10">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <BrainCircuit className="text-rose-500" /> Smart Remedial
+            </h3>
+            <p className="text-sm text-slate-500 mt-1 max-w-xs">
+              Pelajari ulang soal yang pernah salah.
+            </p>
+            <button
+              onClick={startRemedial}
+              className="mt-4 px-5 py-2 bg-white text-rose-600 font-bold rounded-lg shadow-sm border border-rose-100 hover:shadow-md transition text-sm cursor-pointer"
+            >
+              Mulai Remedial
+            </button>
+          </div>
+          <div className="hidden sm:block text-rose-200 relative z-0">
+            <BrainCircuit size={64} />
+          </div>
+        </div>
+
+        {/* 2. Kuis Komunitas (Coming Soon) */}
+        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 shadow-inner flex flex-col justify-between relative">
+          <div className="flex justify-between items-start mb-2 opacity-70">
+            <div>
+              <h3 className="font-bold text-slate-600 flex items-center gap-2">
+                <Globe className="text-slate-400" /> Kuis Komunitas
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Coba kuis buatan pemain lain.
+              </p>
+            </div>
+            <div className="p-3 bg-white rounded-full text-slate-300 border border-slate-100">
+              <Globe size={24} />
+            </div>
+          </div>
+
+          <button
+            disabled
+            className="w-full text-center py-2 bg-slate-200 text-slate-400 rounded-lg font-bold cursor-not-allowed text-sm border border-slate-300"
+          >
+            Segera Hadir 🚧
+          </button>
+        </div>
+      </div>
+
+      {/* TOPICS GRID */}
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <BookOpen className="text-indigo-600" /> Jelajahi Topik
           </h2>
         </div>
-
         {topics.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {topics.map((topic) => (
@@ -291,7 +370,6 @@ const Dashboard = () => {
                     <Hash size={24} />
                   </div>
                 </div>
-
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">
                     {topic.title}
@@ -301,7 +379,6 @@ const Dashboard = () => {
                       "Topik menarik untuk mengasah pengetahuanmu."}
                   </p>
                 </div>
-
                 <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-400 group-hover:text-indigo-500 transition-colors uppercase tracking-wider">
                     Mulai Kuis
