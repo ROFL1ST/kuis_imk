@@ -13,7 +13,7 @@ import {
   Palette,
   Rocket,
   LayoutList,
-  BarChart2
+  BarChart2,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -53,10 +53,50 @@ const WhatsNew = () => {
 
   const updates = [
     {
+      version: "1.5.1",
+      date: "22 Des 2025",
+      title: "Mobile Experience Upgrade & Activity Calendar",
+      highlight: true,
+      changes: [
+        {
+          type: "new",
+          text: "Interactive Activity Calendar: Lihat detail riwayat streak dan aktivitas harian melalui kalender visual interaktif.",
+        },
+        {
+          type: "new",
+          text: "Smart Remedial: Sistem remedial otomatis berdasarkan analisis kelemahan jawabanmu.",
+        },
+        {
+          type: "improvement",
+          text: "Login Streak Optimization: Perbaikan sistem pencatatan streak harian untuk mengakomodasi zona waktu pengguna secara lebih akurat.",
+        },
+        {
+          type: "improvement",
+          text: "Quiz Streak Optimization: Perbaikan sistem pencatatan streak kuis harian agar lebih andal dan minim bug.",
+        },
+        {
+          type: "improvement",
+          text: "Mobile Navigation Overhaul: Desain ulang menu mobile menjadi Full Screen Drawer dengan layout grid yang lebih ramah sentuhan.",
+        },
+        {
+          type: "improvement",
+          text: "Sticky Mobile Stats: Informasi Streak, Level, dan Koin kini selalu tampil (sticky) di bagian atas menu mobile.",
+        },
+        {
+          type: "improvement",
+          text: "UX Streak Mobile: Badge streak di menu mobile kini dapat diklik untuk membuka detail kalender.",
+        },
+        {
+          type: "fix",
+          text: "Scroll Lock: Perbaikan UX untuk mencegah halaman belakang bergulir (scroll) saat menu mobile sedang terbuka.",
+        },
+      ],
+    },
+    {
       version: "1.5.0",
       date: "20 Des 2025",
       title: "Variasi Soal, Admin Tools & Security Upgrade",
-      highlight: true,
+      highlight: false,
       changes: [
         {
           type: "new",
@@ -85,40 +125,41 @@ const WhatsNew = () => {
       ],
     },
     {
-        version: "1.4.0",
-        date: "19 Des 2025",
-        title: "Daily Reward, Daily Missions, Infinite Scroll & Randomized Quiz",
-        highlight: false,
-        changes: [
-          {
-            type: "new",
-            text: "Daily Rewards dan Daily Missions: Dapatkan bonus Koin setiap hari dengan login dan menyelesaikan misi harian.",
-          },
-          {type: "improvement",
-            text: "Tampilan Baru navigation bar mobile untuk akses lebih mudah ke fitur utama.",
-          },
-          {
-            type: "improvement",
-            text: "Tampilan Baru di Dashboard: Desain card topik yang lebih segar dan informatif.",
-          },
-          {
-            type: "improvement",
-            text: "Infinite Scroll pada Duel Arena: Load data lebih ringan dan cepat tanpa perlu klik halaman.",
-          },
-          {
-            type: "improvement",
-            text: "Statistik Duel Akurat: Data kemenangan dan total duel kini dihitung langsung dari server.",
-          },
-          {
-            type: "improvement",
-            text: "Acak Jawaban Kuis: Posisi opsi jawaban (A, B, C, D) kini diacak otomatis setiap kali bermain.",
-          },
-          {
-            type: "fix",
-            text: "Perbaikan bug pada perhitungan win rate di mode 2v2.",
-          },
-        ],
-      },
+      version: "1.4.0",
+      date: "19 Des 2025",
+      title: "Daily Reward, Daily Missions, Infinite Scroll & Randomized Quiz",
+      highlight: false,
+      changes: [
+        {
+          type: "new",
+          text: "Daily Rewards dan Daily Missions: Dapatkan bonus Koin setiap hari dengan login dan menyelesaikan misi harian.",
+        },
+        {
+          type: "improvement",
+          text: "Tampilan Baru navigation bar mobile untuk akses lebih mudah ke fitur utama.",
+        },
+        {
+          type: "improvement",
+          text: "Tampilan Baru di Dashboard: Desain card topik yang lebih segar dan informatif.",
+        },
+        {
+          type: "improvement",
+          text: "Infinite Scroll pada Duel Arena: Load data lebih ringan dan cepat tanpa perlu klik halaman.",
+        },
+        {
+          type: "improvement",
+          text: "Statistik Duel Akurat: Data kemenangan dan total duel kini dihitung langsung dari server.",
+        },
+        {
+          type: "improvement",
+          text: "Acak Jawaban Kuis: Posisi opsi jawaban (A, B, C, D) kini diacak otomatis setiap kali bermain.",
+        },
+        {
+          type: "fix",
+          text: "Perbaikan bug pada perhitungan win rate di mode 2v2.",
+        },
+      ],
+    },
     {
       version: "1.3.0",
       date: "18 Des 2025",

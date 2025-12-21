@@ -289,7 +289,10 @@ const Navbar = () => {
             {/* 1. Stats Bar (Sticky Top Mobile Menu) */}
             <div className="bg-white px-4 py-4 shadow-sm border-b border-slate-100">
               <div className="flex justify-between items-center gap-2">
-                <div className="flex-1 flex flex-col items-center bg-orange-50 text-orange-700 py-2 rounded-xl border border-orange-100">
+                <button
+                  onClick={() => setShowFullCalendar(true)} // Aksi buka kalender
+                  className="flex-1 flex flex-col items-center bg-orange-50 text-orange-700 py-2 rounded-xl border border-orange-100 hover:bg-orange-100 active:scale-95 transition cursor-pointer" // Tambah hover & active effect
+                >
                   <span className="text-xs font-bold uppercase opacity-60">
                     Streak
                   </span>
@@ -297,7 +300,7 @@ const Navbar = () => {
                     <Flame size={14} fill="currentColor" />{" "}
                     {user?.streak_count || 0}
                   </div>
-                </div>
+                </button>
                 <div className="flex-1 flex flex-col items-center bg-indigo-50 text-indigo-700 py-2 rounded-xl border border-indigo-100">
                   <span className="text-xs font-bold uppercase opacity-60">
                     Level
