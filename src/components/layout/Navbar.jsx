@@ -271,55 +271,47 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* === TOMBOL HAMBURGER MOBILE === */}
-          <button
-            className="sm:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition relative"
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <X size={24} /> : <Menu size={24} />}
-            {!open && unreadCount > 0 && (
-              <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
-            )}
-          </button>
+          {/* === BAGIAN KANAN MOBILE (STATS & HAMBURGER) === */}
+          {/* Ini adalah bagian baru yang kamu minta */}
+          <div className="flex items-center gap-2 sm:hidden">
+            {/* 1. Mobile Streak Badge (Clickable) */}
+            <button
+              onClick={() => setShowFullCalendar(true)}
+              className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1.5 rounded-full text-xs font-bold border border-orange-100 active:scale-95 transition"
+            >
+              <Flame
+                size={14}
+                fill="currentColor"
+                className={user?.streak_count > 0 ? "animate-pulse" : ""}
+              />
+              {user?.streak_count || 0}
+            </button>
+
+            {/* 2. Mobile Coin Badge */}
+            <div className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-1.5 rounded-full text-xs font-bold border border-yellow-200">
+              <Coins size={14} fill="currentColor" />
+              {user?.coins || 0}
+            </div>
+
+            {/* 3. Hamburger Button */}
+            <button
+              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition relative"
+              onClick={() => setOpen(!open)}
+            >
+              {open ? <X size={24} /> : <Menu size={24} />}
+              {!open && unreadCount > 0 && (
+                <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* === MENU MOBILE (CLEAN & GRID LAYOUT) === */}
+        {/* Saya hapus stats bar di dalam menu karena sudah ada di navbar, 
+            agar tidak duplikat. Tapi kalau mau tetap ada juga tidak masalah.
+            Di sini saya pertahankan Profile ringkas di dalam. */}
         {open && (
           <div className="sm:hidden fixed inset-0 top-16 bg-slate-50 z-40 flex flex-col animate-fadeIn">
-            {/* 1. Stats Bar (Sticky Top Mobile Menu) */}
-            <div className="bg-white px-4 py-4 shadow-sm border-b border-slate-100">
-              <div className="flex justify-between items-center gap-2">
-                <button
-                  onClick={() => setShowFullCalendar(true)} // Aksi buka kalender
-                  className="flex-1 flex flex-col items-center bg-orange-50 text-orange-700 py-2 rounded-xl border border-orange-100 hover:bg-orange-100 active:scale-95 transition cursor-pointer" // Tambah hover & active effect
-                >
-                  <span className="text-xs font-bold uppercase opacity-60">
-                    Streak
-                  </span>
-                  <div className="flex items-center gap-1 font-black text-sm">
-                    <Flame size={14} fill="currentColor" />{" "}
-                    {user?.streak_count || 0}
-                  </div>
-                </button>
-                <div className="flex-1 flex flex-col items-center bg-indigo-50 text-indigo-700 py-2 rounded-xl border border-indigo-100">
-                  <span className="text-xs font-bold uppercase opacity-60">
-                    Level
-                  </span>
-                  <div className="flex items-center gap-1 font-black text-sm">
-                    <Star size={14} fill="currentColor" /> {user?.level || 1}
-                  </div>
-                </div>
-                <div className="flex-1 flex flex-col items-center bg-yellow-50 text-yellow-700 py-2 rounded-xl border border-yellow-200">
-                  <span className="text-xs font-bold uppercase opacity-60">
-                    Koin
-                  </span>
-                  <div className="flex items-center gap-1 font-black text-sm">
-                    <Coins size={14} fill="currentColor" /> {user?.coins || 0}
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* 2. Scrollable Content */}
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
               {/* Section: Main Menu (Grid) */}
@@ -434,9 +426,13 @@ const Navbar = () => {
                   <p className="font-bold text-slate-800 truncate">
                     {user?.name}
                   </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    @{user?.username}
-                  </p>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 truncate">
+                    <span>@{user?.username}</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-indigo-600 font-bold">
+                      Lvl {user?.level || 1}
+                    </span>
+                  </div>
                 </div>
                 <Link
                   to="/settings"
