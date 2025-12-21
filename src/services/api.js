@@ -56,6 +56,12 @@ export const quizAPI = {
   getMyHistory: (page = 1, limit = 10) =>
     api.get(`/history?page=${page}&limit=${limit}`), //
   getHistoryById: (historyId) => api.get(`/history/${historyId}`), //
+
+  getRemedial: () => api.get("/quizzes/remedial/start"),
+
+  getCommunityQuizzes: () => api.get("/community/quizzes"),
+  getMyCommunityQuizzes: () => api.get("/community/quizzes/my"),
+  createCommunityQuiz: (data) => api.post("/community/quizzes", data),
 };
 
 // Social & Leaderboard Endpoints
@@ -96,6 +102,9 @@ export const userAPI = {
   updateProfile: (data) => api.put("/users/me", data),
   getUserProfile: (username) => api.get(`/users/${username}`),
   getAchievements: () => api.get("/users/achievements"),
+
+  getSmartAnalytics: () => api.get("/users/analytics/smart"),
+  getActivityCalendar: () => api.get("/users/activity/calendar"),
 };
 
 export const updateProfile = async (data) => {

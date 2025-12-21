@@ -21,6 +21,7 @@ import {
   Flag,
   Type as TypeIcon,
   CheckSquare,
+  Flame,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
@@ -37,14 +38,15 @@ const shuffleArray = (array) => {
   return newArray;
 };
 
-const QuizPlay = () => {
+const QuizPlay = ({ isRemedial = false }) => {
   const { quizId } = useParams();
   const { user, setUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const quizTitle = isRemedial
+    ? "Smart Remedial (Perbaikan)"
+    : location.state?.title || "Kuis";
 
-  // Tangkap Data dari Link State
-  const quizTitle = location.state?.title || "Kuis";
   const isChallenge = location.state?.isChallenge || false;
   const isRealtime = location.state?.isRealtime || false;
   const timeLimit = location.state?.timeLimit || 0;
@@ -163,8 +165,11 @@ const QuizPlay = () => {
   };
 
   useEffect(() => {
-    quizAPI
-      .getQuestions(quizId)
+    const fetchAction = isRemedial
+      ? quizAPI.getRemedial()
+      : quizAPI.getQuestions(quizId);
+
+    fetchAction
       .then((res) => {
         const rawQuestions = res.data.data || [];
 
@@ -352,18 +357,19 @@ const QuizPlay = () => {
     const submissionTitle = isChallenge ? `[DUEL] ${quizTitle}` : quizTitle;
 
     const payload = {
-      quiz_id: parseInt(quizId),
+      quiz_id: parseInt(quizId) || 0,
       quiz_title: submissionTitle,
       score: localScore, // Kirim skor estimasi (Backend akan validasi ulang)
       total_soal: questions.length,
       snapshot: processedSnapshot,
       time_taken: timeTaken,
       challenge_id: challengeID,
+      question_ids: questions.map((q) => q.ID),
     };
 
     try {
       const currentLevel = user?.level || 1;
-
+      const currentStreak = user?.streak_count || 0;
       const res = await quizAPI.submitScore(payload);
       const finalHistory = res.data.data;
 
@@ -384,6 +390,20 @@ const QuizPlay = () => {
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
+      if (updatedUser.streak_count > currentStreak) {
+        toast.success(
+          <div className="flex items-center gap-2">
+            <Flame className="text-orange-500 fill-orange-500" />
+            <div>
+              <p className="font-bold">Streak Diperpanjang!</p>
+              <p className="text-xs">
+                {updatedUser.streak_count} hari berturut-turut.
+              </p>
+            </div>
+          </div>,
+          { duration: 4000 }
+        );
+      }
       if (updatedUser.level > currentLevel) {
         setNewLevelData(updatedUser.level);
         setTimeout(() => setShowLevelUp(true), 500);

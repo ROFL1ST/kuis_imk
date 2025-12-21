@@ -9,7 +9,8 @@ import {
   Clock,
   Users,
   Zap,
-  UserPlus, // Icon baru untuk 2v2
+  UserPlus,
+  Coins, // Icon baru untuk 2v2
 } from "lucide-react";
 import { topicAPI, socialAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -32,6 +33,7 @@ const QuizList = () => {
     timeLimit: 0, // Minutes
     isRealtime: false,
     selectedOpponents: [], // Array of usernames
+    wagerAmount: 0,
   });
 
   useEffect(() => {
@@ -95,6 +97,10 @@ const QuizList = () => {
       toast.error("Pilih minimal 1 lawan!");
       return;
     }
+    if (challengeSettings.wagerAmount < 0) {
+      toast.error("Taruhan tidak boleh negatif");
+      return;
+    }
     if (
       challengeSettings.mode === "2v2" &&
       challengeSettings.selectedOpponents.length !== 3
@@ -111,6 +117,7 @@ const QuizList = () => {
         mode: challengeSettings.mode,
         time_limit: parseInt(challengeSettings.timeLimit) * 60, // Convert to seconds
         is_realtime: challengeSettings.isRealtime,
+        wager_amount: parseInt(challengeSettings.wagerAmount),
       };
 
       await socialAPI.createChallenge(payload);
@@ -291,7 +298,30 @@ const QuizList = () => {
               />
             </div>
           </div>
-
+          <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+            <label className="block text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
+              <Coins size={16} /> Taruhan Koin (Opsional)
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="0"
+                step="50"
+                className="w-full p-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none text-slate-700 font-bold"
+                placeholder="Contoh: 100"
+                value={challengeSettings.wagerAmount}
+                onChange={(e) =>
+                  setChallengeSettings({
+                    ...challengeSettings,
+                    wagerAmount: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <p className="text-[10px] text-yellow-700 mt-1">
+              *Pemenang mengambil semua. Koin dipotong saat tantangan dibuat.
+            </p>
+          </div>
           {/* 3. Realtime Checkbox */}
           <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
             <input
@@ -354,7 +384,7 @@ const QuizList = () => {
 
                   return (
                     <button
-                      key={friend.ID}
+                      key={friend.id}
                       onClick={() => toggleOpponent(friend.username)}
                       className={`w-full text-left p-2.5 rounded-lg border flex justify-between items-center group transition
                         ${
