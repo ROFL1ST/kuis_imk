@@ -27,7 +27,7 @@ const Dashboard = () => {
   const [dailyData, setDailyData] = useState(null);
 
   useEffect(() => {
-    document.title = "Dashboard - QuizMaster";
+    document.title = "Dashboard | QuizApp";
   }, []);
 
   useEffect(() => {
