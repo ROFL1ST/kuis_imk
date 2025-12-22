@@ -27,6 +27,10 @@ const Dashboard = () => {
   const [dailyData, setDailyData] = useState(null);
 
   useEffect(() => {
+    document.title = "Dashboard - QuizMaster";
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -98,19 +102,15 @@ const Dashboard = () => {
     }
   };
 
-  // --- LOGIC PEMISAHAN STATUS ---
+  const quizStreakCount =
+    dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
 
-  // 1. QUIZ STREAK (Activity) - Untuk Icon Api
-  // Mengambil data 'quiz_streak' dari backend (hasil hitungan realtime)
-  const quizStreakCount = dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
-  
   // Status pengerjaan hari ini (Boolean dari backend)
   const isQuizDoneToday = dailyData?.streak?.is_quiz_done ?? false;
 
-  // 2. LOGIN STREAK (Daily Reward) - Untuk Card Hadiah
   // Mengambil 'day' yang merupakan urutan hari klaim hadiah
   const loginStreakDay = dailyData?.streak?.day ?? 1;
-  
+
   // Status tombol klaim (claimable / cooldown)
   const isLoginRewardClaimed =
     dailyData?.streak?.status === "cooldown" ||
@@ -157,7 +157,6 @@ const Dashboard = () => {
       {/* DAILY SECTION */}
       {dailyData && dailyData.streak && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
           {/* Card 1: Streak (Belajar) & Daily Gift (Login) */}
           <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
@@ -176,7 +175,7 @@ const Dashboard = () => {
                 />
                 <span className="font-bold">Mode Serius</span>
               </div>
-              
+
               {/* Angka ini adalah QUIZ Streak */}
               <h2 className="text-4xl font-black mb-1">
                 {quizStreakCount} Hari
