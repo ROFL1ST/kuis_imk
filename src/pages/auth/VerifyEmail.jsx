@@ -115,7 +115,7 @@ const VerifyEmail = () => {
                              Kembali ke Pengaturan
                         </button>
                         <button 
-                            onClick={() => navigate("/")}
+                            onClick={() => navigate("/dashboard")}
                             className="px-6 py-2 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition w-full flex items-center justify-center gap-2"
                         >
                             <ArrowLeft size={18} /> Ke Beranda

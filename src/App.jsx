@@ -28,6 +28,7 @@ import ScrollToTop from "./components/layout/ScrollToTop";
 import Shop from "./pages/shop/Shop";
 import Inventory from "./pages/shop/Inventory";
 import Community from "./pages/community/Community";
+import LandingPage from "./pages/landing/LandingPage";
 
 const MainLayout = ({ children }) => (
   <>
@@ -44,6 +45,8 @@ function App() {
         <Toaster position="top-center" />
         <EmailAlert />
         <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
@@ -52,7 +55,7 @@ function App() {
           <Route path="/whats-new" element={<WhatsNew />} />
           <Route element={<ProtectedRoute />}>
             <Route
-              path="/"
+              path="/dashboard"
               element={
                 <MainLayout>
                   <Dashboard />
@@ -129,14 +132,14 @@ function App() {
             />
             {/* Gameplay Fullscreen */}
             <Route path="/play/:quizId" element={<QuizPlay />} />
-            <Route
+            {/* <Route
               path="/about"
               element={
                 <MainLayout>
                   <About />
                 </MainLayout>
               }
-            />
+            /> */}
             <Route
               path="/settings"
               element={

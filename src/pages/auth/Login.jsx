@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Coins,
   Flame,
+  Zap,
 } from "lucide-react";
 import Modal from "../../components/ui/Modal";
 
@@ -38,7 +39,7 @@ const Login = () => {
         setShowRewardModal(true);
       } else {
         toast.success("Login Berhasil!");
-        navigate("/");
+        navigate("/dashboard");
       }
     } else {
       toast.error(result.message);
@@ -47,7 +48,7 @@ const Login = () => {
 
   const handleCloseReward = () => {
     setShowRewardModal(false);
-    navigate("/");
+    navigate("/dashboard");
   };
 
   useEffect(() => {
@@ -68,12 +69,14 @@ const Login = () => {
           animate={{ scale: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl mb-4">
-            <Brain className="h-10 w-10 text-white" />
+          <div className="flex gap-x-3 items-center justify-center mb-2">
+            <div className="bg-indigo-600 text-white p-2 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-indigo-500/30">
+              <Zap size={24} fill="currentColor" />
+            </div>
+            <span className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+              QuizApp
+            </span>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            QuizzApp
-          </h1>
           <p className="text-slate-600 mt-2">
             Uji pengetahuanmu dengan kuis seru!
           </p>

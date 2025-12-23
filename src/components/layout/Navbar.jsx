@@ -92,7 +92,7 @@ const Navbar = () => {
         <div className="max-w-6xl mx-auto px-4 h-16 flex justify-between items-center">
           {/* Brand */}
           <Link
-            to="/"
+            to="/dashboard"
             className="text-2xl font-black text-indigo-600 tracking-tight flex items-center gap-2"
             onClick={() => setOpen(false)}
           >
@@ -101,7 +101,7 @@ const Navbar = () => {
 
           {/* === MENU DESKTOP (Hidden di Mobile) === */}
           <div className="hidden sm:flex gap-6">
-            <Link to="/" className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition">
+            <Link to="/dashboard" className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition">
               <LayoutDashboard size={18} /> Topik
             </Link>
             <Link to="/challenges" className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition">
@@ -231,7 +231,7 @@ const Navbar = () => {
               <div>
                 <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">Menu Utama</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <Link to="/" onClick={() => setOpen(false)} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-indigo-300 transition active:scale-95">
+                  <Link to="/dashboard" onClick={() => setOpen(false)} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-indigo-300 transition active:scale-95">
                     <div className="bg-indigo-100 p-2 rounded-full text-indigo-600"><LayoutDashboard size={20} /></div>
                     <span className="text-sm font-bold text-slate-700">Topik</span>
                   </Link>

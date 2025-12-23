@@ -202,7 +202,7 @@ const QuizPlay = ({ isRemedial = false }) => {
       .catch((err) => {
         console.error(err);
         toast.error("Gagal memuat soal.");
-        navigate("/");
+        navigate("/dashboard");
       })
       .finally(() => setLoading(false));
 
@@ -739,7 +739,7 @@ const QuizPlay = ({ isRemedial = false }) => {
                 </button>
               ) : (
                 <Link
-                  to="/"
+                  to="/dashboard"
                   className="w-full py-3.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition flex items-center justify-center gap-2"
                 >
                   <Home size={18} /> Kembali ke Dashboard
