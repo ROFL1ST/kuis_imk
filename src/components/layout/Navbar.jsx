@@ -24,7 +24,7 @@ import { useState, useRef, useEffect } from "react";
 import Modal from "../ui/Modal";
 import UserAvatar from "../ui/UserAvatar";
 import StreakHoverCard from "../ui/StreakHoverCard";
-import { userAPI } from "../../services/api";
+import { dailyAPI, userAPI } from "../../services/api";
 import { AnimatePresence, motion } from "framer-motion";
 import CalendarModal from "../ui/CalendarModal";
 
@@ -35,6 +35,7 @@ const Navbar = () => {
   // State
   const [showStreak, setShowStreak] = useState(false);
   const [calendarDates, setCalendarDates] = useState([]);
+  const [missions, setMissions] = useState([]); // <--- State baru untuk Misi
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -42,7 +43,6 @@ const Navbar = () => {
   const [showFullCalendar, setShowFullCalendar] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -53,7 +53,7 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
-  // Lock body scroll when mobile menu is open
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -65,18 +65,25 @@ const Navbar = () => {
     };
   }, [open]);
 
-  // Fetch Calendar
+  
   useEffect(() => {
     if (user) {
-      const fetchCalendar = async () => {
+      const fetchData = async () => {
         try {
-          const res = await userAPI.getActivityCalendar();
-          setCalendarDates(res.data.data || []);
+          // 1. Ambil Kalender Aktivitas
+          const resCalendar = await userAPI.getActivityCalendar();
+          setCalendarDates(resCalendar.data.data || []);
+
+          // 2. Ambil Info Harian (Misi & Streak Detail)
+          // Pastikan userAPI.getDailyInfo() sudah dibuat di services/api.js
+          const resDaily = await dailyAPI.getInfo();
+          setMissions(resDaily.data.data.missions || []);
+          
         } catch (e) {
-          console.error(e);
+          console.error("Failed to fetch navbar data:", e);
         }
       };
-      fetchCalendar();
+      fetchData();
     }
   }, [user]);
 
@@ -101,26 +108,44 @@ const Navbar = () => {
 
           {/* === MENU DESKTOP (Hidden di Mobile) === */}
           <div className="hidden sm:flex gap-6">
-            <Link to="/dashboard" className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition">
+            <Link
+              to="/dashboard"
+              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+            >
               <LayoutDashboard size={18} /> Topik
             </Link>
-            <Link to="/challenges" className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition">
+            <Link
+              to="/challenges"
+              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+            >
               <Swords size={18} /> Duel
             </Link>
-            <Link to="/friends" className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition">
+            <Link
+              to="/friends"
+              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+            >
               <Users size={18} /> Teman
             </Link>
-            <Link to="/history" className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition">
+            <Link
+              to="/history"
+              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+            >
               <History size={18} /> Riwayat
             </Link>
-            <Link to="/shop" className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition">
+            <Link
+              to="/shop"
+              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+            >
               <ShoppingBag size={18} /> Shop
             </Link>
           </div>
 
           {/* === STATS & PROFIL DESKTOP (Hidden di Mobile) === */}
           <div className="hidden sm:flex items-center gap-4 border-l pl-4 ml-4">
-            <Link to="/notifications" className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition">
+            <Link
+              to="/notifications"
+              className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"
+            >
               <Bell size={20} />
               {unreadCount > 0 && (
                 <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 ring-2 ring-white text-[10px] font-bold text-white">
@@ -130,15 +155,37 @@ const Navbar = () => {
             </Link>
 
             {/* Desktop Streak */}
-            <div className="relative group cursor-pointer" onMouseEnter={() => setShowStreak(true)} onMouseLeave={() => setShowStreak(false)}>
+            <div
+              className="relative group cursor-pointer"
+              onMouseEnter={() => setShowStreak(true)}
+              onMouseLeave={() => setShowStreak(false)}
+            >
               <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-3 py-1 rounded-full text-xs font-bold border border-orange-100 transition hover:bg-orange-100">
-                <Flame size={14} fill="currentColor" className={user?.streak_count > 0 ? "animate-pulse" : ""} />
+                <Flame
+                  size={14}
+                  fill="currentColor"
+                  className={user?.streak_count > 0 ? "animate-pulse" : ""}
+                />
                 {user?.streak_count || 0}
               </div>
               <AnimatePresence>
                 {showStreak && (
-                  <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} transition={{ duration: 0.2 }}>
-                    <StreakHoverCard streakCount={user?.streak_count || 0} activityDates={calendarDates} onOpenCalendar={() => { setShowStreak(false); setShowFullCalendar(true); }} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <StreakHoverCard
+                      streakCount={user?.streak_count || 0}
+                      activityDates={calendarDates}
+                      missions={missions} // <--- Oper data misi ke sini
+                      onOpenCalendar={() => {
+                        setShowStreak(false);
+                        setShowFullCalendar(true);
+                      }}
+                      
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -156,29 +203,61 @@ const Navbar = () => {
 
             {/* Desktop Dropdown */}
             <div className="relative" ref={dropdownRef}>
-              <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full hover:bg-slate-50 transition border border-transparent hover:border-slate-100 group">
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full hover:bg-slate-50 transition border border-transparent hover:border-slate-100 group"
+              >
                 <div className="text-right hidden lg:block">
-                  <div className="text-sm font-bold text-slate-700 group-hover:text-indigo-700 transition">{user?.name}</div>
+                  <div className="text-sm font-bold text-slate-700 group-hover:text-indigo-700 transition">
+                    {user?.name}
+                  </div>
                 </div>
                 <UserAvatar user={user} size="md" />
-                <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  size={16}
+                  className={`text-slate-400 transition-transform duration-200 ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
               {dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 animate-scaleIn origin-top-right z-50">
-                  <Link to={`/@${user?.username}`} onClick={() => setDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium">
+                  <Link
+                    to={`/@${user?.username}`}
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
                     <User size={16} /> Profil Saya
                   </Link>
-                  <Link to="/inventory" onClick={() => setDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium">
+                  <Link
+                    to="/inventory"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
                     <Package size={16} /> Inventory
                   </Link>
-                  <Link to="/settings" onClick={() => setDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium">
+                  <Link
+                    to="/settings"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
                     <Settings size={16} /> Pengaturan
                   </Link>
-                  <Link to="/about" onClick={() => setDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium">
+                  <Link
+                    to="/about"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
                     <Info size={16} /> Tentang Aplikasi
                   </Link>
                   <div className="h-px bg-slate-100 my-1"></div>
-                  <button onClick={() => { setDropdownOpen(false); setIsLogoutModalOpen(true); }} className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition font-medium">
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      setIsLogoutModalOpen(true);
+                    }}
+                    className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition font-medium"
+                  >
                     <LogOut size={16} /> Keluar
                   </button>
                 </div>
@@ -193,7 +272,11 @@ const Navbar = () => {
               onClick={() => setShowFullCalendar(true)}
               className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1.5 rounded-lg text-xs font-bold border border-orange-100 active:scale-95 transition"
             >
-              <Flame size={13} fill="currentColor" className={user?.streak_count > 0 ? "animate-pulse" : ""} />
+              <Flame
+                size={13}
+                fill="currentColor"
+                className={user?.streak_count > 0 ? "animate-pulse" : ""}
+              />
               {user?.streak_count || 0}
             </button>
 
@@ -226,48 +309,115 @@ const Navbar = () => {
         {open && (
           <div className="sm:hidden fixed inset-0 top-16 bg-slate-50 z-40 flex flex-col animate-fadeIn">
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
-              
               {/* Menu Utama */}
               <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">Menu Utama</h3>
+                <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">
+                  Menu Utama
+                </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <Link to="/dashboard" onClick={() => setOpen(false)} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-indigo-300 transition active:scale-95">
-                    <div className="bg-indigo-100 p-2 rounded-full text-indigo-600"><LayoutDashboard size={20} /></div>
-                    <span className="text-sm font-bold text-slate-700">Topik</span>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setOpen(false)}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-indigo-300 transition active:scale-95"
+                  >
+                    <div className="bg-indigo-100 p-2 rounded-full text-indigo-600">
+                      <LayoutDashboard size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      Topik
+                    </span>
                   </Link>
-                  <Link to="/challenges" onClick={() => setOpen(false)} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-orange-300 transition active:scale-95">
-                    <div className="bg-orange-100 p-2 rounded-full text-orange-600"><Swords size={20} /></div>
-                    <span className="text-sm font-bold text-slate-700">Duel</span>
+                  <Link
+                    to="/challenges"
+                    onClick={() => setOpen(false)}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-orange-300 transition active:scale-95"
+                  >
+                    <div className="bg-orange-100 p-2 rounded-full text-orange-600">
+                      <Swords size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      Duel
+                    </span>
                   </Link>
-                  <Link to="/friends" onClick={() => setOpen(false)} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-pink-300 transition active:scale-95">
-                    <div className="bg-pink-100 p-2 rounded-full text-pink-600"><Users size={20} /></div>
-                    <span className="text-sm font-bold text-slate-700">Teman</span>
+                  <Link
+                    to="/friends"
+                    onClick={() => setOpen(false)}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-pink-300 transition active:scale-95"
+                  >
+                    <div className="bg-pink-100 p-2 rounded-full text-pink-600">
+                      <Users size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      Teman
+                    </span>
                   </Link>
-                  <Link to="/history" onClick={() => setOpen(false)} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-blue-300 transition active:scale-95">
-                    <div className="bg-blue-100 p-2 rounded-full text-blue-600"><History size={20} /></div>
-                    <span className="text-sm font-bold text-slate-700">Riwayat</span>
+                  <Link
+                    to="/history"
+                    onClick={() => setOpen(false)}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-blue-300 transition active:scale-95"
+                  >
+                    <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                      <History size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      Riwayat
+                    </span>
                   </Link>
                 </div>
               </div>
 
               {/* Lainnya */}
               <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">Lainnya</h3>
+                <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">
+                  Lainnya
+                </h3>
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <Link to="/shop" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100">
-                    <ShoppingBag size={18} className="text-purple-500" /> <span className="text-sm font-bold text-slate-700">Item Shop</span>
+                  <Link
+                    to="/shop"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100"
+                  >
+                    <ShoppingBag size={18} className="text-purple-500" />{" "}
+                    <span className="text-sm font-bold text-slate-700">
+                      Item Shop
+                    </span>
                   </Link>
-                  <Link to="/inventory" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100">
-                    <Package size={18} className="text-amber-500" /> <span className="text-sm font-bold text-slate-700">Inventory</span>
+                  <Link
+                    to="/inventory"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100"
+                  >
+                    <Package size={18} className="text-amber-500" />{" "}
+                    <span className="text-sm font-bold text-slate-700">
+                      Inventory
+                    </span>
                   </Link>
-                  <Link to="/notifications" onClick={() => setOpen(false)} className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 active:bg-slate-100">
+                  <Link
+                    to="/notifications"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 active:bg-slate-100"
+                  >
                     <div className="flex items-center gap-3">
-                      <Bell size={18} className="text-red-500" /> <span className="text-sm font-bold text-slate-700">Notifikasi</span>
+                      <Bell size={18} className="text-red-500" />{" "}
+                      <span className="text-sm font-bold text-slate-700">
+                        Notifikasi
+                      </span>
                     </div>
-                    {unreadCount > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{unreadCount > 9 ? "9+" : unreadCount}</span>}
+                    {unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
                   </Link>
-                  <Link to="/about" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100">
-                    <Info size={18} className="text-amber-500" /> <span className="text-sm font-bold text-slate-700">Tentang Aplikasi</span>
+                  <Link
+                    to="/about"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100"
+                  >
+                    <Info size={18} className="text-amber-500" />{" "}
+                    <span className="text-sm font-bold text-slate-700">
+                      Tentang Aplikasi
+                    </span>
                   </Link>
                 </div>
               </div>
@@ -278,18 +428,36 @@ const Navbar = () => {
               <div className="flex items-center gap-3 mb-4">
                 <UserAvatar user={user} size="md" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-800 truncate">{user?.name}</p>
-                  <p className="text-xs text-slate-500 truncate">@{user?.username}</p>
+                  <p className="font-bold text-slate-800 truncate">
+                    {user?.name}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">
+                    @{user?.username}
+                  </p>
                 </div>
-                <Link to="/settings" onClick={() => setOpen(false)} className="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition">
+                <Link
+                  to="/settings"
+                  onClick={() => setOpen(false)}
+                  className="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition"
+                >
                   <Settings size={20} />
                 </Link>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Link to={`/@${user?.username}`} onClick={() => setOpen(false)} className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm text-center hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+                <Link
+                  to={`/@${user?.username}`}
+                  onClick={() => setOpen(false)}
+                  className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm text-center hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
+                >
                   Lihat Profil
                 </Link>
-                <button onClick={() => { setOpen(false); setIsLogoutModalOpen(true); }} className="py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-100 font-bold text-sm text-center hover:bg-red-100 transition">
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    setIsLogoutModalOpen(true);
+                  }}
+                  className="py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-100 font-bold text-sm text-center hover:bg-red-100 transition"
+                >
                   Keluar
                 </button>
               </div>
@@ -298,18 +466,43 @@ const Navbar = () => {
         )}
       </nav>
 
-      <CalendarModal isOpen={showFullCalendar} onClose={() => setShowFullCalendar(false)} activityDates={calendarDates} currentStreak={user?.streak_count || 0} />
-      
+      <CalendarModal
+        isOpen={showFullCalendar}
+        onClose={() => setShowFullCalendar(false)}
+        activityDates={calendarDates}
+        currentStreak={user?.streak_count || 0}
+      />
+
       {/* Modal Logout */}
-      <Modal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} maxWidth="max-w-sm">
+      <Modal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        maxWidth="max-w-sm"
+      >
         <div className="flex items-center gap-3 text-red-600 mb-4">
-          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center"><AlertTriangle size={24} /></div>
-          <h2 className="text-lg font-bold text-slate-800">Konfirmasi Keluar</h2>
+          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <AlertTriangle size={24} />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800">
+            Konfirmasi Keluar
+          </h2>
         </div>
-        <p className="text-slate-600 mb-6 text-sm">Apakah kamu yakin ingin keluar dari aplikasi?</p>
+        <p className="text-slate-600 mb-6 text-sm">
+          Apakah kamu yakin ingin keluar dari aplikasi?
+        </p>
         <div className="flex gap-3">
-          <button onClick={() => setIsLogoutModalOpen(false)} className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition">Batal</button>
-          <button onClick={handleLogout} className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition">Ya, Keluar</button>
+          <button
+            onClick={() => setIsLogoutModalOpen(false)}
+            className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
+          >
+            Ya, Keluar
+          </button>
         </div>
       </Modal>
     </>
