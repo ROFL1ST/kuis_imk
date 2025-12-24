@@ -15,6 +15,7 @@ import { getToken } from "../../services/auth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
+import Skeleton from "../../components/ui/Skeleton";
 
 const Notifications = () => {
   const [notifs, setNotifs] = useState([]);
@@ -104,7 +105,7 @@ const Notifications = () => {
     try {
       // Optimistic Update
       setNotifs((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      
+
       await notificationAPI.markAllRead();
       toast.success("Semua ditandai sudah dibaca");
     } catch (err) {
@@ -132,13 +133,25 @@ const Notifications = () => {
   const getStyle = (type) => {
     switch (type) {
       case "success":
-        return { icon: <CheckCircle size={20} className="text-green-500" />, bg: "bg-green-50 border-green-100" };
+        return {
+          icon: <CheckCircle size={20} className="text-green-500" />,
+          bg: "bg-green-50 border-green-100",
+        };
       case "warning":
-        return { icon: <AlertTriangle size={20} className="text-orange-500" />, bg: "bg-orange-50 border-orange-100" };
+        return {
+          icon: <AlertTriangle size={20} className="text-orange-500" />,
+          bg: "bg-orange-50 border-orange-100",
+        };
       case "error":
-        return { icon: <X size={20} className="text-red-500" />, bg: "bg-red-50 border-red-100" };
+        return {
+          icon: <X size={20} className="text-red-500" />,
+          bg: "bg-red-50 border-red-100",
+        };
       default:
-        return { icon: <Info size={20} className="text-blue-500" />, bg: "bg-blue-50 border-blue-100" };
+        return {
+          icon: <Info size={20} className="text-blue-500" />,
+          bg: "bg-blue-50 border-blue-100",
+        };
     }
   };
 
@@ -148,9 +161,41 @@ const Notifications = () => {
     const diffInSeconds = Math.floor((now - date) / 1000);
     if (diffInSeconds < 60) return "Baru saja";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m lalu`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}j lalu`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}j lalu`;
     return `${Math.floor(diffInSeconds / 86400)}h lalu`;
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <Skeleton className="h-8 w-32" /> {/* Judul */}
+          <Skeleton className="h-8 w-24 rounded-lg" /> {/* Mark all read */}
+        </div>
+
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="flex gap-4 p-4 bg-white border border-slate-100 rounded-2xl"
+            >
+              {/* Icon Type (Info/Warning/Success) */}
+              <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
+
+              <div className="flex-1 space-y-2">
+                {/* Pesan Notif */}
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+                {/* Waktu */}
+                <Skeleton className="h-3 w-16 mt-1" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -166,7 +211,9 @@ const Notifications = () => {
             <Bell size={24} />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-slate-800">Notifikasi</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-slate-800">
+              Notifikasi
+            </h1>
             <p className="text-slate-500 text-xs md:text-sm">
               Aktivitas terbaru Anda
             </p>
@@ -181,7 +228,7 @@ const Notifications = () => {
               onClick={handleMarkAllRead}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 py-2 text-xs md:text-sm font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition border border-indigo-100"
             >
-              <CheckCheck size={16} /> 
+              <CheckCheck size={16} />
               <span className="whitespace-nowrap">Baca Semua</span>
             </button>
 
@@ -190,7 +237,7 @@ const Notifications = () => {
               onClick={() => setConfirmModal({ isOpen: true })}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 py-2 text-xs md:text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition border border-red-100"
             >
-              <Trash2 size={16} /> 
+              <Trash2 size={16} />
               <span>Hapus</span>
             </button>
           </div>
@@ -199,9 +246,7 @@ const Notifications = () => {
 
       {/* --- LIST NOTIFIKASI --- */}
       <div className="space-y-3">
-        {loading ? (
-          <div className="text-center py-10 text-slate-400 text-sm animate-pulse">Memuat notifikasi...</div>
-        ) : notifs.length === 0 ? (
+        {notifs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 md:py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-4">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
               <Bell size={28} />
@@ -233,25 +278,37 @@ const Notifications = () => {
                 >
                   <div className="flex gap-3 md:gap-4">
                     {/* Icon */}
-                    <div className={`mt-0.5 flex-shrink-0 ${n.is_read ? "grayscale opacity-50" : ""}`}>
+                    <div
+                      className={`mt-0.5 flex-shrink-0 ${
+                        n.is_read ? "grayscale opacity-50" : ""
+                      }`}
+                    >
                       {style.icon}
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 min-w-0"> {/* min-w-0 prevents flex items from overflowing */}
+                    <div className="flex-1 min-w-0">
+                      {" "}
+                      {/* min-w-0 prevents flex items from overflowing */}
                       <div className="flex justify-between items-start gap-2">
-                        <h4 className={`font-bold text-sm md:text-base truncate w-full ${n.is_read ? "text-slate-600" : "text-slate-800"}`}>
+                        <h4
+                          className={`font-bold text-sm md:text-base truncate w-full ${
+                            n.is_read ? "text-slate-600" : "text-slate-800"
+                          }`}
+                        >
                           {n.title}
                         </h4>
                         {!n.is_read && (
                           <span className="w-2 h-2 bg-red-500 rounded-full shrink-0 animate-pulse mt-1.5"></span>
                         )}
                       </div>
-                      
-                      <p className={`text-xs md:text-sm mt-1 leading-relaxed line-clamp-2 md:line-clamp-none ${n.is_read ? "text-slate-400" : "text-slate-600"}`}>
+                      <p
+                        className={`text-xs md:text-sm mt-1 leading-relaxed line-clamp-2 md:line-clamp-none ${
+                          n.is_read ? "text-slate-400" : "text-slate-600"
+                        }`}
+                      >
                         {n.message}
                       </p>
-                      
                       <div className="mt-2.5 flex items-center justify-between">
                         <span className="text-[10px] md:text-xs text-slate-400 flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-full w-fit">
                           <Clock size={10} /> {timeAgo(n.created_at)}
@@ -285,7 +342,8 @@ const Notifications = () => {
             Hapus Semua?
           </h3>
           <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-            Semua notifikasi akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.
+            Semua notifikasi akan dihapus permanen. Tindakan ini tidak bisa
+            dibatalkan.
           </p>
           <div className="flex gap-3">
             <button

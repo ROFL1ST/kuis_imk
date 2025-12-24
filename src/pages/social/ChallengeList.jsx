@@ -27,6 +27,7 @@ import {
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
 import { EventSourcePolyfill } from "event-source-polyfill";
+import Skeleton from "../../components/ui/Skeleton";
 
 // --- HELPER COMPONENT: PLAYER ROW ---
 const PlayerRow = ({
@@ -506,12 +507,64 @@ const ChallengeList = () => {
     );
   };
 
-  if (initialLoading)
+  if (initialLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        {/* 1. Header: Title & Button Create */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-32" /> {/* Title "Duel" */}
+            <Skeleton className="h-4 w-48" /> {/* Subtitle */}
+          </div>
+          {/* Tombol Buat Tantangan */}
+          <Skeleton className="h-10 w-10 sm:w-36 rounded-xl" />
+        </div>
+
+        {/* 2. Tabs Navigation (Open / Active / History) */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          <Skeleton className="h-9 w-24 rounded-full flex-shrink-0" />
+          <Skeleton className="h-9 w-24 rounded-full flex-shrink-0" />
+          <Skeleton className="h-9 w-24 rounded-full flex-shrink-0" />
+        </div>
+
+        {/* 3. List Challenges Cards */}
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+            >
+              {/* Kiri: Info Tantangan */}
+              <div className="flex items-center gap-4">
+                {/* Icon Topik / VS Icon */}
+                <Skeleton className="w-14 h-14 rounded-2xl flex-shrink-0" />
+
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-40" /> {/* Judul Topik */}
+                  <div className="flex gap-2">
+                    <Skeleton className="h-4 w-16" /> {/* Bet/Coin */}
+                    <Skeleton className="h-4 w-20" /> {/* Status */}
+                  </div>
+                </div>
+              </div>
+
+              {/* Kanan: Info Lawan / Button Action */}
+              <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-0 border-slate-50 pt-3 sm:pt-0">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="w-8 h-8 rounded-full" />{" "}
+                  {/* Avatar Lawan */}
+                  <Skeleton className="h-4 w-20 sm:hidden" />{" "}
+                  {/* Nama Lawan (Mobile) */}
+                </div>
+                <Skeleton className="h-9 w-24 rounded-lg" />{" "}
+                {/* Button Terima/Main */}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
+  }
 
   return (
     <div className="max-w-5xl mx-auto pb-20 space-y-8">

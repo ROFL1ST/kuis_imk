@@ -20,6 +20,7 @@ import Modal from "../../components/ui/Modal";
 import UserHoverCard from "../../components/ui/UserHoverCard";
 import UserAvatar from "../../components/ui/UserAvatar";
 import { useAuth } from "../../hooks/useAuth";
+import Skeleton from "../../components/ui/Skeleton";
 
 const Friends = () => {
   const { user } = useAuth();
@@ -150,6 +151,59 @@ const Friends = () => {
       setConfirmModal({ isOpen: false, friendId: null, friendName: "" });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        {/* 1. Header & Search Bar */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-8 w-32" /> {/* Title "Teman" */}
+            <Skeleton className="h-8 w-8 rounded-full" />{" "}
+            {/* Icon Add/Filter */}
+          </div>
+          <Skeleton className="h-12 w-full rounded-xl" /> {/* Search Input */}
+        </div>
+
+        {/* 2. Tabs Navigation (Teman Saya / Permintaan) */}
+        <div className="flex gap-2 border-b border-slate-100 pb-2">
+          <Skeleton className="h-9 w-28 rounded-lg" />
+          <Skeleton className="h-9 w-28 rounded-lg" />
+        </div>
+
+        {/* 3. List User (Card Style) */}
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl"
+            >
+              <div className="flex items-center gap-4">
+                {/* Avatar Bulat */}
+                <Skeleton className="w-12 h-12 rounded-full flex-shrink-0" />
+
+                {/* Info User */}
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" /> {/* Nama */}
+                  <div className="flex gap-2">
+                    <Skeleton className="h-3 w-16" /> {/* Level */}
+                    <Skeleton className="h-3 w-20" /> {/* Status/Streak */}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tombol Aksi (Kanan) */}
+              <div className="flex gap-2">
+                <Skeleton className="w-10 h-10 rounded-lg" /> {/* Chat Icon */}
+                <Skeleton className="w-24 h-10 rounded-lg hidden sm:block" />{" "}
+                {/* Button Text */}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20 px-4">
@@ -355,7 +409,7 @@ const Friends = () => {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {searchResults
-                      .filter((userResult) => userResult.ID !== user.ID) 
+                      .filter((userResult) => userResult.ID !== user.ID)
                       .map((userResult) => {
                         // Cek Status Hubungan
                         const isSent = sentRequests.some(
@@ -369,7 +423,6 @@ const Friends = () => {
                         );
 
                         return (
-                       
                           <div
                             key={userResult.id}
                             className="relative bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group overflow-visible z-0 hover:z-10"

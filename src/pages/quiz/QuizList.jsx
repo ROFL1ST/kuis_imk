@@ -16,6 +16,7 @@ import { topicAPI, socialAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
+import Skeleton from "../../components/ui/Skeleton";
 
 const QuizList = () => {
   const { slug } = useParams();
@@ -135,6 +136,31 @@ const QuizList = () => {
     document.title = `Kuis di ${slug} | QuizApp`;
   }, [slug]);
 
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Search Bar Skeleton */}
+        <Skeleton className="h-12 w-full mb-8 rounded-xl" />
+
+        {/* List Quiz */}
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4"
+            >
+              <Skeleton className="w-16 h-16 rounded-xl flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-5 w-1/3" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+              <Skeleton className="w-24 h-10 rounded-lg hidden sm:block" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="max-w-4xl mx-auto pb-20">
       <Link
@@ -161,9 +187,7 @@ const QuizList = () => {
         </Link>
       </div>
 
-      {loading ? (
-        <div className="text-center py-20">Memuat Kuis...</div>
-      ) : quizzes.length === 0 ? (
+      {quizzes.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-xl shadow-sm">
           <p className="text-slate-500">Belum ada kuis di topik ini.</p>
         </div>

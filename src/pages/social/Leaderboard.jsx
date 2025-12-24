@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { socialAPI } from "../../services/api";
 import { Medal, ArrowLeft } from "lucide-react";
 import UserAvatar from "../../components/ui/UserAvatar";
+import Skeleton from "../../components/ui/Skeleton";
 
 const Leaderboard = () => {
   const { slug } = useParams();
@@ -28,6 +29,36 @@ const Leaderboard = () => {
     return "bg-white border-slate-100 text-slate-600";
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        {/* Header Title */}
+        <div className="flex flex-col items-center mb-8 space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+
+        {/* List Skeleton */}
+        <div className="space-y-3 bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 p-3 border-b border-slate-50 last:border-0"
+            >
+              <Skeleton className="w-8 h-8 rounded-full" /> {/* Rank/Number */}
+              <Skeleton className="w-10 h-10 rounded-full" /> {/* Avatar */}
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-32" /> {/* Name */}
+                <Skeleton className="h-3 w-20" /> {/* Subtitle */}
+              </div>
+              <Skeleton className="h-6 w-16 rounded-full" /> {/* Score */}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       <Link
@@ -44,49 +75,41 @@ const Leaderboard = () => {
         <p className="text-slate-500">Pejuang skor tertinggi di topik ini</p>
       </div>
 
-      {loading ? (
-        <div className="text-center">Memuat Peringkat...</div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {leaders.map((entry, index) => (
-            <div
-              key={index}
-              className={`p-4 rounded-xl border flex items-center justify-between shadow-sm ${getRankStyle(
-                index
-              )}`}
-            >
-              <div className="flex items-center gap-4">
-                <span className="font-bold text-slate-400 w-6 text-center">
-                  #{index + 1}
-                </span>
+      <div className="flex flex-col gap-3">
+        {leaders.map((entry, index) => (
+          <div
+            key={index}
+            className={`p-4 rounded-xl border flex items-center justify-between shadow-sm ${getRankStyle(
+              index
+            )}`}
+          >
+            <div className="flex items-center gap-4">
+              <span className="font-bold text-slate-400 w-6 text-center">
+                #{index + 1}
+              </span>
 
-               
-                <UserAvatar
-                  user={entry} 
-                  size="md"
-                />
+              <UserAvatar user={entry} size="md" />
 
-                <div>
-                  <p className="font-bold text-slate-800">{entry.name}</p>
-                  <p className="text-xs text-slate-500">@{entry.username}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Medal size={18} />
-                <span className="font-bold text-lg">
-                  {entry.total_points} Poin
-                </span>
+              <div>
+                <p className="font-bold text-slate-800">{entry.name}</p>
+                <p className="text-xs text-slate-500">@{entry.username}</p>
               </div>
             </div>
-          ))}
-
-          {leaders.length === 0 && (
-            <div className="text-center p-8 text-slate-500 bg-white rounded-xl border">
-              Belum ada data leaderboard. Jadilah yang pertama!
+            <div className="flex items-center gap-2">
+              <Medal size={18} />
+              <span className="font-bold text-lg">
+                {entry.total_points} Poin
+              </span>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
+
+        {leaders.length === 0 && (
+          <div className="text-center p-8 text-slate-500 bg-white rounded-xl border">
+            Belum ada data leaderboard. Jadilah yang pertama!
+          </div>
+        )}
+      </div>
     </div>
   );
 };

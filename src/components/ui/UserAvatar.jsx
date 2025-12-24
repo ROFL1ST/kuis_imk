@@ -17,6 +17,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
       return "none";
 
     const foundFrame = user.equipped_items.find((entry) => {
+      // Handle struktur data yang mungkin beda (nested vs flat)
       if (entry.item && entry.item.type === "avatar_frame") return true;
       if (entry.type === "avatar_frame") return true;
       return false;
@@ -28,7 +29,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
 
   const frameId = getFrameId();
 
-  // 3. Style Frame yang DIPERBAIKI dengan efek 3D
+  // 3. Style Frame (Menggunakan Class yang sudah ada di index.css)
   const getFrameStyles = (id) => {
     const baseStyle = "relative w-full h-full rounded-full flex items-center justify-center overflow-visible z-10 transform-gpu";
     
@@ -38,9 +39,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[5px]
           bg-gradient-to-br from-[#8B4513] via-[#A0522D] to-[#8B4513]
           border-[4px] border-[#5D4037]
-          shadow-[inset_0_3px_6px_rgba(255,255,255,0.2),
-                  inset_0_-3px_6px_rgba(0,0,0,0.4),
-                  0_8px_20px_rgba(93,64,55,0.6)]
+          shadow-[inset_0_3px_6px_rgba(255,255,255,0.2),inset_0_-3px_6px_rgba(0,0,0,0.4),0_8px_20px_rgba(93,64,55,0.6)]
           relative before:absolute before:inset-0 before:rounded-full before:border-[1px] before:border-[#D7CCC8]/30
           after:absolute after:inset-[-2px] after:rounded-full after:border-[1px] after:border-[#3E2723]/40
           animate-wood-grain`;
@@ -50,10 +49,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[4px]
           bg-gradient-to-br from-gray-300 via-gray-200 to-gray-400
           border-[3px] border-gray-400
-          shadow-[inset_0_2px_8px_rgba(255,255,255,0.9),
-                  inset_0_-2px_8px_rgba(0,0,0,0.1),
-                  0_8px_25px_rgba(148,163,184,0.7),
-                  0_0_0_1px_rgba(255,255,255,0.3)]
+          shadow-[inset_0_2px_8px_rgba(255,255,255,0.9),inset_0_-2px_8px_rgba(0,0,0,0.1),0_8px_25px_rgba(148,163,184,0.7),0_0_0_1px_rgba(255,255,255,0.3)]
           animate-metallic-shine`;
 
       case "frame_gold":
@@ -61,10 +57,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[5px]
           bg-gradient-to-br from-yellow-500 via-yellow-400 to-yellow-600
           border-[3px] border-yellow-700
-          shadow-[inset_0_4px_12px_rgba(255,255,255,0.5),
-                  inset_0_-4px_12px_rgba(180,83,9,0.4),
-                  0_12px_35px_rgba(234,179,8,0.7),
-                  0_0_0_2px_rgba(255,215,0,0.4)]
+          shadow-[inset_0_4px_12px_rgba(255,255,255,0.5),inset_0_-4px_12px_rgba(180,83,9,0.4),0_12px_35px_rgba(234,179,8,0.7),0_0_0_2px_rgba(255,215,0,0.4)]
           animate-gold-glow
           relative before:absolute before:inset-0 before:rounded-full before:bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.8)_0%,transparent_70%)] before:opacity-30`;
 
@@ -73,9 +66,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[4px]
           bg-gradient-to-br from-cyan-400 via-blue-500 to-cyan-600
           border-[2px] border-cyan-300
-          shadow-[inset_0_0_15px_rgba(6,182,212,0.6),
-                  0_0_35px_#06b6d4,
-                  0_0_70px_rgba(59,130,246,0.8)]
+          shadow-[inset_0_0_15px_rgba(6,182,212,0.6),0_0_35px_#06b6d4,0_0_70px_rgba(59,130,246,0.8)]
           animate-neon-pulse
           relative before:absolute before:inset-0 before:rounded-full before:bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.8)_0%,transparent_70%)] before:opacity-40`;
 
@@ -84,9 +75,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[4px]
           bg-gradient-to-br from-red-500 via-pink-600 to-red-400
           border-[2px] border-red-400
-          shadow-[inset_0_0_15px_rgba(239,68,68,0.6),
-                  0_0_40px_#ef4444,
-                  0_0_80px_rgba(219,39,119,0.7)]
+          shadow-[inset_0_0_15px_rgba(239,68,68,0.6),0_0_40px_#ef4444,0_0_80px_rgba(219,39,119,0.7)]
           animate-neon-pulse
           relative before:absolute before:inset-0 before:rounded-full before:bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.8)_0%,transparent_70%)] before:opacity-40`;
 
@@ -95,8 +84,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[3px]
           bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600
           border-[2px] border-dashed border-emerald-300
-          shadow-[0_8px_25px_rgba(16,185,129,0.5),
-                  0_0_0_1px_rgba(236,72,153,0.3)]
+          shadow-[0_8px_25px_rgba(16,185,129,0.5),0_0_0_1px_rgba(236,72,153,0.3)]
           animate-glitch-3d
           relative before:absolute before:inset-[-1px] before:rounded-full before:bg-[conic-gradient(from_0deg,transparent_0deg,#06b6d4_90deg,transparent_180deg,#ec4899_270deg)] before:opacity-60 before:animate-conic-spin`;
 
@@ -105,9 +93,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[4px]
           bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-600
           border-[1px] border-transparent
-          shadow-[inset_0_0_20px_rgba(139,92,246,0.5),
-                  0_0_45px_rgba(168,85,247,0.7),
-                  0_0_90px_rgba(236,72,153,0.4)]
+          shadow-[inset_0_0_20px_rgba(139,92,246,0.5),0_0_45px_rgba(168,85,247,0.7),0_0_90px_rgba(236,72,153,0.4)]
           animate-galaxy-3d
           relative before:absolute before:inset-0 before:rounded-full before:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.2)_0%,transparent_70%)] before:animate-pulse`;
 
@@ -116,10 +102,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[4px]
           bg-gradient-to-br from-yellow-500 via-yellow-400 to-yellow-600
           border-[3px] border-yellow-700
-          shadow-[inset_0_3px_10px_rgba(255,255,255,0.4),
-                  inset_0_-3px_10px_rgba(180,83,9,0.3),
-                  0_10px_30px_rgba(234,179,8,0.6),
-                  0_0_0_2px_rgba(255,215,0,0.3)]
+          shadow-[inset_0_3px_10px_rgba(255,255,255,0.4),inset_0_-3px_10px_rgba(180,83,9,0.3),0_10px_30px_rgba(234,179,8,0.6),0_0_0_2px_rgba(255,215,0,0.3)]
           animate-crown-royal`;
 
       default:
@@ -127,8 +110,7 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
           p-[2px]
           bg-gradient-to-br from-gray-100 to-gray-200
           border-[2px] border-gray-300/60
-          shadow-[inset_0_1px_3px_rgba(255,255,255,0.9),
-                  0_4px_12px_rgba(0,0,0,0.1)]`;
+          shadow-[inset_0_1px_3px_rgba(255,255,255,0.9),0_4px_12px_rgba(0,0,0,0.1)]`;
     }
   };
 
@@ -218,178 +200,4 @@ const UserAvatar = ({ user, size = "md", className = "" }) => {
   );
 };
 
-// CSS Animations untuk efek 3D
-const GlobalStyles = () => (
-  <style jsx global>{`
-    /* Efek 3D untuk Wooden */
-    @keyframes wood-grain {
-      0% { background-position: 0% 0%; }
-      100% { background-position: 100px 100px; }
-    }
-    .animate-wood-grain {
-      background-size: 100px 100px;
-      background-image: repeating-linear-gradient(
-        45deg,
-        rgba(139, 69, 19, 0.1) 0px,
-        rgba(139, 69, 19, 0.1) 1px,
-        transparent 1px,
-        transparent 10px
-      );
-      animation: wood-grain 20s linear infinite;
-    }
-
-    /* Efek logam berkilau */
-    @keyframes metallic-shine {
-      0%, 100% { filter: brightness(1); }
-      50% { filter: brightness(1.2); }
-    }
-    .animate-metallic-shine {
-      animation: metallic-shine 3s ease-in-out infinite;
-    }
-
-    /* Glow emas */
-    @keyframes gold-glow {
-      0%, 100% { 
-        box-shadow: inset 0 4px 12px rgba(255,255,255,0.5),
-                    inset 0 -4px 12px rgba(180,83,9,0.4),
-                    0 12px 35px rgba(234,179,8,0.7),
-                    0 0 0 2px rgba(255,215,0,0.4);
-      }
-      50% { 
-        box-shadow: inset 0 4px 12px rgba(255,255,255,0.6),
-                    inset 0 -4px 12px rgba(180,83,9,0.5),
-                    0 15px 45px rgba(234,179,8,0.9),
-                    0 0 0 3px rgba(255,215,0,0.6);
-      }
-    }
-    .animate-gold-glow {
-      animation: gold-glow 2s ease-in-out infinite;
-    }
-
-    /* Pulse neon */
-    @keyframes neon-pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.8; }
-    }
-    .animate-neon-pulse {
-      animation: neon-pulse 1.5s ease-in-out infinite;
-    }
-
-    /* Efek glitch 3D */
-    @keyframes glitch-3d {
-      0%, 100% { 
-        transform: translate(0, 0) rotate(0deg);
-        filter: hue-rotate(0deg);
-      }
-      33% { 
-        transform: translate(1px, -1px) rotate(0.5deg);
-        filter: hue-rotate(90deg);
-      }
-      66% { 
-        transform: translate(-1px, 1px) rotate(-0.5deg);
-        filter: hue-rotate(180deg);
-      }
-    }
-    .animate-glitch-3d {
-      animation: glitch-3d 2s ease-in-out infinite;
-    }
-
-    /* Galaxy 3D effect */
-    @keyframes galaxy-3d {
-      0% { 
-        background-position: 0% 0%;
-        transform: rotate(0deg);
-      }
-      100% { 
-        background-position: 200% 200%;
-        transform: rotate(360deg);
-      }
-    }
-    .animate-galaxy-3d {
-      background-size: 200% 200%;
-      animation: galaxy-3d 20s linear infinite;
-    }
-
-    /* Crown royal effect */
-    @keyframes crown-royal {
-      0%, 100% { 
-        filter: drop-shadow(0 10px 30px rgba(234,179,8,0.6));
-      }
-      50% { 
-        filter: drop-shadow(0 15px 40px rgba(234,179,8,0.9));
-      }
-    }
-    .animate-crown-royal {
-      animation: crown-royal 2s ease-in-out infinite;
-    }
-
-    /* Conic spin */
-    @keyframes conic-spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .animate-conic-spin {
-      animation: conic-spin 3s linear infinite;
-    }
-
-    /* Ping slow */
-    @keyframes ping-slow {
-      0%, 100% { 
-        opacity: 0.3;
-        transform: scale(1);
-      }
-      50% { 
-        opacity: 0.1;
-        transform: scale(1.05);
-      }
-    }
-    .animate-ping-slow {
-      animation: ping-slow 3s ease-in-out infinite;
-    }
-
-    /* Crown float */
-    @keyframes crown-float {
-      0%, 100% { transform: translate(-50%, 0) rotate(0deg); }
-      50% { transform: translate(-50%, -4px) rotate(5deg); }
-    }
-    .animate-crown-float {
-      animation: crown-float 3s ease-in-out infinite;
-    }
-
-    /* Orbit animations */
-    @keyframes orbit-1 {
-      0% { transform: rotate(0deg) translateX(15px) rotate(0deg); }
-      100% { transform: rotate(360deg) translateX(15px) rotate(-360deg); }
-    }
-    @keyframes orbit-2 {
-      0% { transform: rotate(180deg) translateX(15px) rotate(-180deg); }
-      100% { transform: rotate(540deg) translateX(15px) rotate(-540deg); }
-    }
-    .animate-orbit-1 { animation: orbit-1 8s linear infinite; }
-    .animate-orbit-2 { animation: orbit-2 8s linear infinite; }
-
-    /* Bounce animations */
-    .animate-bounce-slow { animation: bounce 3s ease-in-out infinite; }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-
-    /* Pulse animation */
-    @keyframes pulse {
-      0%, 100% { opacity: 0.2; }
-      50% { opacity: 0.4; }
-    }
-    .animate-pulse {
-      animation: pulse 3s ease-in-out infinite;
-    }
-
-    /* Pastikan semua elemen benar-benar bulat */
-    .rounded-full {
-      border-radius: 9999px !important;
-    }
-  `}</style>
-);
-
 export default UserAvatar;
-export { GlobalStyles };
