@@ -1,5 +1,3 @@
-// src/pages/about/WhatsNew.jsx
-
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -53,10 +51,39 @@ const WhatsNew = () => {
 
   const updates = [
     {
+      version: "1.5.2",
+      date: "24 Des 2025",
+      title: "Visual Overhaul: Skeleton, Inventory & 3D Avatars",
+      highlight: true,
+      description: "Pembaruan fokus pada keindahan visual dan kenyamanan pengguna. Aplikasi kini terasa lebih cepat dan hidup!",
+      changes: [
+        {
+          type: "new",
+          text: "Skeleton Loading System: Transisi antar halaman kini jauh lebih mulus dengan animasi skeleton modern (tidak ada lagi layar putih berkedip).",
+        },
+        {
+          type: "new",
+          text: "Inventory 2.0: Tampilan Tas baru dengan 'Live Preview'. Coba bingkai dan gelar langsung di avatar-mu sebelum memakainya.",
+        },
+        {
+          type: "new",
+          text: "3D Avatar Frames: Bingkai avatar kini hidup dengan efek animasi visual nyata (Neon Pulse, Gold Shine, Glitch Effect, dll).",
+        },
+        {
+          type: "improvement",
+          text: "Logo Loader: Animasi loading awal aplikasi (splash screen) yang lebih profesional dan branded.",
+        },
+        {
+          type: "fix",
+          text: "Streak Logic Fix: Perbaikan perhitungan streak harian (menghapus bug double count) dan sinkronisasi kalender yang lebih akurat.",
+        },
+      ],
+    },
+    {
       version: "1.5.1",
       date: "22 Des 2025",
       title: "Mobile Experience Upgrade & Activity Calendar",
-      highlight: true,
+      highlight: false,
       changes: [
         {
           type: "new",
