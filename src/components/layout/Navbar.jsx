@@ -35,7 +35,8 @@ const Navbar = () => {
   // State
   const [showStreak, setShowStreak] = useState(false);
   const [calendarDates, setCalendarDates] = useState([]);
-  const [missions, setMissions] = useState([]); // <--- State baru untuk Misi
+  const [missions, setMissions] = useState([]);
+  const [dailyStreak, setDailyStreak] = useState(0);
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -53,7 +54,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
-
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -65,20 +65,16 @@ const Navbar = () => {
     };
   }, [open]);
 
-  
   useEffect(() => {
     if (user) {
       const fetchData = async () => {
         try {
-          // 1. Ambil Kalender Aktivitas
           const resCalendar = await userAPI.getActivityCalendar();
           setCalendarDates(resCalendar.data.data || []);
 
-          // 2. Ambil Info Harian (Misi & Streak Detail)
-          // Pastikan userAPI.getDailyInfo() sudah dibuat di services/api.js
           const resDaily = await dailyAPI.getInfo();
           setMissions(resDaily.data.data.missions || []);
-          
+          setDailyStreak(resDaily.data.data.streak.day || 0);
         } catch (e) {
           console.error("Failed to fetch navbar data:", e);
         }
@@ -184,7 +180,7 @@ const Navbar = () => {
                         setShowStreak(false);
                         setShowFullCalendar(true);
                       }}
-                      
+                      dailyStreak={dailyStreak}
                     />
                   </motion.div>
                 )}

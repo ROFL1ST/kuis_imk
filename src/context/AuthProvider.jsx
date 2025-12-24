@@ -11,6 +11,7 @@ import {
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { EventSourcePolyfill } from "event-source-polyfill"; // Pastikan import ini ada
+import LogoLoader from "../components/ui/LogoLoader";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getUser());
@@ -132,7 +133,7 @@ export const AuthProvider = ({ children }) => {
         eventSource.onerror = (err) => {
           // Silent error agar tidak spam console jika koneksi putus/token expired
           if (err?.status === 401) {
-             // Opsional: logout() jika token expired
+            // Opsional: logout() jika token expired
           }
           eventSource.close();
         };
@@ -218,6 +219,10 @@ export const AuthProvider = ({ children }) => {
     refreshNotifications: fetchUnreadCount,
     refreshProfile,
   };
+
+  if (loading) {
+    return <LogoLoader />;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

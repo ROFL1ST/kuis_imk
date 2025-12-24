@@ -30,6 +30,7 @@ import {
   BarChart2,
   Share2,
 } from "lucide-react";
+import Skeleton from "../../components/ui/Skeleton";
 
 const Profile = () => {
   const { username } = useParams();
@@ -250,14 +251,79 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-            className="h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full mx-auto mb-4"
-          />
-          <p className="text-slate-600 font-medium">Memuat profil...</p>
+      <div className="pb-20">
+        {/* 1. Banner Area (Full Width / Container) */}
+        <div className="relative mb-20 md:mb-24">
+          {/* Gambar Banner */}
+          <Skeleton className="w-full h-48 md:h-64 rounded-b-[2.5rem] md:rounded-b-[3rem]" />
+
+          {/* Container untuk Avatar Overlay */}
+          <div className="max-w-5xl mx-auto px-4 relative">
+            <div className="absolute -bottom-16 md:-bottom-20 left-4 md:left-8">
+              {/* Circle Wrapper (Border Putih) */}
+              <div className="p-1.5 bg-white rounded-full">
+                {/* Avatar Image Skeleton */}
+                <Skeleton className="w-28 h-28 md:w-36 md:h-36 rounded-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. User Info & Action Button */}
+        <div className="max-w-5xl mx-auto px-6 md:px-8 mb-8">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            {/* Nama & Bio */}
+            <div className="space-y-3 mt-2">
+              <Skeleton className="h-8 w-48 md:w-64" /> {/* Nama User */}
+              <Skeleton className="h-4 w-32" /> {/* @username */}
+              {/* Bio Box */}
+              <div className="pt-2">
+                <Skeleton className="h-4 w-full max-w-sm" />
+                <Skeleton className="h-4 w-3/4 mt-1" />
+              </div>
+            </div>
+
+            {/* Tombol Edit / Settings (Desktop: Kanan, Mobile: Bawah) */}
+            <div className="flex gap-3 mt-2 md:mt-0">
+              <Skeleton className="h-10 w-32 rounded-xl" />
+              <Skeleton className="h-10 w-10 rounded-xl" />
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Stats Grid (Level, Streak, Rank, Coins) */}
+        <div className="max-w-5xl mx-auto px-4 md:px-8 mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-20 md:h-24 rounded-2xl" />
+            ))}
+          </div>
+        </div>
+
+        {/* 4. Tabs & Content (History / About) */}
+        <div className="max-w-5xl mx-auto px-4 md:px-8 space-y-6">
+          {/* Tab Headers */}
+          <div className="flex gap-6 border-b border-slate-100 pb-2">
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-24" />
+          </div>
+
+          {/* Content Body (Misal Grid History) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="p-4 border border-slate-100 rounded-2xl flex items-center gap-4"
+              >
+                <Skeleton className="w-16 h-16 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );

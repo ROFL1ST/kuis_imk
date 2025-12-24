@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { quizAPI } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import Skeleton from "../../components/ui/Skeleton";
 
 const History = () => {
   const [histories, setHistories] = useState([]);
@@ -93,6 +94,42 @@ const History = () => {
     if (m === 0) return `${s}s`;
     return `${m}m ${s}s`;
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* Title Skeleton */}
+        <Skeleton className="h-10 w-48 mb-6" />
+
+        {/* Stats Summary (Kotak-kotak di atas biasanya) */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl hidden md:block" />
+        </div>
+
+        {/* List History Items */}
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
+               <div className="flex items-center gap-4">
+                  {/* Icon/Score Badge */}
+                  <Skeleton className="w-14 h-14 rounded-xl" />
+                  <div className="space-y-2">
+                     {/* Quiz Title */}
+                     <Skeleton className="h-5 w-48" />
+                     {/* Date/Time */}
+                     <Skeleton className="h-3 w-32" />
+                  </div>
+               </div>
+               {/* Arrow/Action */}
+               <Skeleton className="w-8 h-8 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto pb-12 space-y-8">

@@ -15,6 +15,7 @@ import {
 import { motion } from "framer-motion";
 import UserAvatar from "../../components/ui/UserAvatar";
 import Modal from "../../components/ui/Modal";
+import Skeleton from "../../components/ui/Skeleton";
 
 const Shop = () => {
   const { user, setUser } = useAuth(); // Kita butuh setUser untuk update koin real-time
@@ -86,7 +87,38 @@ const Shop = () => {
   const filteredItems =
     activeTab === "all" ? items : items.filter((i) => i.type === activeTab);
 
-  if (loading) return <div className="p-8 text-center">Loading Shop...</div>;
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-8">
+         {/* Banner/Header Toko */}
+         <Skeleton className="w-full h-40 rounded-3xl mb-8" />
+         
+         {/* Categories Tabs */}
+         <div className="flex gap-3 mb-6 overflow-x-auto">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="w-24 h-10 rounded-full flex-shrink-0" />)}
+         </div>
+
+         {/* Items Grid */}
+         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+               <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
+                  {/* Image Placeholder */}
+                  <Skeleton className="w-full aspect-square rounded-xl" />
+                  
+                  {/* Title & Price */}
+                  <div className="space-y-2 mt-2">
+                     <Skeleton className="h-4 w-3/4" />
+                     <Skeleton className="h-4 w-1/2" />
+                  </div>
+                  
+                  {/* Button Beli */}
+                  <Skeleton className="h-9 w-full rounded-lg mt-auto" />
+               </div>
+            ))}
+         </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto pb-12">

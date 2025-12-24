@@ -6,6 +6,7 @@ const StreakHoverCard = ({
   activityDates = [],
   missions = [], // <--- Kita terima data misi dari prop
   onOpenCalendar,
+  dailyStreak,
 }) => {
   console.log("StreakHoverCard missions:", missions);
   // --- LOGIC 1: CALENDAR ---
@@ -42,15 +43,13 @@ const StreakHoverCard = ({
 
   const weekData = getLast7Days();
 
-  // --- LOGIC 2: NEXT BIG REWARD (Kelipatan 7 Hari) ---
-  // Backend logic: Hadiah besar tiap kelipatan 7 (seed_daily.go)
+ 
   const daysCycle = 7;
-  const currentProgress = streakCount % daysCycle;
+  const currentProgress = dailyStreak % daysCycle;
   const daysLeft = daysCycle - currentProgress;
-  const nextMilestone = streakCount + daysLeft;
+  const nextMilestone = dailyStreak + daysLeft;
   
-  // Hitung persentase bar progress menuju kelipatan 7 berikutnya
-  // Jika streak 0, progress 0. Jika streak 6, progress ~85%.
+
   const milestoneProgress = (currentProgress / daysCycle) * 100;
 
   // --- LOGIC 3: MINI MISSION SUMMARY ---

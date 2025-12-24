@@ -18,6 +18,7 @@ import {
 import { topicAPI, dailyAPI, quizAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import toast from "react-hot-toast";
+import Skeleton from "../../components/ui/Skeleton";
 
 const Dashboard = () => {
   const { user, refreshProfile } = useAuth();
@@ -118,8 +119,37 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+        {/* Skeleton Header Banner */}
+        <Skeleton className="w-full h-48 md:h-64 rounded-3xl" />
+
+        {/* Skeleton Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+
+        {/* Skeleton Topics Grid */}
+        <div>
+          <Skeleton className="h-8 w-48 mb-6" /> {/* Judul Section */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                {/* Icon Box */}
+                <Skeleton className="w-12 h-12 rounded-xl" />
+                {/* Title & Desc */}
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+                {/* Button */}
+                <Skeleton className="h-10 w-full rounded-lg mt-2" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
