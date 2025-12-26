@@ -25,9 +25,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
+import StreakSuccessModal from "../../components/ui/StreakSuccessModal"; // Import Modal Baru
 import { getToken } from "../../services/auth";
 import { EventSourcePolyfill } from "event-source-polyfill";
-// Helper: Shuffle Array (Fisher-Yates Algorithm)
+
+// Helper: Shuffle Array
 const shuffleArray = (array) => {
   if (!array || array.length === 0) return [];
   const newArray = [...array];
@@ -52,32 +54,36 @@ const QuizPlay = ({ isRemedial = false }) => {
   const timeLimit = location.state?.timeLimit || 0;
   const challengeID = location.state?.challengeID || null;
 
-  // State Data Soal & Jawaban
+  // State Data
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({}); // Bisa string (MCQ/Short) atau array (Multi)
+  const [answers, setAnswers] = useState({});
 
   // State UI
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
-  // Timer Visual
+  // Timer
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerIntervalRef = useRef(null);
 
-  // State Result
+  // Result
   const [isFinished, setIsFinished] = useState(false);
   const [resultData, setResultData] = useState(null);
   const startTime = useRef(Date.now());
   const [duration, setDuration] = useState(0);
   const [historyId, setHistoryId] = useState(null);
 
-  // Level Up Modal
+  // Modals
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevelData, setNewLevelData] = useState(0);
+  
+  // State Streak Modal Baru
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const [streakModalData, setStreakModalData] = useState({ count: 0, type: "extended" });
 
-  // Realtime Logic States
+  // Realtime States
   const [opponentsProgress, setOpponentsProgress] = useState({});
   const [playersMap, setPlayersMap] = useState({});
   const [finishedPlayers, setFinishedPlayers] = useState({});
@@ -94,7 +100,7 @@ const QuizPlay = ({ isRemedial = false }) => {
       `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream`,
       {
         headers: {
-          Authorization: `Bearer ${token}`, // Kirim Token di Header
+          Authorization: `Bearer ${token}`,
         },
         heartbeatTimeout: 120000,
       }
@@ -173,7 +179,6 @@ const QuizPlay = ({ isRemedial = false }) => {
       .then((res) => {
         const rawQuestions = res.data.data || [];
 
-        // Proses Soal: Shuffle opsi hanya jika MCQ atau Multi Select
         const processedQuestions = rawQuestions.map((q) => {
           const type = q.type || "mcq";
           let options = q.options;
@@ -220,22 +225,18 @@ const QuizPlay = ({ isRemedial = false }) => {
   }, [elapsedTime, timeLimit, isFinished, submitting]);
 
   // ----------------------------------------------------------------
-  // 3. HANDLERS INPUT JAWABAN
+  // 3. HANDLERS INPUT
   // ----------------------------------------------------------------
-
-  // Handler: Pilihan Ganda / Boolean
   const handleOptionClick = (option) => {
     const currentQId = questions[currentIndex].ID;
     setAnswers({ ...answers, [currentQId]: option });
   };
 
-  // Handler: Isian Singkat
   const handleTextChange = (e) => {
     const currentQId = questions[currentIndex].ID;
     setAnswers({ ...answers, [currentQId]: e.target.value });
   };
 
-  // Handler: Multi Select (Checkbox)
   const handleMultiSelectClick = (option) => {
     const currentQId = questions[currentIndex].ID;
     const currentSelected = Array.isArray(answers[currentQId])
@@ -244,19 +245,16 @@ const QuizPlay = ({ isRemedial = false }) => {
 
     let newSelected;
     if (currentSelected.includes(option)) {
-      // Hapus (Uncheck)
       newSelected = currentSelected.filter((item) => item !== option);
     } else {
-      // Tambah (Check)
       newSelected = [...currentSelected, option];
     }
     setAnswers({ ...answers, [currentQId]: newSelected });
   };
 
   // ----------------------------------------------------------------
-  // 4. LOGIC NAVIGASI & SUBMIT
+  // 4. NAVIGASI & SUBMIT
   // ----------------------------------------------------------------
-
   const sendProgress = async (index) => {
     if (isRealtime && challengeID) {
       try {
@@ -290,7 +288,6 @@ const QuizPlay = ({ isRemedial = false }) => {
     }
   };
 
-  // Helper: Hitung Skor Lokal (Estimasi Frontend)
   const calculateLocalScore = () => {
     let correct = 0;
     questions.forEach((q) => {
@@ -300,7 +297,6 @@ const QuizPlay = ({ isRemedial = false }) => {
       if (!userAns) return;
 
       if (q.type === "short_answer") {
-        // Case Insensitive
         if (
           String(userAns).trim().toLowerCase() ===
           String(correctAns).trim().toLowerCase()
@@ -308,9 +304,8 @@ const QuizPlay = ({ isRemedial = false }) => {
           correct++;
         }
       } else if (q.type === "multi_select") {
-        // Array comparison
         try {
-          const keyArray = JSON.parse(correctAns || "[]"); // Kunci jawaban dari DB biasanya string JSON
+          const keyArray = JSON.parse(correctAns || "[]");
           if (Array.isArray(userAns) && Array.isArray(keyArray)) {
             if (userAns.length === keyArray.length) {
               const sortedUser = [...userAns].sort().toString();
@@ -322,7 +317,6 @@ const QuizPlay = ({ isRemedial = false }) => {
           console.error("Error parsing multi select key", e);
         }
       } else {
-        // Exact Match (MCQ / Boolean)
         if (userAns === correctAns) correct++;
       }
     });
@@ -339,16 +333,14 @@ const QuizPlay = ({ isRemedial = false }) => {
       timeTaken = timeLimit;
     }
 
-    // 1. Hitung Estimasi Skor Frontend
     const localCorrectCount = calculateLocalScore();
     const localScore = Math.round((localCorrectCount / questions.length) * 100);
 
-    // 2. Siapkan Snapshot (Convert Array MultiSelect ke JSON String)
     const processedSnapshot = {};
     Object.keys(answers).forEach((key) => {
       const ans = answers[key];
       if (Array.isArray(ans)) {
-        processedSnapshot[key] = JSON.stringify(ans); // ["A", "B"] -> '["A", "B"]'
+        processedSnapshot[key] = JSON.stringify(ans);
       } else {
         processedSnapshot[key] = ans;
       }
@@ -359,7 +351,7 @@ const QuizPlay = ({ isRemedial = false }) => {
     const payload = {
       quiz_id: parseInt(quizId) || 0,
       quiz_title: submissionTitle,
-      score: localScore, // Kirim skor estimasi (Backend akan validasi ulang)
+      score: localScore,
       total_soal: questions.length,
       snapshot: processedSnapshot,
       time_taken: timeTaken,
@@ -370,12 +362,12 @@ const QuizPlay = ({ isRemedial = false }) => {
     try {
       const currentLevel = user?.level || 1;
       const currentStreak = user?.streak_count || 0;
+      
       const res = await quizAPI.submitScore(payload);
       const finalHistory = res.data.data;
 
       setHistoryId(finalHistory.ID);
 
-      // Ambil skor resmi dari backend untuk ditampilkan
       const backendScore = finalHistory.score;
       const officialCorrectCount = Math.round(
         (backendScore / 100) * questions.length
@@ -385,30 +377,33 @@ const QuizPlay = ({ isRemedial = false }) => {
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       }
 
+      // Update User Local State
       const userRes = await authAPI.authMe();
       const updatedUser = userRes.data.data.user;
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
+      // --- LOGIC MODAL STREAK (Menggantikan Toast) ---
       if (updatedUser.streak_count > currentStreak) {
-        toast.success(
-          <div className="flex items-center gap-2">
-            <Flame className="text-orange-500 fill-orange-500" />
-            <div>
-              <p className="font-bold">Streak Diperpanjang!</p>
-              <p className="text-xs">
-                {updatedUser.streak_count} hari berturut-turut.
-              </p>
-            </div>
-          </div>,
-          { duration: 4000 }
-        );
-      }
-      if (updatedUser.level > currentLevel) {
-        setNewLevelData(updatedUser.level);
-        setTimeout(() => setShowLevelUp(true), 500);
+        // Tentukan tipe: Recovery (balik ke 1 dari 0) atau Extension (nambah lanjut)
+        const type = currentStreak === 0 ? "recovered" : "extended";
+        
+        setStreakModalData({ 
+            count: updatedUser.streak_count, 
+            type: type 
+        });
+        
+        // Trigger Modal Animasi
+        setShowStreakModal(true);
       } else {
         toast.success("Jawaban terkirim!");
+      }
+
+      // Check Level Up
+      if (updatedUser.level > currentLevel) {
+        setNewLevelData(updatedUser.level);
+        // Delay sedikit jika streak modal muncul, atau antrikan
+        setTimeout(() => setShowLevelUp(true), 1000);
       }
 
       setDuration(timeTaken);
@@ -453,12 +448,11 @@ const QuizPlay = ({ isRemedial = false }) => {
   };
 
   // ----------------------------------------------------------------
-  // 5. RENDERER INPUT (Kunci Tampilan Variasi Soal)
+  // 5. RENDERER INPUT
   // ----------------------------------------------------------------
   const renderAnswerInput = (currentQ) => {
     const currentAnswer = answers[currentQ.ID];
 
-    // TIPE 1: ISIAN SINGKAT
     if (currentQ.type === "short_answer") {
       return (
         <div className="mt-4">
@@ -483,13 +477,11 @@ const QuizPlay = ({ isRemedial = false }) => {
           </div>
           <p className="text-xs text-slate-400 mt-3 ml-2 flex items-center gap-1">
             <CheckCircle2 size={12} /> Jawaban tidak sensitif huruf besar/kecil
-            (Case Insensitive)
           </p>
         </div>
       );
     }
 
-    // TIPE 2: MULTI SELECT
     if (currentQ.type === "multi_select") {
       const currentSelected = Array.isArray(currentAnswer) ? currentAnswer : [];
       return (
@@ -504,24 +496,19 @@ const QuizPlay = ({ isRemedial = false }) => {
                 <button
                   key={idx}
                   onClick={() => handleMultiSelectClick(opt)}
-                  className={`
-                  relative p-4 rounded-xl border-2 transition-all flex items-center justify-between group text-left
-                  ${
+                  className={`relative p-4 rounded-xl border-2 transition-all flex items-center justify-between group text-left ${
                     isSelected
                       ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold shadow-md"
                       : "border-slate-100 hover:border-indigo-300 bg-white text-slate-600 hover:bg-slate-50 font-medium"
-                  }
-                `}
+                  }`}
                 >
                   <div className="flex items-center gap-4 w-full">
                     <div
-                      className={`w-6 h-6 rounded-md flex items-center justify-center border-2 transition-colors shrink-0
-                         ${
-                           isSelected
-                             ? "bg-indigo-600 border-indigo-600 text-white"
-                             : "bg-white border-slate-300 group-hover:border-indigo-400"
-                         }
-                    `}
+                      className={`w-6 h-6 rounded-md flex items-center justify-center border-2 transition-colors shrink-0 ${
+                        isSelected
+                          ? "bg-indigo-600 border-indigo-600 text-white"
+                          : "bg-white border-slate-300 group-hover:border-indigo-400"
+                      }`}
                     >
                       {isSelected && <CheckCircle2 size={16} />}
                     </div>
@@ -534,7 +521,6 @@ const QuizPlay = ({ isRemedial = false }) => {
       );
     }
 
-    // TIPE 3: PILIHAN GANDA & BOOLEAN
     const isBoolean = currentQ.type === "boolean";
     return (
       <div
@@ -551,30 +537,24 @@ const QuizPlay = ({ isRemedial = false }) => {
               <button
                 key={idx}
                 onClick={() => handleOptionClick(opt)}
-                className={`
-                relative p-4 rounded-xl border-2 transition-all flex items-center group
-                ${
+                className={`relative p-4 rounded-xl border-2 transition-all flex items-center group ${
                   isSelected
                     ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold shadow-md transform scale-[1.01]"
                     : "border-slate-100 hover:border-indigo-300 bg-white text-slate-600 hover:bg-slate-50 font-medium"
-                }
-                ${
+                } ${
                   isBoolean
                     ? "justify-center text-center h-20 text-lg"
                     : "justify-between text-left"
-                }
-              `}
+                }`}
               >
                 <div className="flex items-center gap-4">
                   {!isBoolean && (
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors
-                         ${
-                           isSelected
-                             ? "bg-indigo-600 text-white border-indigo-600"
-                             : "bg-white text-slate-400 border-slate-200 group-hover:border-indigo-300"
-                         }
-                    `}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors ${
+                        isSelected
+                          ? "bg-indigo-600 text-white border-indigo-600"
+                          : "bg-white text-slate-400 border-slate-200 group-hover:border-indigo-300"
+                      }`}
                     >
                       {label}
                     </div>
@@ -592,7 +572,7 @@ const QuizPlay = ({ isRemedial = false }) => {
   };
 
   // ----------------------------------------------------------------
-  // 6. RENDER MAIN VIEW
+  // 6. RENDER VIEW
   // ----------------------------------------------------------------
 
   if (loading)
@@ -615,13 +595,11 @@ const QuizPlay = ({ isRemedial = false }) => {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className={`bg-white rounded-[2rem] shadow-xl border overflow-hidden mb-6 text-center p-8 relative
-              ${
-                isPass
-                  ? "border-green-200 shadow-green-100"
-                  : "border-red-200 shadow-red-100"
-              }
-            `}
+            className={`bg-white rounded-[2rem] shadow-xl border overflow-hidden mb-6 text-center p-8 relative ${
+              isPass
+                ? "border-green-200 shadow-green-100"
+                : "border-red-200 shadow-red-100"
+            }`}
           >
             {isChallenge && (
               <div className="absolute top-4 left-0 w-full flex justify-center">
@@ -631,16 +609,13 @@ const QuizPlay = ({ isRemedial = false }) => {
               </div>
             )}
 
-            {/* Score Circle */}
             <div className="mt-6 mb-6 flex justify-center relative z-10">
               <div
-                className={`relative w-48 h-48 rounded-full flex flex-col items-center justify-center border-[8px] shadow-inner bg-white
-                    ${
-                      isPass
-                        ? "border-green-100 text-green-600"
-                        : "border-red-100 text-red-500"
-                    }
-               `}
+                className={`relative w-48 h-48 rounded-full flex flex-col items-center justify-center border-[8px] shadow-inner bg-white ${
+                  isPass
+                    ? "border-green-100 text-green-600"
+                    : "border-red-100 text-red-500"
+                }`}
               >
                 <span className="text-6xl font-black tracking-tighter">
                   {resultData.score}
@@ -655,36 +630,26 @@ const QuizPlay = ({ isRemedial = false }) => {
                     delay={0.3}
                     className="absolute -top-2 -right-2 bg-yellow-400 p-2 rounded-full shadow-lg border-4 border-white"
                   >
-                    <Trophy
-                      className="text-white"
-                      size={24}
-                      fill="currentColor"
-                    />
+                    <Trophy className="text-white" size={24} fill="currentColor" />
                   </motion.div>
                 )}
               </div>
             </div>
 
-            <h1
-              className={`text-2xl font-black mb-1 ${
-                isPass ? "text-slate-800" : "text-slate-700"
-              }`}
-            >
+            <h1 className={`text-2xl font-black mb-1 ${isPass ? "text-slate-800" : "text-slate-700"}`}>
               {isPass ? "Kerja Bagus!" : "Jangan Menyerah!"}
             </h1>
             <p className="text-slate-400 text-sm font-medium mb-6">
               Kamu telah menyelesaikan kuis ini.
             </p>
 
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
               <div className="text-center">
                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">
                   Waktu
                 </div>
                 <div className="font-bold text-slate-700 flex justify-center items-center gap-1">
-                  <Clock size={14} />{" "}
-                  {duration > 60 ? formatTime(duration) : `${duration}s`}
+                  <Clock size={14} /> {duration > 60 ? formatTime(duration) : `${duration}s`}
                 </div>
               </div>
               <div className="text-center border-l border-r border-slate-200">
@@ -705,16 +670,13 @@ const QuizPlay = ({ isRemedial = false }) => {
               </div>
             </div>
 
-            {/* Status Menunggu Lawan */}
             {isRealtime && (
               <div
-                className={`border p-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-6 transition-colors
-                  ${
-                    allDone
-                      ? "bg-green-50 border-green-200 text-green-700"
-                      : "bg-blue-50 border-blue-100 text-blue-600 animate-pulse"
-                  }
-              `}
+                className={`border p-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-6 transition-colors ${
+                  allDone
+                    ? "bg-green-50 border-green-200 text-green-700"
+                    : "bg-blue-50 border-blue-100 text-blue-600 animate-pulse"
+                }`}
               >
                 {allDone ? (
                   <>
@@ -722,8 +684,7 @@ const QuizPlay = ({ isRemedial = false }) => {
                   </>
                 ) : (
                   <>
-                    <Loader2 size={14} className="animate-spin" /> Menunggu
-                    lawan lain selesai...
+                    <Loader2 size={14} className="animate-spin" /> Menunggu lawan lain selesai...
                   </>
                 )}
               </div>
@@ -754,6 +715,19 @@ const QuizPlay = ({ isRemedial = false }) => {
             </div>
           </motion.div>
         </div>
+        
+        {/* Modals placed here */}
+        <StreakSuccessModal 
+            isOpen={showStreakModal}
+            onClose={() => setShowStreakModal(false)}
+            streakCount={streakModalData.count}
+            type={streakModalData.type}
+        />
+        <LevelUpModal
+          isOpen={showLevelUp}
+          onClose={() => setShowLevelUp(false)}
+          newLevel={newLevelData}
+        />
       </div>
     );
   }
@@ -761,26 +735,23 @@ const QuizPlay = ({ isRemedial = false }) => {
   // VIEW 2: GAMEPLAY
   const currentQ = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
-  const remainingTime =
-    timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
+  const remainingTime = timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
   const isUrgent = timeLimit > 0 && remainingTime < 30;
 
-  // Cek apakah user sudah menjawab (untuk enable tombol Next)
   const currentAnswer = answers[currentQ.ID];
   let isAnswered = false;
   if (Array.isArray(currentAnswer)) {
     isAnswered = currentAnswer.length > 0;
   } else {
-    isAnswered =
-      typeof currentAnswer === "string" && currentAnswer.trim().length > 0;
+    isAnswered = typeof currentAnswer === "string" && currentAnswer.trim().length > 0;
   }
 
   return (
     <div
-      className={`min-h-screen flex flex-col items-center justify-center px-4 pt-6 pb-10 transition-colors duration-500 
-        ${isUrgent ? "bg-red-50" : "bg-slate-50"}`}
+      className={`min-h-screen flex flex-col items-center justify-center px-4 pt-6 pb-10 transition-colors duration-500 ${
+        isUrgent ? "bg-red-50" : "bg-slate-50"
+      }`}
     >
-      {/* Top Bar */}
       <div className="w-full max-w-2xl flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <button
@@ -800,23 +771,15 @@ const QuizPlay = ({ isRemedial = false }) => {
           </div>
         </div>
         <div
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs border shadow-sm transition-all duration-300
-            ${
-              isUrgent
-                ? "bg-red-600 text-white border-red-600 animate-pulse scale-110"
-                : isRealtime
-                ? "bg-blue-50 text-blue-600 border-blue-100"
-                : "bg-white text-slate-600 border-slate-200"
-            }
-         `}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-xs border shadow-sm transition-all duration-300 ${
+            isUrgent
+              ? "bg-red-600 text-white border-red-600 animate-pulse scale-110"
+              : isRealtime
+              ? "bg-blue-50 text-blue-600 border-blue-100"
+              : "bg-white text-slate-600 border-slate-200"
+          }`}
         >
-          {isUrgent ? (
-            <AlertTriangle size={14} />
-          ) : isRealtime ? (
-            <Zap size={14} />
-          ) : (
-            <Clock size={14} />
-          )}
+          {isUrgent ? <AlertTriangle size={14} /> : isRealtime ? <Zap size={14} /> : <Clock size={14} />}
           <span className="tabular-nums">
             {timeLimit > 0 ? formatTime(remainingTime) : `${elapsedTime}s`}
           </span>
@@ -824,19 +787,15 @@ const QuizPlay = ({ isRemedial = false }) => {
       </div>
 
       <div className="w-full max-w-2xl">
-        {/* Progress Bar */}
         <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8 overflow-hidden">
           <motion.div
-            className={`h-full rounded-full ${
-              isUrgent ? "bg-red-500" : "bg-indigo-600"
-            }`}
+            className={`h-full rounded-full ${isUrgent ? "bg-red-500" : "bg-indigo-600"}`}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
           />
         </div>
 
-        {/* Hint Area */}
         <AnimatePresence>
           {showHint && (
             <motion.div
@@ -845,23 +804,15 @@ const QuizPlay = ({ isRemedial = false }) => {
               exit={{ opacity: 0, y: -10 }}
               className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mb-6 text-yellow-800 flex gap-3 shadow-sm"
             >
-              <Lightbulb
-                size={20}
-                className="shrink-0 mt-0.5 text-yellow-500"
-              />
+              <Lightbulb size={20} className="shrink-0 mt-0.5 text-yellow-500" />
               <div>
-                <p className="text-xs font-bold uppercase opacity-60 mb-1">
-                  Bantuan
-                </p>
-                <p className="text-sm font-medium leading-relaxed">
-                  {currentQ.hint}
-                </p>
+                <p className="text-xs font-bold uppercase opacity-60 mb-1">Bantuan</p>
+                <p className="text-sm font-medium leading-relaxed">{currentQ.hint}</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Question Card */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQ.ID}
@@ -885,7 +836,6 @@ const QuizPlay = ({ isRemedial = false }) => {
               )}
             </div>
 
-            {/* Label Jenis Soal */}
             <div className="mb-4">
               {currentQ.type === "short_answer" && (
                 <span className="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">
@@ -904,12 +854,10 @@ const QuizPlay = ({ isRemedial = false }) => {
               )}
             </div>
 
-            {/* PANGGIL RENDERER INPUT */}
             {renderAnswerInput(currentQ)}
           </motion.div>
         </AnimatePresence>
 
-        {/* Area Progress Lawan (Realtime) */}
         {isRealtime && Object.keys(opponentsProgress).length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -923,9 +871,7 @@ const QuizPlay = ({ isRemedial = false }) => {
             <div className="space-y-3">
               {Object.entries(opponentsProgress).map(([oppID, prog]) => {
                 const playerInfo = playersMap[oppID];
-                const displayName = playerInfo
-                  ? playerInfo.name
-                  : `Player ${oppID}`;
+                const displayName = playerInfo ? playerInfo.name : `Player ${oppID}`;
                 const isFriend = isTeammate(oppID);
                 const playerFinished = finishedPlayers[oppID];
                 return (
@@ -951,8 +897,7 @@ const QuizPlay = ({ isRemedial = false }) => {
                       </div>
                       {playerFinished ? (
                         <div className="h-5 bg-green-100 text-green-700 text-[10px] font-bold px-2 rounded-md flex items-center gap-1 w-fit border border-green-200">
-                          <Flag size={10} fill="currentColor" /> SELESAI (
-                          {playerFinished.score} Poin)
+                          <Flag size={10} fill="currentColor" /> SELESAI ({playerFinished.score} Poin)
                         </div>
                       ) : (
                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden relative">
@@ -976,7 +921,6 @@ const QuizPlay = ({ isRemedial = false }) => {
           </motion.div>
         )}
 
-        {/* Tombol Navigasi */}
         <div className="flex justify-between items-center mt-8">
           <button
             onClick={handlePrevious}
@@ -1006,11 +950,6 @@ const QuizPlay = ({ isRemedial = false }) => {
           </button>
         </div>
       </div>
-      <LevelUpModal
-        isOpen={showLevelUp}
-        onClose={() => setShowLevelUp(false)}
-        newLevel={newLevelData}
-      />
     </div>
   );
 };
