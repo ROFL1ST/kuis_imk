@@ -183,6 +183,20 @@ const LobbyModal = ({
     }
   }, [countdown, status]);
 
+  const handleLeaveLobby = async () => {
+    try {
+      await socialAPI.leaveLobby(challengeId);
+
+      if (eventSourceRef.current) eventSourceRef.current.close();
+
+      toast.success("Keluar dari lobby.");
+      onClose(); // Tutup modal
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal keluar lobby");
+    }
+  };
+
   const handleHostStart = async () => {
     setStartingGame(true);
     try {
@@ -198,7 +212,8 @@ const LobbyModal = ({
     <Modal
       isOpen={isOpen}
       noCloseButton={status !== "waiting"}
-      onClose={status === "waiting" ? onClose : () => {}}
+      // onClose={status === "waiting" ? onClose : () => {}}
+      onClose={() => {}}
       maxWidth="max-w-md"
     >
       <div className="text-center">
@@ -307,7 +322,12 @@ const LobbyModal = ({
                 <Loader2 className="animate-spin" size={18} /> Menunggu Host...
               </button>
             )}
-
+            <button
+              onClick={handleLeaveLobby}
+              className="w-full py-3 bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 rounded-xl font-bold transition flex items-center justify-center gap-2"
+            >
+              <LogOut size={18} /> Keluar Lobby
+            </button>
             {isHost &&
               lobbyPlayers.filter((p) => p.status === "accepted").length <
                 2 && (
