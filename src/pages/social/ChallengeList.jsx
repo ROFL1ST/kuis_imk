@@ -23,6 +23,7 @@ import {
   Trophy,
   Target,
   Coins,
+  LogOut,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
