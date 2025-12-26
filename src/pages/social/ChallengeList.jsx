@@ -325,7 +325,7 @@ const LobbyModal = ({
             )}
             <button
               onClick={handleLeaveLobby}
-              className="w-full py-3 bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 rounded-xl font-bold transition flex items-center justify-center gap-2"
+              className="w-full py-3 mt-2 bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 rounded-xl font-bold transition flex items-center justify-center gap-2"
             >
               <LogOut size={18} /> Keluar Lobby
             </button>
@@ -455,7 +455,7 @@ const ChallengeList = () => {
     }
   };
 
-  const handleEnterLobby = (id, title, creatorId, timeLimit) => {
+  const handleEnterLobby = async (id, title, creatorId, timeLimit) => {
     setLobbyModal({
       isOpen: true,
       challengeId: id,
@@ -463,6 +463,12 @@ const ChallengeList = () => {
       isHost: user.ID === creatorId,
       timeLimit: timeLimit,
     });
+
+    try {
+      await socialAPI.acceptChallenge(id);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleRejoinGame = (duel) => {
@@ -927,7 +933,7 @@ const ChallengeList = () => {
                 {!isFinished && !isRejected && (
                   <div className="px-5 pb-5 pt-2">
                     {/* KONDISI 1: Belum Terima (Pending) */}
-                    {myStatus === "pending" && (
+                    {myStatus === "pending" && !isMyCreated && (
                       <div className="flex flex-col gap-2">
                         {duel.wager_amount > 0 && (
                           <p className="text-[10px] text-center text-yellow-700 bg-yellow-50 p-1.5 rounded font-medium border border-yellow-100">
@@ -966,7 +972,22 @@ const ChallengeList = () => {
                         </div>
                       </div>
                     )}
-
+                    {myStatus === "pending" && isMyCreated && (
+                      <button
+                        onClick={() =>
+                          handleEnterLobby(
+                            duel.ID,
+                            duel.quiz?.title,
+                            duel.creator_id,
+                            duel.time_limit || 0
+                          )
+                        }
+                        className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg flex items-center justify-center gap-2 transition-all"
+                      >
+                        <LogIn size={20} />{" "}
+                        {isMyCreated ? "BUKA LOBBY (HOST)" : "MASUK LOBBY"}
+                      </button>
+                    )}
                     {/* KONDISI 2: Sudah Accepted, Belum Main */}
                     {myStatus === "accepted" && myScore === -1 && (
                       <>
