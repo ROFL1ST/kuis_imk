@@ -206,7 +206,7 @@ const Friends = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20 px-4">
+    <div className="max-w-6xl mx-auto space-y-8 pb-20 ">
       {/* === HEADER SECTION BARU (Gradient & Search) === */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 shadow-xl text-white relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
