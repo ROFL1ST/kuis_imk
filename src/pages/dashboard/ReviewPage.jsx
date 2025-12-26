@@ -1,5 +1,3 @@
-// src/pages/dashboard/ReviewPage.jsx
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -16,6 +14,7 @@ import {
 } from "lucide-react";
 import { quizAPI } from "../../services/api";
 import toast from "react-hot-toast";
+import Skeleton from "../../components/ui/Skeleton"; // Import Skeleton
 
 const ReviewPage = () => {
   const { historyId } = useParams();
@@ -47,15 +46,12 @@ const ReviewPage = () => {
     return `${m} menit ${s} detik`;
   };
 
-  // Helper untuk memformat tampilan jawaban
   const formatAnswer = (answer, type) => {
     if (!answer)
       return <span className="text-slate-400 italic">- Tidak Dijawab -</span>;
 
-    // Jika Multi Select, parsing JSON string ke Badge
     if (type === "multi_select") {
       try {
-        // Cek apakah answer sudah berupa array atau masih string JSON
         const ansArray = Array.isArray(answer) ? answer : JSON.parse(answer);
 
         if (ansArray.length === 0)
@@ -79,17 +75,60 @@ const ReviewPage = () => {
         );
       } catch (e) {
         console.error("Error parsing multi select answer", e);
-        return answer; // Fallback jika gagal parse
+        return answer;
       }
     }
 
     return answer;
   };
 
+  // --- SKELETON LOADING UI ---
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="max-w-4xl mx-auto pb-12 space-y-8 px-4 md:px-0">
+        {/* Back Button Skeleton */}
+        <Skeleton className="h-6 w-32 rounded-lg" />
+
+        {/* Summary Card Skeleton */}
+        <div className="rounded-3xl border border-slate-200 overflow-hidden bg-white">
+          <div className="p-6 sm:p-8 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-64 rounded-xl" /> {/* Title */}
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-32 rounded-full" /> {/* Date */}
+                  <Skeleton className="h-6 w-24 rounded-full" /> {/* Question Count */}
+                </div>
+              </div>
+              <Skeleton className="h-10 w-32 rounded-xl" /> {/* Timer Badge */}
+            </div>
+          </div>
+          
+          {/* Stats Grid Skeleton */}
+          <div className="p-6 sm:p-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+            ))}
+          </div>
+        </div>
+
+        {/* Detail List Skeleton */}
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48 rounded-lg" /> {/* Header "Detail Jawaban" */}
+          
+          {/* Loop Question Skeletons */}
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-6 rounded-2xl border border-slate-100 bg-white space-y-4">
+              <div className="flex justify-between">
+                <Skeleton className="h-6 w-16 rounded-lg" /> {/* Number */}
+                <Skeleton className="h-6 w-20 rounded-full" /> {/* Status Badge */}
+              </div>
+              <Skeleton className="h-6 w-full" /> {/* Question Line 1 */}
+              <Skeleton className="h-6 w-3/4" /> {/* Question Line 2 */}
+              <Skeleton className="h-24 w-full rounded-xl mt-4" /> {/* Answer Box */}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -106,30 +145,23 @@ const ReviewPage = () => {
   } = data;
   const isPass = score >= 70;
 
-  // Deteksi Duel Mode
   const isDuel = quiz_title.includes("[DUEL]");
   const cleanTitle = quiz_title.replace("[DUEL]", "").trim();
 
-  // Hitung Statistik Manual & Validasi Jawaban
   let correctCount = 0;
 
   const detailedAnswers = questions.map((q) => {
     const userAnswer = snapshot[String(q.ID)];
     let isCorrect = false;
 
-    // --- LOGIC PENILAIAN ---
     if (!userAnswer) {
       isCorrect = false;
     } else if (q.type === "short_answer") {
-      // Case Insensitive
       isCorrect =
         String(userAnswer).trim().toLowerCase() ===
         String(q.correct).trim().toLowerCase();
     } else if (q.type === "multi_select") {
-      // Array Comparison
       try {
-        // User answer bisa jadi string JSON dari DB, atau array mentah (tergantung kondisi snapshot)
-        // Biasanya dari DB snapshot tersimpan sebagai string JSON '["A","B"]'
         const userArr =
           typeof userAnswer === "string" ? JSON.parse(userAnswer) : userAnswer;
         const correctArr = JSON.parse(q.correct || "[]");
@@ -146,7 +178,6 @@ const ReviewPage = () => {
         isCorrect = false;
       }
     } else {
-      // Default (MCQ / Boolean) - Exact Match
       isCorrect = userAnswer === q.correct;
     }
 
@@ -204,11 +235,11 @@ const ReviewPage = () => {
 
             <div
               className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-bold text-sm
-                 ${
-                   isDuel
-                     ? "bg-white border-orange-200 text-orange-600 shadow-sm"
-                     : "bg-white border-indigo-200 text-indigo-600 shadow-sm"
-                 }`}
+                  ${
+                    isDuel
+                      ? "bg-white border-orange-200 text-orange-600 shadow-sm"
+                      : "bg-white border-indigo-200 text-indigo-600 shadow-sm"
+                  }`}
             >
               <Timer size={18} />
               {formatDuration(time_taken)}

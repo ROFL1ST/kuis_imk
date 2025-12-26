@@ -14,18 +14,30 @@ import {
   BrainCircuit,
   Globe,
   Play,
+  AlertTriangle, // Icon Warning
+  Loader2,       // Icon Loading
+  XCircle,       // Icon Weakness
+  ArrowRight
 } from "lucide-react";
 import { topicAPI, dailyAPI, quizAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import toast from "react-hot-toast";
 import Skeleton from "../../components/ui/Skeleton";
+import Modal from "../../components/ui/Modal"; // Pastikan Modal diimport
 
 const Dashboard = () => {
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  
+  // State Data Utama
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dailyData, setDailyData] = useState(null);
+
+  // State Modal Remedial & Analisis
+  const [showRemedialModal, setShowRemedialModal] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [weakTopics, setWeakTopics] = useState([]); 
 
   useEffect(() => {
     document.title = "Dashboard | QuizApp";
@@ -63,7 +75,7 @@ const Dashboard = () => {
 
       setDailyData((prev) => ({
         ...prev,
-        streak: { ...prev.streak, status: "claimed" }, // Update status tombol klaim
+        streak: { ...prev.streak, status: "claimed" },
       }));
       refreshProfile();
     } catch (error) {
@@ -88,63 +100,77 @@ const Dashboard = () => {
     }
   };
 
-  const startRemedial = async () => {
+  // --- LOGIC DIAGNOSIS REMEDIAL ---
+  const handleOpenRemedial = async () => {
+    setShowRemedialModal(true);
+    setAnalyzing(true);
+    setWeakTopics([]);
+
     try {
-      await quizAPI.getRemedial();
-      navigate("/play/remedial");
+      // 1. Fetch soal remedial dulu untuk diintip isinya
+      const res = await quizAPI.getRemedial();
+      const questions = res.data.data || [];
+
+      // 2. Ekstrak nama Quiz/Topik dari soal
+      // Note: Backend perlu Preload("Quiz") agar properti 'Quiz.Title' atau 'quiz.title' tersedia.
+      // Jika backend belum update, akan tampil "Materi Umum" atau "Quiz ID: ..."
+      const topicsFound = questions.map(q => {
+         // Cek berbagai kemungkinan struktur response (CamelCase/SnakeCase)
+         return q.Quiz?.Title || q.quiz?.title || q.Quiz?.title || (q.quiz_id ? `Quiz Materi #${q.quiz_id}` : "Materi Umum");
+      });
+
+      // Hilangkan duplikat
+      const uniqueTopics = [...new Set(topicsFound)];
+      
+      // Ambil maksimal 3 topik untuk ditampilkan
+      setWeakTopics(uniqueTopics.slice(0, 3)); 
+
     } catch (err) {
+      // Jika 404, artinya tidak ada remedial (User Aman)
       if (err.response && err.response.status === 404) {
-        toast.success("Kamu hebat! Tidak ada soal remedial saat ini.", {
+        setShowRemedialModal(false);
+        toast.success("Hebat! Tidak ada materi yang perlu diulang saat ini.", {
           icon: "🎉",
+          duration: 4000,
         });
       } else {
-        toast.error("Gagal memuat remedial.");
+        toast.error("Gagal menganalisis data remedial.");
+        setShowRemedialModal(false);
       }
+    } finally {
+      setAnalyzing(false);
     }
   };
 
-  const quizStreakCount =
-    dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
+  const startRemedial = () => {
+    setShowRemedialModal(false);
+    navigate("/play/remedial");
+  };
 
-  // Status pengerjaan hari ini (Boolean dari backend)
+  const quizStreakCount = dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
   const isQuizDoneToday = dailyData?.streak?.is_quiz_done ?? false;
-
-  // Mengambil 'day' yang merupakan urutan hari klaim hadiah
   const loginStreakDay = dailyData?.streak?.day ?? 1;
-
-  // Status tombol klaim (claimable / cooldown)
-  const isLoginRewardClaimed =
-    dailyData?.streak?.status === "cooldown" ||
-    dailyData?.streak?.status === "claimed";
+  const isLoginRewardClaimed = dailyData?.streak?.status === "cooldown" || dailyData?.streak?.status === "claimed";
 
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Skeleton Header Banner */}
         <Skeleton className="w-full h-48 md:h-64 rounded-3xl" />
-
-        {/* Skeleton Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-24 w-full" />
           ))}
         </div>
-
-        {/* Skeleton Topics Grid */}
         <div>
-          <Skeleton className="h-8 w-48 mb-6" /> {/* Judul Section */}
+          <Skeleton className="h-8 w-48 mb-6" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                {/* Icon Box */}
                 <Skeleton className="w-12 h-12 rounded-xl" />
-                {/* Title & Desc */}
                 <div className="space-y-2">
                   <Skeleton className="h-6 w-3/4" />
                   <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-1/2" />
                 </div>
-                {/* Button */}
                 <Skeleton className="h-10 w-full rounded-lg mt-2" />
               </div>
             ))}
@@ -194,7 +220,6 @@ const Dashboard = () => {
             {/* Bagian Atas: QUIZ STREAK (Activity) */}
             <div>
               <div className="flex items-center gap-2 mb-2 opacity-90">
-                {/* Api menyala jika streak > 0 ATAU hari ini sudah mengerjakan */}
                 <Flame
                   size={18}
                   className={
@@ -206,7 +231,6 @@ const Dashboard = () => {
                 <span className="font-bold">Mode Serius</span>
               </div>
 
-              {/* Angka ini adalah QUIZ Streak */}
               <h2 className="text-4xl font-black mb-1">
                 {quizStreakCount} Hari
               </h2>
@@ -214,7 +238,6 @@ const Dashboard = () => {
                 Streak Quiz Beruntun
               </p>
 
-              {/* Status Api (Sudah Latihan / Belum) */}
               <div
                 className={`mt-4 text-xs p-2 rounded-lg backdrop-blur-sm inline-block font-bold ${
                   isQuizDoneToday
@@ -332,7 +355,8 @@ const Dashboard = () => {
 
       {/* MENU PINTAR (Remedial & Komunitas) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 1. Smart Remedial (Active) */}
+        
+        {/* 1. Smart Remedial (Active with Modal Insight) */}
         <div className="bg-gradient-to-r from-rose-50 to-orange-50 rounded-2xl p-6 border border-rose-100 flex items-center justify-between shadow-sm relative overflow-hidden group">
           <div className="absolute right-0 top-0 w-32 h-32 bg-rose-200/20 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2"></div>
           <div className="relative z-10">
@@ -340,13 +364,14 @@ const Dashboard = () => {
               <BrainCircuit className="text-rose-500" /> Smart Remedial
             </h3>
             <p className="text-sm text-slate-500 mt-1 max-w-xs">
-              Pelajari ulang soal yang pernah salah.
+              AI akan mendeteksi kelemahanmu dan menyusun soal khusus.
             </p>
+            {/* Ubah onClick ke handleOpenRemedial */}
             <button
-              onClick={startRemedial}
+              onClick={handleOpenRemedial}
               className="mt-4 px-5 py-2 bg-white text-rose-600 font-bold rounded-lg shadow-sm border border-rose-100 hover:shadow-md transition text-sm cursor-pointer"
             >
-              Mulai Remedial
+              Analisis Kelemahan Saya
             </button>
           </div>
           <div className="hidden sm:block text-rose-200 relative z-0">
@@ -430,6 +455,67 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* --- MODAL DIAGNOSIS REMEDIAL --- */}
+      <Modal
+        isOpen={showRemedialModal}
+        onClose={() => setShowRemedialModal(false)}
+        maxWidth="max-w-md"
+      >
+        <div className="text-center">
+          {analyzing ? (
+            <div className="py-8">
+                <Loader2 size={48} className="animate-spin text-indigo-500 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-slate-700">Menganalisis Jawabanmu...</h3>
+                <p className="text-sm text-slate-400">Sistem sedang mencari topik yang perlu kamu ulang.</p>
+            </div>
+          ) : (
+            <>
+                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-bounce-slow">
+                    <AlertTriangle size={32} />
+                </div>
+                
+                <h2 className="text-2xl font-black text-slate-800 mb-2">Diagnosis Selesai</h2>
+                <p className="text-slate-500 text-sm mb-6 px-4">
+                   Kamu sering melakukan kesalahan pada topik-topik berikut:
+                </p>
+                
+                {/* Daftar Topik Lemah */}
+                <div className="bg-slate-50 rounded-xl p-4 text-left border border-slate-100 mb-6">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Fokus Perbaikan Hari Ini:</h4>
+                    <div className="space-y-2">
+                        {weakTopics.length > 0 ? weakTopics.map((topicName, idx) => (
+                            <div key={idx} className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                                <XCircle size={18} className="text-red-500 shrink-0" />
+                                <span className="font-bold text-slate-700 text-sm">{topicName}</span>
+                            </div>
+                        )) : (
+                            <div className="text-center text-slate-400 text-xs italic">
+                                Data spesifik tidak tersedia, tapi soal sudah siap dikerjakan!
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setShowRemedialModal(false)}
+                        className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition"
+                    >
+                        Nanti Saja
+                    </button>
+                    <button 
+                        onClick={startRemedial}
+                        className="flex-1 py-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-rose-200 transition flex items-center justify-center gap-2"
+                    >
+                        Mulai Perbaikan <ArrowRight size={18} />
+                    </button>
+                </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
     </div>
   );
 };

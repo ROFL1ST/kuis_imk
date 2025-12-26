@@ -175,3 +175,52 @@ html {
 .rounded-full {
   border-radius: 9999px !important;
 }
+
+
+/* streak */
+@keyframes frost-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.bg-frozen {
+  /* Menggunakan warna biru yang lebih 'dingin' dan solid agar kontras */
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%);
+  border-color: #4dd0e1 !important; /* Cyan border */
+  color: #00bcd4 !important; /* Cyan text */
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 188, 212, 0.2); /* Sedikit glow dingin */
+}
+
+.bg-frozen::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  /* Efek kilau es */
+  background: linear-gradient(
+    60deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.7) 50%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  background-size: 200% 100%;
+  animation: frost-shimmer 2.5s infinite linear;
+  opacity: 0.7;
+}
+
+/* Tambahan untuk custom scrollbar jika diperlukan di modal */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

@@ -1,10 +1,11 @@
+// src/components/ui/CalendarModal.jsx
+
 import React, { useState } from "react";
-import { X, ChevronLeft, ChevronRight, Check, Flame, Trophy, Calendar, TrendingUp } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Check, Flame, Trophy, Calendar, TrendingUp, Snowflake } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 }) => {
   const [displayDate, setDisplayDate] = useState(new Date());
-  // State baru untuk arah animasi (1 = Next/Kanan, -1 = Prev/Kiri)
   const [direction, setDirection] = useState(0); 
 
   if (!isOpen) return null;
@@ -17,8 +18,14 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
       day: "2-digit"
     }).format(date);
   };
+  
+  // Helper: Ambil tanggal kemarin (untuk cek streak putus)
+  const getPreviousDayString = (dateStr) => {
+      const date = new Date(dateStr);
+      date.setDate(date.getDate() - 1);
+      return getJakartaDateString(date);
+  };
 
-  // --- LOGIC KALENDER ---
   const year = displayDate.getFullYear();
   const month = displayDate.getMonth();
 
@@ -31,7 +38,6 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
   for (let i = 0; i < startingDay; i++) days.push(null);
   for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
 
-  // --- LOGIC STATISTIK ---
   const currentMonthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
   const activeDaysInMonth = activityDates.filter(date => date.startsWith(currentMonthPrefix)).length;
   const monthlyPercentage = Math.round((activeDaysInMonth / daysInMonth) * 100);
@@ -39,37 +45,65 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
   let motivationText = "Ayo mulai petualanganmu!";
   let barColor = "bg-slate-300";
   if (monthlyPercentage > 0) { motivationText = "Awal yang bagus!"; barColor = "bg-orange-300"; }
-  if (monthlyPercentage >= 30) { motivationText = "Konsistensi mulai terbentuk! 👍"; barColor = "bg-orange-400"; }
-  if (monthlyPercentage >= 60) { motivationText = "Kamu makin rajin nih! 🔥"; barColor = "bg-orange-500"; }
-  if (monthlyPercentage >= 90) { motivationText = "Luar biasa! Hampir sempurna! 🚀"; barColor = "bg-purple-500"; }
-  if (monthlyPercentage === 100) { motivationText = "Sempurna! Kamu Legenda! 🏆"; barColor = "bg-purple-600"; }
+  if (monthlyPercentage >= 30) { motivationText = "Konsistensi mulai terbentuk! 🔥"; barColor = "bg-orange-400"; }
+  if (monthlyPercentage >= 60) { motivationText = "Kamu makin rajin nih! ⚡"; barColor = "bg-orange-500"; }
+  if (monthlyPercentage >= 90) { motivationText = "Luar biasa! Hampir sempurna! 🌟"; barColor = "bg-purple-500"; }
+  if (monthlyPercentage === 100) { motivationText = "Sempurna! Kamu Legenda! 👑"; barColor = "bg-purple-600"; }
 
   const totalActiveDays = activityDates.length;
 
-  // --- HANDLERS DENGAN ANIMASI ---
   const prevMonth = () => {
-    setDirection(-1); // Set arah ke kiri
+    setDirection(-1); 
     setDisplayDate(new Date(year, month - 1, 1));
   };
   
   const nextMonth = () => {
-    setDirection(1); // Set arah ke kanan
+    setDirection(1); 
     setDisplayDate(new Date(year, month + 1, 1));
   };
 
-  const isDateActive = (dateObj) => {
-    if (!dateObj) return false;
-    return activityDates.includes(getJakartaDateString(dateObj));
-  };
-  const isToday = (dateObj) => {
-    if (!dateObj) return false;
-    return getJakartaDateString(dateObj) === getJakartaDateString(new Date());
+  const isDateActive = (dateStr) => {
+    return activityDates.includes(dateStr);
   };
 
-  // --- VARIANTS ANIMASI SLIDE ---
+  const isToday = (dateStr) => {
+    return dateStr === getJakartaDateString(new Date());
+  };
+
+  // --- LOGIKA UTAMA: TENTUKAN STATUS HARI ---
+  const getDayStatus = (dateObj) => {
+    if (!dateObj) return { type: 'empty' };
+    
+    const dateStr = getJakartaDateString(dateObj);
+    const todayStr = getJakartaDateString(new Date());
+    
+    // 1. Hari Aktif (Api Menyala)
+    if (isDateActive(dateStr)) {
+        return { type: 'active' };
+    }
+
+    // 2. Hari Ini (Belum Dikerjakan)
+    if (dateStr === todayStr) {
+        return { type: 'today_inactive' }; 
+    }
+    
+    // 3. Hari Lewat (Cek apakah 'Frozen' atau 'Padam')
+    if (dateStr < todayStr) {
+        // Cek hari sebelumnya. Jika hari sebelumnya AKTIF, maka hari ini adalah TITIK PUTUS (Frozen).
+        // Jika hari sebelumnya TIDAK AKTIF, maka api sudah padam sebelumnya (Inactive Normal).
+        const prevDayStr = getPreviousDayString(dateStr);
+        if (isDateActive(prevDayStr)) {
+             return { type: 'frozen' }; // Efek Es
+        }
+        return { type: 'inactive_past' }; // Biasa
+    }
+
+    return { type: 'future' };
+  };
+
   const slideVariants = {
     enter: (direction) => ({
-      x: direction > 0 ? 20 : -20, // Masuk dari kanan jika next, kiri jika prev
+      x: direction > 0 ? 20 : -20,
       opacity: 0,
     }),
     center: {
@@ -77,7 +111,7 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
       opacity: 1,
     },
     exit: (direction) => ({
-      x: direction > 0 ? -20 : 20, // Keluar ke kiri jika next, kanan jika prev
+      x: direction > 0 ? -20 : 20,
       opacity: 0,
     }),
   };
@@ -90,7 +124,7 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         className="bg-white w-full max-w-sm md:max-w-md rounded-[32px] shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]"
       >
-        {/* HEADER MODAL */}
+        {/* HEADER */}
         <div className="bg-slate-50 p-5 border-b border-slate-100 flex justify-between items-center shrink-0 z-10 relative">
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center border-2 border-orange-200 text-orange-500 shadow-sm">
@@ -106,19 +140,15 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
             </button>
         </div>
 
-        {/* SCROLLABLE CONTENT */}
+        {/* CONTENT */}
         <div className="overflow-y-auto custom-scrollbar relative">
-            
-            {/* BAGIAN 1: KALENDER (DIBUNGKUS ANIMASI) */}
             <div className="p-6 pb-2">
-                {/* Header Kontrol Bulan (Tetap Static agar tidak ikut gerak, hanya teks bulan yg gerak kalau mau, tapi disini kita gerakkan isinya saja agar layout stabil) */}
                 <div className="flex justify-between items-center mb-6 px-1">
                     <button onClick={prevMonth} className="w-9 h-9 flex items-center justify-center border rounded-xl hover:bg-slate-50 text-slate-500 transition shadow-sm active:scale-95"><ChevronLeft size={20}/></button>
                     
-                    {/* AnimatePresence untuk Nama Bulan */}
                     <AnimatePresence mode="wait" custom={direction}>
                         <motion.h3 
-                            key={monthName} // Key berubah -> trigger animasi
+                            key={monthName}
                             custom={direction}
                             variants={slideVariants}
                             initial="enter"
@@ -142,38 +172,54 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
                     ))}
                 </div>
 
-                {/* ANIMASI GRID TANGGAL */}
-                <div className="min-h-[240px]"> {/* Min-height agar modal tidak 'jump' saat ganti bulan */}
+                <div className="min-h-[240px]">
                     <AnimatePresence mode="wait" custom={direction}>
                         <motion.div 
-                            key={displayDate.toISOString()} // Key unik per bulan
+                            key={displayDate.toISOString()}
                             custom={direction}
                             variants={slideVariants}
                             initial="enter"
                             animate="center"
                             exit="exit"
-                            transition={{ duration: 0.2 }} // Durasi cepat agar snappy
+                            transition={{ duration: 0.2 }}
                             className="grid grid-cols-7 gap-2"
                         >
                             {days.map((dateObj, idx) => {
-                                if (!dateObj) return <div key={idx} />; 
+                                if (!dateObj) return <div key={idx} />;
+                                
+                                const status = getDayStatus(dateObj);
+                                let containerClass = "bg-transparent border-transparent text-slate-300";
+                                let content = dateObj.getDate();
+                                let showMarker = false;
 
-                                const active = isDateActive(dateObj);
-                                const today = isToday(dateObj);
+                                switch (status.type) {
+                                    case 'active':
+                                        containerClass = "bg-gradient-to-b from-orange-400 to-orange-500 border-orange-500 text-white shadow-md shadow-orange-200";
+                                        content = <Check size={16} strokeWidth={4} />;
+                                        break;
+                                    case 'frozen':
+                                        containerClass = "bg-frozen"; 
+                                        content = <Snowflake size={16} className="animate-pulse" />;
+                                        break;
+                                    case 'today_inactive':
+                                        containerClass = "bg-white border-orange-300 border-dashed text-orange-500";
+                                        showMarker = true;
+                                        break;
+                                    case 'inactive_past':
+                                        containerClass = "bg-slate-50 border-slate-100 text-slate-400"; 
+                                        break;
+                                    default:
+                                        containerClass = "bg-transparent border-transparent text-slate-600 hover:bg-slate-50";
+                                }
 
                                 return (
                                     <div key={idx} className="flex flex-col items-center">
                                         <div className={`
-                                            w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all cursor-default relative
-                                            ${active 
-                                                ? "bg-gradient-to-b from-orange-400 to-orange-500 border-orange-500 text-white shadow-md shadow-orange-200" 
-                                                : today 
-                                                    ? "bg-white border-orange-300 border-dashed text-orange-500" 
-                                                    : "bg-transparent border-transparent text-slate-600 hover:bg-slate-50"
-                                            }
+                                            w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all cursor-default relative overflow-hidden
+                                            ${containerClass}
                                         `}>
-                                            {active ? <Check size={16} strokeWidth={4} /> : dateObj.getDate()}
-                                            {today && !active && <div className="absolute w-1.5 h-1.5 bg-orange-500 rounded-full -bottom-1"></div>}
+                                            {content}
+                                            {showMarker && <div className="absolute w-1.5 h-1.5 bg-orange-500 rounded-full -bottom-1"></div>}
                                         </div>
                                     </div>
                                 );
@@ -183,7 +229,7 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
                 </div>
             </div>
 
-            {/* BAGIAN 2: STATISTIK BULANAN (IKUT ANIMASI GANTI BULAN) */}
+            {/* STATS */}
             <div className="px-6 pb-6">
                  <AnimatePresence mode="wait" custom={direction}>
                     <motion.div
@@ -193,10 +239,9 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
                         initial="enter"
                         animate="center"
                         exit="exit"
-                        transition={{ duration: 0.2, delay: 0.05 }} // Sedikit delay agar efek 'cascade'
+                        transition={{ duration: 0.2, delay: 0.05 }}
                         className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-4"
                     >
-                        {/* Progress Bar Bulan Ini */}
                         <div>
                             <div className="flex justify-between items-end mb-2">
                                 <div className="flex items-center gap-2">
@@ -220,7 +265,6 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
 
                         <div className="h-px bg-slate-200 border-dashed"></div>
 
-                        {/* Stats Bawah */}
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-sm text-yellow-500">
@@ -247,7 +291,6 @@ const CalendarModal = ({ isOpen, onClose, activityDates = [], currentStreak = 0 
 
         </div>
 
-        {/* FOOTER KECIL */}
         <div className="p-3 bg-slate-50 border-t border-slate-100 text-center shrink-0 z-10 relative">
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                 Keep the fire burning! 🔥

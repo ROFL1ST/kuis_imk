@@ -45,7 +45,7 @@ export const authAPI = {
 
 // Topic & Quiz Endpoints
 export const topicAPI = {
-  getAllTopics: () => api.get("/topics"), // 
+  getAllTopics: () => api.get("/topics"), //
   getQuizzesBySlug: (slug) => api.get(`/topics/${slug}/quizzes`), //
 };
 
@@ -92,6 +92,7 @@ export const socialAPI = {
   startGame: (challengeId) => api.post(`/challenges/${challengeId}/start`),
   postProgress: (challengeId, progressData) =>
     api.post(`/challenges/${challengeId}/progress`, progressData),
+  leaveLobby: (id) => api.post(`/challenges/${id}/leave`),
 };
 
 // User Profile Endpoints

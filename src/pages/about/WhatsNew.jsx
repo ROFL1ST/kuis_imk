@@ -51,11 +51,32 @@ const WhatsNew = () => {
 
   const updates = [
     {
+      version: "1.5.3",
+      date: "26 Des 2025",
+      title: "Leave Lobby, Bug Fixes & Performance Improvements",
+      highlight: true,
+      changes: [
+        {
+          type: "new",
+          text: "Fitur Leave Lobby: Kini kamu bisa keluar dari lobi tantangan sebelum memulai duel tanpa harus menunggu lawan.",
+        },
+        {
+          type: "improvement",
+          text: "Peningkatan Performa Aplikasi: Optimalisasi kode untuk pengalaman pengguna yang lebih lancar dan responsif.",
+        },
+        {
+          type: "fix",
+          text: "Perbaikan bug minor dan peningkatan performa aplikasi secara keseluruhan.",
+        },
+      ],
+    },
+    {
       version: "1.5.2",
       date: "24 Des 2025",
       title: "Visual Overhaul: Skeleton, Inventory & 3D Avatars",
-      highlight: true,
-      description: "Pembaruan fokus pada keindahan visual dan kenyamanan pengguna. Aplikasi kini terasa lebih cepat dan hidup!",
+      highlight: false,
+      description:
+        "Pembaruan fokus pada keindahan visual dan kenyamanan pengguna. Aplikasi kini terasa lebih cepat dan hidup!",
       changes: [
         {
           type: "new",
