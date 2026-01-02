@@ -27,9 +27,10 @@ import { useState, useRef, useEffect } from "react";
 import Modal from "../ui/Modal";
 import UserAvatar from "../ui/UserAvatar";
 import StreakHoverCard from "../ui/StreakHoverCard";
-import { dailyAPI, userAPI } from "../../services/api";
-import { AnimatePresence, motion } from "framer-motion";
 import CalendarModal from "../ui/CalendarModal";
+import AnnouncementModal from "../ui/AnnouncementModal"; // Import Modal
+import { dailyAPI, userAPI, notificationAPI } from "../../services/api"; // Import notificationAPI
+import { AnimatePresence, motion } from "framer-motion";
 
 const Navbar = () => {
   const { user, logout, unreadCount } = useAuth();
@@ -43,6 +44,8 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [announcementData, setAnnouncementData] = useState(null); // State Data Announcement
+  const [showAnnouncement, setShowAnnouncement] = useState(false); // State Visibility Modal
 
   const [showFullCalendar, setShowFullCalendar] = useState(false);
   const dropdownRef = useRef(null);
@@ -83,6 +86,29 @@ const Navbar = () => {
         }
       };
       fetchData();
+      fetchData();
+
+      // Fetch Announcement
+      const fetchAnnouncement = async () => {
+        try {
+          const res = await notificationAPI.getAnnouncements();
+          // Backend returns array, sorted by created_at desc. Take the first one.
+          const latest = res.data.data?.[0];
+
+          if (latest) {
+            // Check if already seen locally
+            const lastSeenId = localStorage.getItem("last_seen_announcement");
+            if (lastSeenId !== String(latest.id)) {
+              setAnnouncementData(latest);
+              setShowAnnouncement(true);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch announcement:", error);
+        }
+      };
+
+      fetchAnnouncement();
     }
   }, [user]);
 
@@ -90,6 +116,16 @@ const Navbar = () => {
     logout();
     setIsLogoutModalOpen(false);
     navigate("/login");
+  };
+
+  const handleCloseAnnouncement = () => {
+    setShowAnnouncement(false);
+    if (announcementData) {
+      localStorage.setItem(
+        "last_seen_announcement",
+        String(announcementData.id)
+      );
+    }
   };
 
   return (
@@ -186,7 +222,7 @@ const Navbar = () => {
 
             {/* Desktop Level */}
             <div className="flex items-center gap-1 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold border border-indigo-100">
-              <Star size={14} fill="currentColor" /> Lvl {user?.level || 1}
+              <Star size={14} fill="currentColor" /> Level {user?.level || 1}
             </div>
 
             {/* Desktop Coin */}
@@ -297,7 +333,7 @@ const Navbar = () => {
             {/* 2. Level Badge (BAGUS / PREMIUM LOOK) */}
             <div className="flex items-center gap-1 bg-indigo-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-indigo-200 border border-indigo-500">
               <Star size={12} fill="#fbbf24" className="text-yellow-400" />
-              <span>Lvl {user?.level || 1}</span>
+              <span>Level {user?.level || 1}</span>
             </div>
 
             {/* 3. Coin */}
@@ -543,6 +579,13 @@ const Navbar = () => {
           </button>
         </div>
       </Modal>
+
+      {/* Announcement Modal (Global) */}
+      <AnnouncementModal
+        isOpen={showAnnouncement}
+        onClose={handleCloseAnnouncement}
+        announcement={announcementData}
+      />
     </>
   );
 };

@@ -51,9 +51,17 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   const { user, setUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  // Classroom Context
+  const assignmentId = location.state?.assignmentId || null;
+  const classroomId = location.state?.classroomId || null;
+  const classroomName = location.state?.classroomName || null;
+
+  const originalTitle = location.state?.title || "Kuis";
   const quizTitle = isRemedial
     ? "Smart Remedial (Perbaikan)"
-    : location.state?.title || "Kuis";
+    : classroomName
+    ? `${originalTitle} (Class: ${classroomName})`
+    : originalTitle;
 
   const isChallenge = location.state?.isChallenge || false;
   const isRealtime = location.state?.isRealtime || false;
@@ -352,7 +360,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         const data = res.data.data;
         if (res.data.message === "Correct!" || data.next_question) {
           // Correct Answer
-          toast.success(`Benar! Streak: ${data.new_streak}`, { icon: "🔥" });
+          toast.success(`Benar! Runtunan: ${data.new_streak}`, { icon: "🔥" });
 
           // Process Next Question
           const q = data.next_question;
@@ -572,6 +580,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       time_taken: timeTaken,
       challenge_id: challengeID,
       question_ids: questions.map((q) => q.ID),
+      assignment_id: assignmentId ? parseInt(assignmentId) : null, // New
+      classroom_id: classroomId ? parseInt(classroomId) : null, // New
     };
 
     try {
@@ -838,7 +848,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                   {isSurvival ? resultData.correct : resultData.score}
                 </span>
                 <span className="text-xs font-bold tracking-widest opacity-60 mt-1">
-                  {isSurvival ? "ROUNDS" : "POIN"}
+                  {isSurvival ? "RONDE" : "POIN"}
                 </span>
                 {isPass && (
                   <motion.div
@@ -864,8 +874,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             >
               {isSurvival
                 ? isPass
-                  ? "Great Run!"
-                  : "Survival Over"
+                  ? "Luar Biasa!"
+                  : "Permainan Berakhir"
                 : isPass
                 ? "Kerja Bagus!"
                 : "Jangan Menyerah!"}
@@ -952,7 +962,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                 <div className="w-4 h-4">
                   <Flame size={16} />
                 </div>{" "}
-                Rate this Quiz
+                Beri Nilai Kuis
               </button>
             </div>
           </motion.div>
@@ -1098,6 +1108,13 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                   <Lightbulb size={20} />
                 </button>
               )}
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="p-2 rounded-full bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 transition shrink-0"
+                title="Laporkan Soal"
+              >
+                <Flag size={20} />
+              </button>
             </div>
 
             <div className="mb-4">

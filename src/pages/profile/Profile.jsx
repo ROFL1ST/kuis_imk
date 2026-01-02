@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
 import UserAvatar from "../../components/ui/UserAvatar"; // [BARU] Import UserAvatar
+import ReportModal from "../../components/ui/ReportModal"; // [BARU] Import ReportModal
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -42,6 +43,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isImageHover, setIsImageHover] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false); // State Report Modal
 
   // State khusus Friend Status ("none", "pending", "friend")
   const [friendStatus, setFriendStatus] = useState("none");
@@ -381,7 +383,7 @@ const Profile = () => {
                   animate={isImageHover ? { scale: 1.1 } : { scale: 1 }}
                   className="absolute z-20 -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-sm font-bold px-3 py-1.5 rounded-full border-4 border-white shadow-lg flex items-center gap-1"
                 >
-                  <Crown size={12} /> Lvl {currentLevel}
+                  <Crown size={12} /> Level {currentLevel}
                 </motion.div>
               </div>
 
@@ -504,7 +506,11 @@ const Profile = () => {
                         </motion.button>
                       )}
 
-                      <button className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 hover:text-red-500 transition">
+                      <button
+                        onClick={() => setShowReportModal(true)}
+                        className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 hover:text-red-500 transition"
+                        title="Laporkan User"
+                      >
                         <Flag size={20} />
                       </button>
                     </>
@@ -535,7 +541,7 @@ const Profile = () => {
                   >
                     <Target className="text-orange-600" size={18} />
                     <span className="font-bold text-orange-700">
-                      {user.streak_count || 0} Hari Streak
+                      {user.streak_count || 0} Runtunan
                     </span>
                   </motion.div>
                 )}
@@ -732,7 +738,7 @@ const Profile = () => {
                     label="Status"
                     value={
                       <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">
-                        <CheckCircle size={12} /> Active User
+                        <CheckCircle size={12} /> Pengguna Aktif
                       </span>
                     }
                     isComponent
@@ -770,7 +776,7 @@ const Profile = () => {
                   <Crown size={20} />
                 </div>
                 <span className="text-sm font-bold text-slate-400 uppercase">
-                  Wins
+                  Menang
                 </span>
               </div>
               <p className="text-2xl font-black text-slate-800">
@@ -783,7 +789,7 @@ const Profile = () => {
                   <BrainCircuit size={20} />
                 </div>
                 <span className="text-sm font-bold text-slate-400 uppercase">
-                  Quizzes
+                  Kuis
                 </span>
               </div>
               <p className="text-2xl font-black text-slate-800">
@@ -943,6 +949,13 @@ const Profile = () => {
           </Modal>
         )}
       </AnimatePresence>
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetId={profileData?.user?.id}
+        targetType="user"
+      />
     </motion.div>
   );
 };

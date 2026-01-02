@@ -18,9 +18,11 @@ const ClassroomList = () => {
   const fetchClassrooms = async () => {
     try {
       const res = await classroomAPI.getMyClassrooms();
-      if (res.data.success) {
+      if (res.data.status === "success") {
         setClassrooms(res.data.data);
-      }
+      } else {
+        toast.error(res.data.message);
+      } 
     } catch (error) {
       console.error("Failed to fetch classrooms", error);
     } finally {
@@ -34,10 +36,10 @@ const ClassroomList = () => {
 
     try {
       const loadingToast = toast.loading("Joining class...");
-      const res = await classroomAPI.joinClassroom(joinCode);
+      const res = await classroomAPI.joinClassroom(joinCode.toLowerCase());
       toast.dismiss(loadingToast);
 
-      if (res.data.success) {
+      if (res.data.status === "success" ) {
         toast.success("Joined classroom successfully!");
         setShowJoinModal(false);
         setJoinCode("");
@@ -84,7 +86,7 @@ const ClassroomList = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classrooms.map((classroom, index) => (
+          {classrooms.joining.map((classroom, index) => (
             <motion.div
               key={classroom.ID}
               initial={{ opacity: 0, y: 20 }}

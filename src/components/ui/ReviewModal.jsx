@@ -12,7 +12,7 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (rating === 0) return toast.error("Please select a rating");
+    if (rating === 0) return toast.error("Mohon pilih penilaian");
 
     setLoading(true);
     try {
@@ -22,13 +22,13 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
       });
 
       if (res.data.success) {
-        toast.success("Thanks for your feedback!", { icon: "⭐" });
+        toast.success("Terima kasih atas masukan Anda!", { icon: "⭐" });
         onClose();
         setRating(0);
         setComment("");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to submit review");
+      toast.error(error.response?.data?.message || "Gagal mengirim ulasan");
     } finally {
       setLoading(false);
     }
@@ -58,9 +58,11 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
                     <Star className="w-5 h-5 text-yellow-600 fill-yellow-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Rate this Quiz</h3>
+                    <h3 className="font-bold text-gray-900">
+                      Beri Nilai Kuis Ini
+                    </h3>
                     <p className="text-xs text-gray-500 font-medium mt-0.5">
-                      Share your experience
+                      Bagikan pengalaman Anda
                     </p>
                   </div>
                 </div>
@@ -96,13 +98,13 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
 
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Comment (Optional)
+                    Komentar (Opsional)
                   </label>
                   <div className="relative">
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      placeholder="What did you think about the questions?"
+                      placeholder="Apa pendapat Anda tentang soal-soalnya?"
                       className="w-full p-3 pl-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none resize-none h-24 text-gray-700"
                     />
                     <MessageSquare className="absolute top-3.5 left-3 w-4 h-4 text-gray-400" />
@@ -114,7 +116,7 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
                   disabled={loading}
                   className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-yellow-500/30"
                 >
-                  {loading ? "Submitting..." : "Submit Review"}
+                  {loading ? "Mengirim..." : "Kirim Ulasan"}
                 </button>
               </form>
             </div>

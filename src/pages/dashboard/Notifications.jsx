@@ -19,6 +19,8 @@ import Skeleton from "../../components/ui/Skeleton";
 
 const Notifications = () => {
   const [notifs, setNotifs] = useState([]);
+  const [announcements, setAnnouncements] = useState([]); // State Broadcasts
+  const [activeTab, setActiveTab] = useState("notifications"); // Tab State
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
@@ -39,9 +41,28 @@ const Notifications = () => {
     }
   };
 
+  // Fetch Broadcasts
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await notificationAPI.getAnnouncements();
+      setAnnouncements(res.data.data || []);
+    } catch (error) {
+      console.error("Failed fetch announcements", error);
+    }
+  };
+
   useEffect(() => {
     fetchNotifs();
   }, []);
+
+  // Polling Realtime Broadcasts (Every 15s) only when tab is active
+  useEffect(() => {
+    if (activeTab === "broadcasts") {
+      fetchAnnouncements(); // Fetch immediately on switch
+      const interval = setInterval(fetchAnnouncements, 15000); // 15s Polling
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
 
   // 2. Logic Realtime Stream (SSE)
   useEffect(() => {
@@ -220,8 +241,35 @@ const Notifications = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        {notifs.length > 0 && (
+        {/* TABS */}
+        <div className="flex bg-slate-100 p-1 rounded-xl">
+          <button
+            onClick={() => setActiveTab("notifications")}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition ${
+              activeTab === "notifications"
+                ? "bg-white text-indigo-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Notifikasi
+          </button>
+          <button
+            onClick={() => setActiveTab("broadcasts")}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 ${
+              activeTab === "broadcasts"
+                ? "bg-white text-indigo-600 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Siaran{" "}
+            <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">
+              Live
+            </span>
+          </button>
+        </div>
+
+        {/* Action Buttons (Only for Notifs) */}
+        {activeTab === "notifications" && notifs.length > 0 && (
           <div className="flex items-center gap-2 self-start md:self-auto w-full md:w-auto">
             {/* Tombol Baca Semua */}
             <button
@@ -245,88 +293,173 @@ const Notifications = () => {
       </div>
 
       {/* --- LIST NOTIFIKASI --- */}
-      <div className="space-y-3">
-        {notifs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 md:py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-4">
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
-              <Bell size={28} />
+      {activeTab === "notifications" ? (
+        <div className="space-y-3">
+          {notifs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 md:py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-4">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
+                <Bell size={28} />
+              </div>
+              <h3 className="font-bold text-slate-700 text-base md:text-lg">
+                Tidak ada notifikasi
+              </h3>
+              <p className="text-slate-400 text-xs md:text-sm mt-1">
+                Saat ini belum ada update baru untukmu.
+              </p>
             </div>
-            <h3 className="font-bold text-slate-700 text-base md:text-lg">
-              Tidak ada notifikasi
-            </h3>
-            <p className="text-slate-400 text-xs md:text-sm mt-1">
-              Saat ini belum ada update baru untukmu.
-            </p>
-          </div>
-        ) : (
-          <AnimatePresence>
-            {notifs.map((n) => {
-              const style = getStyle(n.type);
-              return (
-                <motion.div
-                  key={n.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  onClick={() => handleMarkRead(n.id, n.link)}
-                  className={`relative p-4 md:p-5 rounded-2xl border cursor-pointer transition-all duration-300 hover:shadow-md active:scale-[0.99] ${
-                    n.is_read
-                      ? "bg-white border-slate-100 opacity-80"
-                      : `border-transparent shadow-sm ${style.bg}`
-                  }`}
-                >
-                  <div className="flex gap-3 md:gap-4">
-                    {/* Icon */}
-                    <div
-                      className={`mt-0.5 flex-shrink-0 ${
-                        n.is_read ? "grayscale opacity-50" : ""
-                      }`}
-                    >
-                      {style.icon}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      {" "}
-                      {/* min-w-0 prevents flex items from overflowing */}
-                      <div className="flex justify-between items-start gap-2">
-                        <h4
-                          className={`font-bold text-sm md:text-base truncate w-full ${
-                            n.is_read ? "text-slate-600" : "text-slate-800"
-                          }`}
-                        >
-                          {n.title}
-                        </h4>
-                        {!n.is_read && (
-                          <span className="w-2 h-2 bg-red-500 rounded-full shrink-0 animate-pulse mt-1.5"></span>
-                        )}
-                      </div>
-                      <p
-                        className={`text-xs md:text-sm mt-1 leading-relaxed line-clamp-2 md:line-clamp-none ${
-                          n.is_read ? "text-slate-400" : "text-slate-600"
+          ) : (
+            <AnimatePresence>
+              {notifs.map((n) => {
+                const style = getStyle(n.type);
+                return (
+                  <motion.div
+                    key={n.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    onClick={() => handleMarkRead(n.id, n.link)}
+                    className={`relative p-4 md:p-5 rounded-2xl border cursor-pointer transition-all duration-300 hover:shadow-md active:scale-[0.99] ${
+                      n.is_read
+                        ? "bg-white border-slate-100 opacity-80"
+                        : `border-transparent shadow-sm ${style.bg}`
+                    }`}
+                  >
+                    <div className="flex gap-3 md:gap-4">
+                      {/* Icon */}
+                      <div
+                        className={`mt-0.5 flex-shrink-0 ${
+                          n.is_read ? "grayscale opacity-50" : ""
                         }`}
                       >
-                        {n.message}
-                      </p>
-                      <div className="mt-2.5 flex items-center justify-between">
-                        <span className="text-[10px] md:text-xs text-slate-400 flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-full w-fit">
-                          <Clock size={10} /> {timeAgo(n.created_at)}
-                        </span>
-                        {n.link && (
-                          <span className="text-[10px] md:text-xs font-bold text-indigo-500 hover:underline">
-                            Buka &rarr;
+                        {style.icon}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        {" "}
+                        {/* min-w-0 prevents flex items from overflowing */}
+                        <div className="flex justify-between items-start gap-2">
+                          <h4
+                            className={`font-bold text-sm md:text-base truncate w-full ${
+                              n.is_read ? "text-slate-600" : "text-slate-800"
+                            }`}
+                          >
+                            {n.title}
+                          </h4>
+                          {!n.is_read && (
+                            <span className="w-2 h-2 bg-red-500 rounded-full shrink-0 animate-pulse mt-1.5"></span>
+                          )}
+                        </div>
+                        <p
+                          className={`text-xs md:text-sm mt-1 leading-relaxed line-clamp-2 md:line-clamp-none ${
+                            n.is_read ? "text-slate-400" : "text-slate-600"
+                          }`}
+                        >
+                          {n.message}
+                        </p>
+                        <div className="mt-2.5 flex items-center justify-between">
+                          <span className="text-[10px] md:text-xs text-slate-400 flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-full w-fit">
+                            <Clock size={10} /> {timeAgo(n.CreatedAt)}
                           </span>
-                        )}
+                          {n.link && (
+                            <span className="text-[10px] md:text-xs font-bold text-indigo-500 hover:underline">
+                              Buka &rarr;
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          )}
+        </div>
+      ) : (
+        /* --- LIST BROADCASTS --- */
+        <div className="space-y-4">
+          {announcements.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 md:py-16 bg-white rounded-3xl border border-slate-100 shadow-sm text-center px-4">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
+                <Bell size={28} />
+              </div>
+              <h3 className="font-bold text-slate-700 text-base md:text-lg">
+                Belum ada siaran
+              </h3>
+              <p className="text-slate-400 text-xs md:text-sm mt-1">
+                Admin belum mengirimkan pengumuman apapun.
+              </p>
+            </div>
+          ) : (
+            announcements.map((ann) => {
+              // Reuse getStyle logic or simplified version
+              let icon, borderColor, bgIcon, textIcon, stripeColor;
+              switch (ann.type) {
+                case "success":
+                  borderColor = "border-green-100";
+                  stripeColor = "bg-green-500";
+                  bgIcon = "bg-green-50";
+                  textIcon = "text-green-600";
+                  icon = <CheckCircle size={20} />;
+                  break;
+                case "warning":
+                  borderColor = "border-orange-100";
+                  stripeColor = "bg-orange-500";
+                  bgIcon = "bg-orange-50";
+                  textIcon = "text-orange-600";
+                  icon = <AlertTriangle size={20} />;
+                  break;
+                case "danger":
+                  borderColor = "border-red-100";
+                  stripeColor = "bg-red-500";
+                  bgIcon = "bg-red-50";
+                  textIcon = "text-red-600";
+                  icon = <AlertTriangle size={20} />;
+                  break;
+                default:
+                  borderColor = "border-indigo-100";
+                  stripeColor = "bg-indigo-500";
+                  bgIcon = "bg-indigo-50";
+                  textIcon = "text-indigo-600";
+                  icon = <Bell size={20} />;
+                  break;
+              }
+
+              return (
+                <div
+                  key={ann.id}
+                  className={`bg-white p-5 rounded-2xl border ${borderColor} shadow-sm relative overflow-hidden`}
+                >
+                  <div
+                    className={`absolute top-0 left-0 w-1 h-full ${stripeColor}`}
+                  ></div>
+                  <div className="flex gap-4">
+                    <div
+                      className={`mt-1 ${bgIcon} p-2 rounded-full h-fit ${textIcon}`}
+                    >
+                      {icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-bold text-slate-800 text-lg">
+                          {ann.title}
+                        </h4>
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                          <Clock size={12} /> {timeAgo(ann.CreatedAt)}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 mt-2 leading-relaxed text-sm">
+                        {ann.content}
+                      </p>
+                    </div>
                   </div>
-                </motion.div>
+                </div>
               );
-            })}
-          </AnimatePresence>
-        )}
-      </div>
+            })
+          )}
+        </div>
+      )}
 
       {/* --- MODAL CONFIRM DELETE --- */}
       <Modal
