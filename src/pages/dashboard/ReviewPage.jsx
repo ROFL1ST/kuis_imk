@@ -97,13 +97,14 @@ const ReviewPage = () => {
                 <Skeleton className="h-8 w-64 rounded-xl" /> {/* Title */}
                 <div className="flex gap-2">
                   <Skeleton className="h-6 w-32 rounded-full" /> {/* Date */}
-                  <Skeleton className="h-6 w-24 rounded-full" /> {/* Question Count */}
+                  <Skeleton className="h-6 w-24 rounded-full" />{" "}
+                  {/* Question Count */}
                 </div>
               </div>
               <Skeleton className="h-10 w-32 rounded-xl" /> {/* Timer Badge */}
             </div>
           </div>
-          
+
           {/* Stats Grid Skeleton */}
           <div className="p-6 sm:p-8 grid grid-cols-2 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
@@ -114,18 +115,23 @@ const ReviewPage = () => {
 
         {/* Detail List Skeleton */}
         <div className="space-y-6">
-          <Skeleton className="h-8 w-48 rounded-lg" /> {/* Header "Detail Jawaban" */}
-          
+          <Skeleton className="h-8 w-48 rounded-lg" />{" "}
+          {/* Header "Detail Jawaban" */}
           {/* Loop Question Skeletons */}
           {[1, 2, 3].map((i) => (
-            <div key={i} className="p-6 rounded-2xl border border-slate-100 bg-white space-y-4">
+            <div
+              key={i}
+              className="p-6 rounded-2xl border border-slate-100 bg-white space-y-4"
+            >
               <div className="flex justify-between">
                 <Skeleton className="h-6 w-16 rounded-lg" /> {/* Number */}
-                <Skeleton className="h-6 w-20 rounded-full" /> {/* Status Badge */}
+                <Skeleton className="h-6 w-20 rounded-full" />{" "}
+                {/* Status Badge */}
               </div>
               <Skeleton className="h-6 w-full" /> {/* Question Line 1 */}
               <Skeleton className="h-6 w-3/4" /> {/* Question Line 2 */}
-              <Skeleton className="h-24 w-full rounded-xl mt-4" /> {/* Answer Box */}
+              <Skeleton className="h-24 w-full rounded-xl mt-4" />{" "}
+              {/* Answer Box */}
             </div>
           ))}
         </div>
@@ -146,11 +152,13 @@ const ReviewPage = () => {
   const isPass = score >= 70;
 
   const isDuel = quiz_title.includes("[DUEL]");
+  const isSurvival =
+    quiz_title.includes("Survival") || (data.quiz_id === 0 && !isDuel);
   const cleanTitle = quiz_title.replace("[DUEL]", "").trim();
 
   let correctCount = 0;
 
-  const detailedAnswers = questions.map((q) => {
+  const detailedAnswers = (questions || []).map((q) => {
     const userAnswer = snapshot[String(q.ID)];
     let isCorrect = false;
 
@@ -204,11 +212,18 @@ const ReviewPage = () => {
           ${
             isDuel
               ? "bg-gradient-to-br from-orange-50 to-white border-orange-200"
+              : isSurvival
+              ? "bg-gradient-to-br from-purple-50 to-white border-purple-200"
               : "bg-white border-slate-200"
           }`}
       >
         {isDuel && (
           <div className="absolute right-0 top-0 text-orange-500/10 -translate-y-1/4 translate-x-1/4 pointer-events-none">
+            <Swords size={200} strokeWidth={1} />
+          </div>
+        )}
+        {isSurvival && (
+          <div className="absolute right-0 top-0 text-purple-500/10 -translate-y-1/4 translate-x-1/4 pointer-events-none">
             <Swords size={200} strokeWidth={1} />
           </div>
         )}
@@ -218,6 +233,8 @@ const ReviewPage = () => {
             ${
               isDuel
                 ? "border-orange-100 bg-orange-50/50"
+                : isSurvival
+                ? "border-purple-100 bg-purple-50/50"
                 : "border-slate-100 bg-slate-50/50"
             }`}
         >
@@ -226,6 +243,11 @@ const ReviewPage = () => {
               {isDuel && (
                 <span className="inline-flex items-center gap-1 bg-orange-500 text-white px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider mb-2 shadow-sm">
                   <Swords size={12} /> DUEL MODE
+                </span>
+              )}
+              {isSurvival && (
+                <span className="inline-flex items-center gap-1 bg-purple-600 text-white px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider mb-2 shadow-sm">
+                  <Swords size={12} /> SURVIVAL MODE
                 </span>
               )}
               <h1 className="text-2xl font-bold text-slate-900">
@@ -238,6 +260,8 @@ const ReviewPage = () => {
                   ${
                     isDuel
                       ? "bg-white border-orange-200 text-orange-600 shadow-sm"
+                      : isSurvival
+                      ? "bg-white border-purple-200 text-purple-600 shadow-sm"
                       : "bg-white border-indigo-200 text-indigo-600 shadow-sm"
                   }`}
             >
@@ -267,19 +291,29 @@ const ReviewPage = () => {
                ${
                  isDuel
                    ? "bg-white border-orange-100 shadow-sm"
+                   : isSurvival
+                   ? "bg-white border-purple-100 shadow-sm"
                    : "bg-indigo-50 border-indigo-100"
                }`}
           >
             <span
               className={`text-xs font-bold uppercase tracking-wider mb-1 ${
-                isDuel ? "text-orange-400" : "text-indigo-400"
+                isDuel
+                  ? "text-orange-400"
+                  : isSurvival
+                  ? "text-purple-400"
+                  : "text-indigo-400"
               }`}
             >
-              Skor Kamu
+              {isSurvival ? "Rounds" : "Skor Kamu"}
             </span>
             <span
               className={`text-4xl font-black ${
-                isDuel ? "text-orange-500" : "text-indigo-600"
+                isDuel
+                  ? "text-orange-500"
+                  : isSurvival
+                  ? "text-purple-600"
+                  : "text-indigo-600"
               }`}
             >
               {score}
@@ -289,25 +323,41 @@ const ReviewPage = () => {
           {/* Status */}
           <div
             className={`col-span-2 md:col-span-1 p-4 rounded-2xl border flex flex-col items-center justify-center ${
-              isPass
+              isSurvival
+                ? "bg-purple-50 border-purple-100"
+                : isPass
                 ? "bg-emerald-50 border-emerald-100"
                 : "bg-red-50 border-red-100"
             }`}
           >
             <span
               className={`text-xs font-bold uppercase tracking-wider mb-1 ${
-                isPass ? "text-emerald-400" : "text-red-400"
+                isSurvival
+                  ? "text-purple-400"
+                  : isPass
+                  ? "text-emerald-400"
+                  : "text-red-400"
               }`}
             >
-              Status
+              {isSurvival ? "Hasil" : "Status"}
             </span>
             <span
               className={`text-xl font-bold flex items-center gap-2 ${
-                isPass ? "text-emerald-600" : "text-red-500"
+                isSurvival
+                  ? "text-purple-600"
+                  : isPass
+                  ? "text-emerald-600"
+                  : "text-red-500"
               }`}
             >
-              {isPass ? <CheckCircle size={24} /> : <XCircle size={24} />}
-              {isPass ? "LULUS" : "GAGAL"}
+              {isSurvival ? (
+                <CheckCircle size={24} />
+              ) : isPass ? (
+                <CheckCircle size={24} />
+              ) : (
+                <XCircle size={24} />
+              )}
+              {isSurvival ? "SELESAI" : isPass ? "LULUS" : "GAGAL"}
             </span>
           </div>
 

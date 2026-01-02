@@ -13,6 +13,12 @@ import Friends from "./pages/social/Friends"; // Buat file ini
 import Leaderboard from "./pages/social/Leaderboard"; // Buat file ini
 import Dashboard from "./pages/dashboard/Dashboard";
 import ReviewPage from "./pages/dashboard/ReviewPage";
+
+// New Features
+import GlobalLeaderboard from "./pages/social/GlobalLeaderboard";
+// Survival imports deprecated (moved to QuizPlay)
+import ClassroomList from "./pages/classroom/ClassroomList";
+import ClassroomDetail from "./pages/classroom/ClassroomDetail";
 import Register from "./pages/auth/Register";
 import ChallengeList from "./pages/social/ChallengeList";
 import Profile from "./pages/profile/Profile";
@@ -115,6 +121,14 @@ function App() {
               }
             />
             <Route
+              path="/leaderboard/global"
+              element={
+                <MainLayout>
+                  <GlobalLeaderboard />
+                </MainLayout>
+              }
+            />
+            <Route
               path="/leaderboard/:slug"
               element={
                 <MainLayout>
@@ -173,9 +187,30 @@ function App() {
                 </MainLayout>
               }
             />
+
+            {/* Repurposed Survival Route -> QuizPlay */}
+            <Route path="/play/survival" element={<QuizPlay />} />
             <Route
-              path="/play/remedial"
-              element={<QuizPlay isRemedial={true} />}
+              path="/play/survival/game"
+              element={<Navigate to="/play/survival" replace />}
+            />
+
+            {/* Classrooms */}
+            <Route
+              path="/classrooms"
+              element={
+                <MainLayout>
+                  <ClassroomList />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/classrooms/:id"
+              element={
+                <MainLayout>
+                  <ClassroomDetail />
+                </MainLayout>
+              }
             />
           </Route>
 

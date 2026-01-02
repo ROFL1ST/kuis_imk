@@ -139,6 +139,7 @@ export const notificationAPI = {
   markRead: (id) => api.put(`/notifications/${id}/read`),
   markAllRead: () => api.put("/notifications/read-all"),
   clearAll: () => api.delete("/notifications"),
+  getAnnouncements: () => api.get("/announcements"), // Public/User endpoint
 };
 
 export const shopAPI = {

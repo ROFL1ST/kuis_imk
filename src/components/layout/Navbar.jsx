@@ -19,14 +19,18 @@ import {
   Coins,
   ShoppingBag,
   Package,
+  Trophy,
+  GraduationCap,
+  MoreHorizontal,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Modal from "../ui/Modal";
 import UserAvatar from "../ui/UserAvatar";
 import StreakHoverCard from "../ui/StreakHoverCard";
-import { dailyAPI, userAPI } from "../../services/api";
-import { AnimatePresence, motion } from "framer-motion";
 import CalendarModal from "../ui/CalendarModal";
+import AnnouncementModal from "../ui/AnnouncementModal"; // Import Modal
+import { dailyAPI, userAPI, notificationAPI } from "../../services/api"; // Import notificationAPI
+import { AnimatePresence, motion } from "framer-motion";
 
 const Navbar = () => {
   const { user, logout, unreadCount } = useAuth();
@@ -40,6 +44,8 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [announcementData, setAnnouncementData] = useState(null); // State Data Announcement
+  const [showAnnouncement, setShowAnnouncement] = useState(false); // State Visibility Modal
 
   const [showFullCalendar, setShowFullCalendar] = useState(false);
   const dropdownRef = useRef(null);
@@ -80,6 +86,29 @@ const Navbar = () => {
         }
       };
       fetchData();
+      fetchData();
+
+      // Fetch Announcement
+      const fetchAnnouncement = async () => {
+        try {
+          const res = await notificationAPI.getAnnouncements();
+          // Backend returns array, sorted by created_at desc. Take the first one.
+          const latest = res.data.data?.[0];
+
+          if (latest) {
+            // Check if already seen locally
+            const lastSeenId = localStorage.getItem("last_seen_announcement");
+            if (lastSeenId !== String(latest.id)) {
+              setAnnouncementData(latest);
+              setShowAnnouncement(true);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch announcement:", error);
+        }
+      };
+
+      fetchAnnouncement();
     }
   }, [user]);
 
@@ -87,6 +116,16 @@ const Navbar = () => {
     logout();
     setIsLogoutModalOpen(false);
     navigate("/login");
+  };
+
+  const handleCloseAnnouncement = () => {
+    setShowAnnouncement(false);
+    if (announcementData) {
+      localStorage.setItem(
+        "last_seen_announcement",
+        String(announcementData.id)
+      );
+    }
   };
 
   return (
@@ -103,36 +142,30 @@ const Navbar = () => {
           </Link>
 
           {/* === MENU DESKTOP (Hidden di Mobile) === */}
-          <div className="hidden sm:flex gap-6">
+          <div className="hidden sm:flex items-center gap-1">
             <Link
               to="/dashboard"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
               <LayoutDashboard size={18} /> Topik
             </Link>
             <Link
+              to="/classrooms"
+              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
+            >
+              <GraduationCap size={18} /> Kelas
+            </Link>
+            <Link
               to="/challenges"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
               <Swords size={18} /> Duel
             </Link>
             <Link
-              to="/friends"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+              to="/leaderboard/global"
+              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
-              <Users size={18} /> Teman
-            </Link>
-            <Link
-              to="/history"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
-            >
-              <History size={18} /> Riwayat
-            </Link>
-            <Link
-              to="/shop"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
-            >
-              <ShoppingBag size={18} /> Shop
+              <Trophy size={18} /> Rank
             </Link>
           </div>
 
@@ -189,7 +222,7 @@ const Navbar = () => {
 
             {/* Desktop Level */}
             <div className="flex items-center gap-1 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold border border-indigo-100">
-              <Star size={14} fill="currentColor" /> Lvl {user?.level || 1}
+              <Star size={14} fill="currentColor" /> Level {user?.level || 1}
             </div>
 
             {/* Desktop Coin */}
@@ -224,6 +257,27 @@ const Navbar = () => {
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
                     <User size={16} /> Profil Saya
+                  </Link>
+                  <Link
+                    to="/friends"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
+                    <Users size={16} /> Teman
+                  </Link>
+                  <Link
+                    to="/history"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
+                    <History size={16} /> Riwayat
+                  </Link>
+                  <Link
+                    to="/shop"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
+                    <ShoppingBag size={16} /> Shop
                   </Link>
                   <Link
                     to="/inventory"
@@ -279,7 +333,7 @@ const Navbar = () => {
             {/* 2. Level Badge (BAGUS / PREMIUM LOOK) */}
             <div className="flex items-center gap-1 bg-indigo-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-indigo-200 border border-indigo-500">
               <Star size={12} fill="#fbbf24" className="text-yellow-400" />
-              <span>Lvl {user?.level || 1}</span>
+              <span>Level {user?.level || 1}</span>
             </div>
 
             {/* 3. Coin */}
@@ -357,6 +411,30 @@ const Navbar = () => {
                     </div>
                     <span className="text-sm font-bold text-slate-700">
                       Riwayat
+                    </span>
+                  </Link>
+                  <Link
+                    to="/classrooms"
+                    onClick={() => setOpen(false)}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-green-300 transition active:scale-95"
+                  >
+                    <div className="bg-green-100 p-2 rounded-full text-green-600">
+                      <GraduationCap size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      Kelas
+                    </span>
+                  </Link>
+                  <Link
+                    to="/leaderboard/global"
+                    onClick={() => setOpen(false)}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-yellow-300 transition active:scale-95"
+                  >
+                    <div className="bg-yellow-100 p-2 rounded-full text-yellow-600">
+                      <Trophy size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      Rank
                     </span>
                   </Link>
                 </div>
@@ -501,6 +579,13 @@ const Navbar = () => {
           </button>
         </div>
       </Modal>
+
+      {/* Announcement Modal (Global) */}
+      <AnnouncementModal
+        isOpen={showAnnouncement}
+        onClose={handleCloseAnnouncement}
+        announcement={announcementData}
+      />
     </>
   );
 };

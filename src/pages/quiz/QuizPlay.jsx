@@ -22,12 +22,16 @@ import {
   Type as TypeIcon,
   CheckSquare,
   Flame,
+  Skull, // New Icon
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
 import StreakSuccessModal from "../../components/ui/StreakSuccessModal"; // Import Modal Baru
+import ReportModal from "../../components/ui/ReportModal"; // NEW
+import ReviewModal from "../../components/ui/ReviewModal"; // NEW
 import { getToken } from "../../services/auth";
 import { EventSourcePolyfill } from "event-source-polyfill";
+import { survivalAPI } from "../../services/newFeatures";
 
 // Helper: Shuffle Array
 const shuffleArray = (array) => {
@@ -40,19 +44,34 @@ const shuffleArray = (array) => {
   return newArray;
 };
 
-const QuizPlay = ({ isRemedial = false }) => {
+const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   const { quizId } = useParams();
+  const isRemedial = propIsRemedial || quizId === "remedial";
+
   const { user, setUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  // Classroom Context
+  const assignmentId = location.state?.assignmentId || null;
+  const classroomId = location.state?.classroomId || null;
+  const classroomName = location.state?.classroomName || null;
+
+  const originalTitle = location.state?.title || "Kuis";
   const quizTitle = isRemedial
     ? "Smart Remedial (Perbaikan)"
-    : location.state?.title || "Kuis";
+    : classroomName
+    ? `${originalTitle} (Class: ${classroomName})`
+    : originalTitle;
 
   const isChallenge = location.state?.isChallenge || false;
   const isRealtime = location.state?.isRealtime || false;
   const timeLimit = location.state?.timeLimit || 0;
   const challengeID = location.state?.challengeID || null;
+  // Survival Mode Props
+  const seed = location.state?.seed || "";
+  const mode =
+    location.state?.mode ||
+    (location.pathname.includes("survival") ? "survival" : "classic");
 
   // State Data
   const [questions, setQuestions] = useState([]);
@@ -78,10 +97,17 @@ const QuizPlay = ({ isRemedial = false }) => {
   // Modals
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevelData, setNewLevelData] = useState(0);
-  
+
   // State Streak Modal Baru
   const [showStreakModal, setShowStreakModal] = useState(false);
-  const [streakModalData, setStreakModalData] = useState({ count: 0, type: "extended" });
+  const [streakModalData, setStreakModalData] = useState({
+    count: 0,
+    type: "extended",
+  });
+
+  // New Feature Modals
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   // Realtime States
   const [opponentsProgress, setOpponentsProgress] = useState({});
@@ -171,48 +197,105 @@ const QuizPlay = ({ isRemedial = false }) => {
   };
 
   useEffect(() => {
-    const fetchAction = isRemedial
-      ? quizAPI.getRemedial()
-      : quizAPI.getQuestions(quizId);
+    let fetchAction;
 
-    fetchAction
-      .then((res) => {
-        const rawQuestions = res.data.data || [];
+    if (mode === "survival") {
+      // Survival Mode Initial Fetch
+      setLoading(true);
+      survivalAPI
+        .startSurvival(seed)
+        .then((res) => {
+          if (res.data.status === "success" || res.data.success) {
+            // StartSurvival returns { question: {...}, streak: 0 }
+            const wrapper = res.data.data;
+            const q = wrapper.question || wrapper; // Fallback if structure changes
 
-        const processedQuestions = rawQuestions.map((q) => {
-          const type = q.type || "mcq";
-          let options = q.options;
+            // Process single question
+            let options = q.options;
+            try {
+              options =
+                typeof q.options === "string"
+                  ? JSON.parse(q.options)
+                  : q.options;
+            } catch (e) {
+              options = ["Yes", "No"];
+            }
 
-          if (type === "mcq" || type === "multi_select") {
-            options = shuffleArray(q.options);
+            if (q.type === "mcq" || q.type === "multi_select") {
+              options = shuffleArray(options);
+            }
+
+            const processedQ = {
+              ...q,
+              options: options,
+            };
+
+            setQuestions([processedQ]);
+            startTime.current = Date.now();
+
+            // Timer for Survival? Usually tracked per round or total.
+            // Just keep existing timer logic for "Duration" tracking.
+            timerIntervalRef.current = setInterval(() => {
+              const currentElapsed = Math.floor(
+                (Date.now() - startTime.current) / 1000
+              );
+              setElapsedTime(currentElapsed);
+            }, 1000);
           }
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Gagal memulai survival.");
+          navigate("/dashboard");
+        })
+        .finally(() => setLoading(false));
 
-          return {
-            ...q,
-            type: type,
-            options: options,
-          };
-        });
+      return () => clearInterval(timerIntervalRef.current);
+    } else {
+      // Classic Quiz Mode
+      fetchAction = isRemedial
+        ? quizAPI.getRemedial()
+        : quizAPI.getQuestions(quizId);
 
-        setQuestions(processedQuestions);
-        startTime.current = Date.now();
+      fetchAction
+        .then((res) => {
+          const rawQuestions = res.data.data || [];
 
-        timerIntervalRef.current = setInterval(() => {
-          const currentElapsed = Math.floor(
-            (Date.now() - startTime.current) / 1000
-          );
-          setElapsedTime(currentElapsed);
-        }, 1000);
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Gagal memuat soal.");
-        navigate("/dashboard");
-      })
-      .finally(() => setLoading(false));
+          const processedQuestions = rawQuestions.map((q) => {
+            const type = q.type || "mcq";
+            let options = q.options;
 
-    return () => clearInterval(timerIntervalRef.current);
-  }, [quizId, navigate]);
+            if (type === "mcq" || type === "multi_select") {
+              options = shuffleArray(q.options);
+            }
+
+            return {
+              ...q,
+              type: type,
+              options: options,
+            };
+          });
+
+          setQuestions(processedQuestions);
+          startTime.current = Date.now();
+
+          timerIntervalRef.current = setInterval(() => {
+            const currentElapsed = Math.floor(
+              (Date.now() - startTime.current) / 1000
+            );
+            setElapsedTime(currentElapsed);
+          }, 1000);
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Gagal memuat soal.");
+          navigate("/dashboard");
+        })
+        .finally(() => setLoading(false));
+
+      return () => clearInterval(timerIntervalRef.current);
+    }
+  }, [quizId, navigate, mode, seed, isRemedial]);
 
   useEffect(() => {
     if (timeLimit > 0 && !isFinished && !submitting) {
@@ -255,6 +338,117 @@ const QuizPlay = ({ isRemedial = false }) => {
   // ----------------------------------------------------------------
   // 4. NAVIGASI & SUBMIT
   // ----------------------------------------------------------------
+
+  // Survival Logic
+  const handleSurvivalAnswer = async (answerValue) => {
+    setSubmitting(true);
+    try {
+      const currentQ = questions[currentIndex];
+      // Calculate streak based on current questions length - 1?
+      // Actually best to track streak in state or trust backend.
+      // Backend expects 'streak' to match current.
+      const currentStreak = questions.length - 1;
+
+      const res = await survivalAPI.answerSurvival({
+        question_id: currentQ.ID,
+        answer: answerValue,
+        streak: currentStreak,
+        seed: seed,
+      });
+
+      if (res.data.status === "success") {
+        const data = res.data.data;
+        if (res.data.message === "Correct!" || data.next_question) {
+          // Correct Answer
+          toast.success(`Benar! Runtunan: ${data.new_streak}`, { icon: "🔥" });
+
+          // Process Next Question
+          const q = data.next_question;
+          let options = q.options;
+          try {
+            options =
+              typeof q.options === "string" ? JSON.parse(q.options) : q.options;
+          } catch (e) {
+            options = ["Yes", "No"];
+          }
+
+          if (q.type === "mcq" || q.type === "multi_select") {
+            options = shuffleArray(options);
+          }
+          const processedQ = { ...q, options };
+
+          setQuestions((prev) => [...prev, processedQ]);
+          setCurrentIndex((prev) => prev + 1);
+
+          // Send Realtime Progress
+          if (isRealtime && challengeID) {
+            // For survival, we can optimize this call
+            // socialAPI.postProgress might need update for survival metrics if different
+            // But using total_soal as arbitrary large number or just sending index is fine.
+            await socialAPI.postProgress(challengeID, {
+              current_index: data.new_streak,
+              total_soal: 999,
+            });
+          }
+        } else {
+          // Wrong Answer / Game Over
+          toast.error("Salah! Game Over.");
+
+          const finalStreak = data.final_streak || currentStreak;
+          const score = finalStreak; // Survival Score = Rounds Survived
+
+          // Submit Final Score for Leaderboard / History
+          if (isChallenge) {
+            const processedSnapshot = {};
+            Object.keys(answers).forEach((key) => {
+              const ans = answers[key];
+              if (Array.isArray(ans)) {
+                processedSnapshot[key] = JSON.stringify(ans);
+              } else {
+                processedSnapshot[key] = ans;
+              }
+            });
+
+            const endTime = Date.now();
+            let timeTaken = Math.floor((endTime - startTime.current) / 1000);
+            if (timeLimit > 0 && timeTaken > timeLimit) {
+              timeTaken = timeLimit;
+            }
+            const resHistory = await quizAPI.submitScore({
+              quiz_id: 0,
+              quiz_title: "Survival Challenge",
+              score: score,
+              total_soal: finalStreak, // Use streak as total questions answered
+              snapshot: processedSnapshot, // Detailed snapshot of all answers
+              time_taken: timeTaken,
+              challenge_id: challengeID,
+              mode: "survival",
+            });
+            if (resHistory.data.status === "success") {
+              const data = resHistory.data.data;
+              toast.success("Nilai berhasil disimpan!");
+              setHistoryId(data.ID);
+            }
+          }
+
+          setResultData({
+            score: score,
+            correct: finalStreak,
+            wrong: 1,
+            total: finalStreak + 1,
+          });
+          setIsFinished(true);
+          setDuration(elapsedTime);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error submitting answer");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const sendProgress = async (index) => {
     if (isRealtime && challengeID) {
       try {
@@ -269,17 +463,31 @@ const QuizPlay = ({ isRemedial = false }) => {
   };
 
   const handleNext = async () => {
-    if (currentIndex < questions.length - 1) {
-      const nextIndex = currentIndex + 1;
-      setCurrentIndex(nextIndex);
-      setShowHint(false);
-      await sendProgress(nextIndex);
+    if (mode === "survival") {
+      // In survival, handleNext implies submitting the current answer
+      const currentQ = questions[currentIndex];
+      const ans = answers[currentQ.ID];
+      if (!ans) {
+        toast.error("Pilih jawaban dulu!");
+        return;
+      }
+      await handleSurvivalAnswer(ans);
     } else {
-      await handleSubmit();
+      // Classic Logic
+      if (currentIndex < questions.length - 1) {
+        const nextIndex = currentIndex + 1;
+        setCurrentIndex(nextIndex);
+        setShowHint(false);
+        await sendProgress(nextIndex);
+      } else {
+        await handleSubmit();
+      }
     }
   };
 
   const handlePrevious = () => {
+    if (mode === "survival") return; // No going back in survival
+
     if (currentIndex > 0) {
       const prevIndex = currentIndex - 1;
       setCurrentIndex(prevIndex);
@@ -324,6 +532,21 @@ const QuizPlay = ({ isRemedial = false }) => {
   };
 
   const handleSubmit = async () => {
+    // Override handleSubmit for Survival?
+    // Usually survival is auto-submit per question.
+    // If this is called in survival (e.g. timeout), treat as Game Over?
+    if (mode === "survival") {
+      // Timeout or forced finish
+      setResultData({
+        score: (questions.length - 1) * 10,
+        correct: questions.length - 1,
+        wrong: 1, // Assumed wrong if time out
+        total: questions.length,
+      });
+      setIsFinished(true);
+      return;
+    }
+
     clearInterval(timerIntervalRef.current);
     setSubmitting(true);
 
@@ -357,12 +580,14 @@ const QuizPlay = ({ isRemedial = false }) => {
       time_taken: timeTaken,
       challenge_id: challengeID,
       question_ids: questions.map((q) => q.ID),
+      assignment_id: assignmentId ? parseInt(assignmentId) : null, // New
+      classroom_id: classroomId ? parseInt(classroomId) : null, // New
     };
 
     try {
       const currentLevel = user?.level || 1;
       const currentStreak = user?.streak_count || 0;
-      
+
       const res = await quizAPI.submitScore(payload);
       const finalHistory = res.data.data;
 
@@ -387,12 +612,12 @@ const QuizPlay = ({ isRemedial = false }) => {
       if (updatedUser.streak_count > currentStreak) {
         // Tentukan tipe: Recovery (balik ke 1 dari 0) atau Extension (nambah lanjut)
         const type = currentStreak === 0 ? "recovered" : "extended";
-        
-        setStreakModalData({ 
-            count: updatedUser.streak_count, 
-            type: type 
+
+        setStreakModalData({
+          count: updatedUser.streak_count,
+          type: type,
         });
-        
+
         // Trigger Modal Animasi
         setShowStreakModal(true);
       } else {
@@ -586,7 +811,8 @@ const QuizPlay = ({ isRemedial = false }) => {
 
   // VIEW 1: HASIL AKHIR
   if (isFinished && resultData) {
-    const isPass = resultData.score >= 70;
+    const isSurvival = mode === "survival";
+    const isPass = isSurvival ? resultData.correct > 0 : resultData.score >= 70;
     const allDone = checkAllFinished();
 
     return (
@@ -604,7 +830,8 @@ const QuizPlay = ({ isRemedial = false }) => {
             {isChallenge && (
               <div className="absolute top-4 left-0 w-full flex justify-center">
                 <span className="px-3 py-1 bg-orange-100 text-orange-600 text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1 border border-orange-200">
-                  <Swords size={12} /> Duel Mode
+                  <Swords size={12} />{" "}
+                  {isSurvival ? "Survival Run" : "Duel Mode"}
                 </span>
               </div>
             )}
@@ -618,10 +845,10 @@ const QuizPlay = ({ isRemedial = false }) => {
                 }`}
               >
                 <span className="text-6xl font-black tracking-tighter">
-                  {resultData.score}
+                  {isSurvival ? resultData.correct : resultData.score}
                 </span>
                 <span className="text-xs font-bold tracking-widest opacity-60 mt-1">
-                  POIN
+                  {isSurvival ? "RONDE" : "POIN"}
                 </span>
                 {isPass && (
                   <motion.div
@@ -630,14 +857,28 @@ const QuizPlay = ({ isRemedial = false }) => {
                     delay={0.3}
                     className="absolute -top-2 -right-2 bg-yellow-400 p-2 rounded-full shadow-lg border-4 border-white"
                   >
-                    <Trophy className="text-white" size={24} fill="currentColor" />
+                    <Trophy
+                      className="text-white"
+                      size={24}
+                      fill="currentColor"
+                    />
                   </motion.div>
                 )}
               </div>
             </div>
 
-            <h1 className={`text-2xl font-black mb-1 ${isPass ? "text-slate-800" : "text-slate-700"}`}>
-              {isPass ? "Kerja Bagus!" : "Jangan Menyerah!"}
+            <h1
+              className={`text-2xl font-black mb-1 ${
+                isPass ? "text-slate-800" : "text-slate-700"
+              }`}
+            >
+              {isSurvival
+                ? isPass
+                  ? "Luar Biasa!"
+                  : "Permainan Berakhir"
+                : isPass
+                ? "Kerja Bagus!"
+                : "Jangan Menyerah!"}
             </h1>
             <p className="text-slate-400 text-sm font-medium mb-6">
               Kamu telah menyelesaikan kuis ini.
@@ -649,7 +890,8 @@ const QuizPlay = ({ isRemedial = false }) => {
                   Waktu
                 </div>
                 <div className="font-bold text-slate-700 flex justify-center items-center gap-1">
-                  <Clock size={14} /> {duration > 60 ? formatTime(duration) : `${duration}s`}
+                  <Clock size={14} />{" "}
+                  {duration > 60 ? formatTime(duration) : `${duration}s`}
                 </div>
               </div>
               <div className="text-center border-l border-r border-slate-200">
@@ -684,7 +926,8 @@ const QuizPlay = ({ isRemedial = false }) => {
                   </>
                 ) : (
                   <>
-                    <Loader2 size={14} className="animate-spin" /> Menunggu lawan lain selesai...
+                    <Loader2 size={14} className="animate-spin" /> Menunggu
+                    lawan lain selesai...
                   </>
                 )}
               </div>
@@ -712,21 +955,35 @@ const QuizPlay = ({ isRemedial = false }) => {
               >
                 Review Jawaban
               </button>
+              <button
+                onClick={() => setShowReviewModal(true)}
+                className="text-yellow-500 text-sm font-bold hover:text-yellow-600 py-1 flex items-center justify-center gap-1"
+              >
+                <div className="w-4 h-4">
+                  <Flame size={16} />
+                </div>{" "}
+                Beri Nilai Kuis
+              </button>
             </div>
           </motion.div>
         </div>
-        
+
         {/* Modals placed here */}
-        <StreakSuccessModal 
-            isOpen={showStreakModal}
-            onClose={() => setShowStreakModal(false)}
-            streakCount={streakModalData.count}
-            type={streakModalData.type}
+        <StreakSuccessModal
+          isOpen={showStreakModal}
+          onClose={() => setShowStreakModal(false)}
+          streakCount={streakModalData.count}
+          type={streakModalData.type}
         />
         <LevelUpModal
           isOpen={showLevelUp}
           onClose={() => setShowLevelUp(false)}
           newLevel={newLevelData}
+        />
+        <ReviewModal
+          isOpen={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          quizId={quizId}
         />
       </div>
     );
@@ -735,7 +992,8 @@ const QuizPlay = ({ isRemedial = false }) => {
   // VIEW 2: GAMEPLAY
   const currentQ = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
-  const remainingTime = timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
+  const remainingTime =
+    timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
   const isUrgent = timeLimit > 0 && remainingTime < 30;
 
   const currentAnswer = answers[currentQ.ID];
@@ -743,7 +1001,8 @@ const QuizPlay = ({ isRemedial = false }) => {
   if (Array.isArray(currentAnswer)) {
     isAnswered = currentAnswer.length > 0;
   } else {
-    isAnswered = typeof currentAnswer === "string" && currentAnswer.trim().length > 0;
+    isAnswered =
+      typeof currentAnswer === "string" && currentAnswer.trim().length > 0;
   }
 
   return (
@@ -779,7 +1038,13 @@ const QuizPlay = ({ isRemedial = false }) => {
               : "bg-white text-slate-600 border-slate-200"
           }`}
         >
-          {isUrgent ? <AlertTriangle size={14} /> : isRealtime ? <Zap size={14} /> : <Clock size={14} />}
+          {isUrgent ? (
+            <AlertTriangle size={14} />
+          ) : isRealtime ? (
+            <Zap size={14} />
+          ) : (
+            <Clock size={14} />
+          )}
           <span className="tabular-nums">
             {timeLimit > 0 ? formatTime(remainingTime) : `${elapsedTime}s`}
           </span>
@@ -789,7 +1054,9 @@ const QuizPlay = ({ isRemedial = false }) => {
       <div className="w-full max-w-2xl">
         <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8 overflow-hidden">
           <motion.div
-            className={`h-full rounded-full ${isUrgent ? "bg-red-500" : "bg-indigo-600"}`}
+            className={`h-full rounded-full ${
+              isUrgent ? "bg-red-500" : "bg-indigo-600"
+            }`}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
@@ -804,10 +1071,17 @@ const QuizPlay = ({ isRemedial = false }) => {
               exit={{ opacity: 0, y: -10 }}
               className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mb-6 text-yellow-800 flex gap-3 shadow-sm"
             >
-              <Lightbulb size={20} className="shrink-0 mt-0.5 text-yellow-500" />
+              <Lightbulb
+                size={20}
+                className="shrink-0 mt-0.5 text-yellow-500"
+              />
               <div>
-                <p className="text-xs font-bold uppercase opacity-60 mb-1">Bantuan</p>
-                <p className="text-sm font-medium leading-relaxed">{currentQ.hint}</p>
+                <p className="text-xs font-bold uppercase opacity-60 mb-1">
+                  Bantuan
+                </p>
+                <p className="text-sm font-medium leading-relaxed">
+                  {currentQ.hint}
+                </p>
               </div>
             </motion.div>
           )}
@@ -834,6 +1108,13 @@ const QuizPlay = ({ isRemedial = false }) => {
                   <Lightbulb size={20} />
                 </button>
               )}
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="p-2 rounded-full bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 transition shrink-0"
+                title="Laporkan Soal"
+              >
+                <Flag size={20} />
+              </button>
             </div>
 
             <div className="mb-4">
@@ -871,7 +1152,9 @@ const QuizPlay = ({ isRemedial = false }) => {
             <div className="space-y-3">
               {Object.entries(opponentsProgress).map(([oppID, prog]) => {
                 const playerInfo = playersMap[oppID];
-                const displayName = playerInfo ? playerInfo.name : `Player ${oppID}`;
+                const displayName = playerInfo
+                  ? playerInfo.name
+                  : `Player ${oppID}`;
                 const isFriend = isTeammate(oppID);
                 const playerFinished = finishedPlayers[oppID];
                 return (
@@ -897,7 +1180,8 @@ const QuizPlay = ({ isRemedial = false }) => {
                       </div>
                       {playerFinished ? (
                         <div className="h-5 bg-green-100 text-green-700 text-[10px] font-bold px-2 rounded-md flex items-center gap-1 w-fit border border-green-200">
-                          <Flag size={10} fill="currentColor" /> SELESAI ({playerFinished.score} Poin)
+                          <Flag size={10} fill="currentColor" /> SELESAI (
+                          {playerFinished.score} Poin)
                         </div>
                       ) : (
                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden relative">

@@ -51,10 +51,50 @@ const WhatsNew = () => {
 
   const updates = [
     {
+      version: "1.6.0",
+      date: "03 Jan 2026",
+      title: "Indonesian Localization, Reports System & Admin Revamp",
+      highlight: true,
+      changes: [
+        {
+          type: "new",
+          text: "Sistem Laporan & Ulasan: Kamu sekarang bisa melaporkan soal/pengguna yang melanggar aturan, serta memberikan rating bintang untuk kuis yang telah dimainkan.",
+        },
+        {
+          type: "new",
+          text: "Mode Baru: Mode survival baru yang memberikan tantangan yang lebih seru dan menantang.", 
+        },
+        {
+          type: "improvement",
+          text: "Full Bahasa Indonesia: Seluruh antarmuka aplikasi kini tersedia dalam Bahasa Indonesia yang baku dan mudah dipahami.",
+        },
+        {
+          type: "improvement",
+          text: "Admin Dashboard 2.0: Tampilan baru dashboard admin dengan grafik analitik mingguan, distribusi topik, dan statistik performa soal.",
+        },
+        {
+          type: "new",
+          text: "Realtime Broadcasts: Pengumuman dari admin kini muncul secara realtime dengan kategori (Info, Warning, Danger) dan tampilan visual yang menarik.",
+        },
+        {
+          type: "new",
+          text: "Sistem Classroom: Buat kelas belajar virtual, bagikan kode kelas, dan kerjakan kuis bersama teman sekelas.",
+        },
+        {
+          type: "new",
+          text: "Global Leaderboard: Bandingkan skormu dengan pemain lain di seluruh dunia dan raih puncak klasemen!",
+        },
+        {
+          type: "improvement",
+          text: "Admin Reports Enhanced: Admin kini dapat melihat username pelapor dan judul target secara detail untuk penanganan laporan yang lebih cepat.",
+        },
+      ],
+    },
+    {
       version: "1.5.3",
       date: "26 Des 2025",
       title: "Leave Lobby, Bug Fixes & Performance Improvements",
-      highlight: true,
+      highlight: false,
       changes: [
         {
           type: "new",

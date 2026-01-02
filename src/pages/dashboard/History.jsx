@@ -8,7 +8,8 @@ import {
   History as HistoryIcon,
   BarChart3,
   Timer,
-  Loader2
+  Loader2,
+  BrainCircuit,
 } from "lucide-react";
 import { quizAPI } from "../../services/api";
 import { useNavigate } from "react-router-dom";
@@ -17,10 +18,10 @@ import Skeleton from "../../components/ui/Skeleton";
 const History = () => {
   const [histories, setHistories] = useState([]);
   const [stats, setStats] = useState({ total_quiz: 0, average_score: 0 }); // State untuk statistik
-  
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  
+
   // State Pagination
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -38,7 +39,7 @@ const History = () => {
     setLoading(true);
     try {
       const res = await quizAPI.getMyHistory(pageNum, limit);
-      
+
       // [PENTING] Struktur baru dari Backend (Utils Response)
       // res.data.data berisi { list: [...], stats: {...} }
       const { list, stats: serverStats } = res.data.data;
@@ -54,7 +55,7 @@ const History = () => {
       }
 
       // Cek apakah masih ada data berikutnya
-      if (list.length < limit || (meta.current_page >= meta.total_pages)) {
+      if (list.length < limit || meta.current_page >= meta.total_pages) {
         setHasMore(false);
       }
     } catch (err) {
@@ -66,22 +67,25 @@ const History = () => {
   };
 
   // Logic Infinite Scroll (Intersection Observer)
-  const lastHistoryElementRef = useCallback((node) => {
-    if (loading) return;
-    if (observer.current) observer.current.disconnect();
+  const lastHistoryElementRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observer.current) observer.current.disconnect();
 
-    observer.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore) {
-        setPage((prevPage) => {
-          const nextPage = prevPage + 1;
-          fetchHistory(nextPage);
-          return nextPage;
-        });
-      }
-    });
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => {
+            const nextPage = prevPage + 1;
+            fetchHistory(nextPage);
+            return nextPage;
+          });
+        }
+      });
 
-    if (node) observer.current.observe(node);
-  }, [loading, hasMore]);
+      if (node) observer.current.observe(node);
+    },
+    [loading, hasMore]
+  );
 
   const goToReview = (historyId) => {
     navigate(`/history/review/${historyId}`);
@@ -103,27 +107,30 @@ const History = () => {
 
         {/* Stats Summary (Kotak-kotak di atas biasanya) */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl" />
-            <Skeleton className="h-24 rounded-2xl hidden md:block" />
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl hidden md:block" />
         </div>
 
         {/* List History Items */}
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
-               <div className="flex items-center gap-4">
-                  {/* Icon/Score Badge */}
-                  <Skeleton className="w-14 h-14 rounded-xl" />
-                  <div className="space-y-2">
-                     {/* Quiz Title */}
-                     <Skeleton className="h-5 w-48" />
-                     {/* Date/Time */}
-                     <Skeleton className="h-3 w-32" />
-                  </div>
-               </div>
-               {/* Arrow/Action */}
-               <Skeleton className="w-8 h-8 rounded-full" />
+            <div
+              key={i}
+              className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-4">
+                {/* Icon/Score Badge */}
+                <Skeleton className="w-14 h-14 rounded-xl" />
+                <div className="space-y-2">
+                  {/* Quiz Title */}
+                  <Skeleton className="h-5 w-48" />
+                  {/* Date/Time */}
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </div>
+              {/* Arrow/Action */}
+              <Skeleton className="w-8 h-8 rounded-full" />
             </div>
           ))}
         </div>
@@ -181,14 +188,18 @@ const History = () => {
       {initialLoading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-4"></div>
-          <p className="text-slate-500 text-sm font-medium">Memuat riwayat...</p>
+          <p className="text-slate-500 text-sm font-medium">
+            Memuat riwayat...
+          </p>
         </div>
       ) : histories.length === 0 ? (
         <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-slate-300">
           <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
             <Clock size={40} />
           </div>
-          <h3 className="text-lg font-bold text-slate-700">Belum ada riwayat</h3>
+          <h3 className="text-lg font-bold text-slate-700">
+            Belum ada riwayat
+          </h3>
           <p className="text-slate-500 max-w-xs mx-auto mt-1">
             Kamu belum mengerjakan kuis apapun.
           </p>
@@ -197,8 +208,10 @@ const History = () => {
         <div className="grid gap-4">
           {histories.map((item, index) => {
             const isDuel = item.quiz_title.includes("[DUEL]");
+            const isRemedial = item.quiz_title.includes("Smart Remedial");
             const cleanTitle = item.quiz_title.replace("[DUEL]", "").trim();
-            const isPass = item.score >= 70;
+            const isSurvival = item.quiz_id === 0 && !isRemedial; // Ensure remedial doesn't overlap if id=0
+            const isPass = isSurvival ? item.score > 0 : item.score >= 70;
             const isLastElement = index === histories.length - 1;
 
             return (
@@ -210,16 +223,34 @@ const History = () => {
                   ${
                     isDuel
                       ? "bg-gradient-to-r from-orange-50/80 to-white border-orange-200 hover:border-orange-300"
+                      : isSurvival
+                      ? "bg-gradient-to-r from-purple-50/80 to-white border-purple-200 hover:border-purple-300"
+                      : isRemedial
+                      ? "bg-gradient-to-r from-rose-50/80 to-white border-rose-200 hover:border-rose-300"
                       : "bg-white border-slate-200 hover:border-indigo-200"
                   }`}
               >
-                {/* Visual Tambahan untuk Duel */}
+                {/* Visual Tambahan untuk Duel / Survival / Remedial */}
                 {isDuel ? (
                   <>
                     <div className="absolute -right-6 -bottom-6 text-orange-500/10 rotate-12 pointer-events-none">
                       <Swords size={100} strokeWidth={1.5} />
                     </div>
                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-400"></div>
+                  </>
+                ) : isSurvival ? (
+                  <>
+                    <div className="absolute -right-6 -bottom-6 text-purple-500/10 rotate-12 pointer-events-none">
+                      <Swords size={100} strokeWidth={1.5} />
+                    </div>
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-400"></div>
+                  </>
+                ) : isRemedial ? (
+                  <>
+                    <div className="absolute -right-6 -bottom-6 text-rose-500/10 rotate-12 pointer-events-none">
+                      <BrainCircuit size={100} strokeWidth={1.5} />
+                    </div>
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-400"></div>
                   </>
                 ) : (
                   <div
@@ -237,6 +268,10 @@ const History = () => {
                     ${
                       isDuel
                         ? "bg-white border-orange-100 text-orange-600"
+                        : isSurvival
+                        ? "bg-white border-purple-100 text-purple-600"
+                        : isRemedial
+                        ? "bg-white border-rose-100 text-rose-500"
                         : isPass
                         ? "bg-emerald-50 border-emerald-100 text-emerald-600"
                         : "bg-red-50 border-red-100 text-red-500"
@@ -248,6 +283,10 @@ const History = () => {
                     </span>
                     {isDuel ? (
                       <Swords size={12} className="mt-0.5 opacity-60" />
+                    ) : isSurvival ? (
+                      <span className="text-[9px] font-bold uppercase mt-0.5 opacity-80">
+                        ROUNDS
+                      </span>
                     ) : (
                       <span className="text-[9px] font-bold uppercase mt-0.5 opacity-80">
                         {isPass ? "Lulus" : "Gagal"}
@@ -322,15 +361,15 @@ const History = () => {
               </div>
             );
           })}
-
           {/* Loader saat Fetching Data Baru */}
           {loading && (
             <div className="py-4 flex justify-center items-center text-slate-400 gap-2">
               <Loader2 className="animate-spin" size={20} />
-              <span className="text-sm font-medium">Memuat lebih banyak...</span>
+              <span className="text-sm font-medium">
+                Memuat lebih banyak...
+              </span>
             </div>
           )}
-          
           {/* Tanda sudah habis */}
           {!hasMore && histories.length > 0 && (
             <div className="py-6 text-center text-slate-400 text-xs font-medium border-t border-dashed border-slate-200 mt-4">
