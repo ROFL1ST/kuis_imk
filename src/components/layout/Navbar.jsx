@@ -19,6 +19,9 @@ import {
   Coins,
   ShoppingBag,
   Package,
+  Trophy,
+  GraduationCap,
+  MoreHorizontal,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Modal from "../ui/Modal";
@@ -103,36 +106,30 @@ const Navbar = () => {
           </Link>
 
           {/* === MENU DESKTOP (Hidden di Mobile) === */}
-          <div className="hidden sm:flex gap-6">
+          <div className="hidden sm:flex items-center gap-1">
             <Link
               to="/dashboard"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
               <LayoutDashboard size={18} /> Topik
             </Link>
             <Link
+              to="/classrooms"
+              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
+            >
+              <GraduationCap size={18} /> Kelas
+            </Link>
+            <Link
               to="/challenges"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
               <Swords size={18} /> Duel
             </Link>
             <Link
-              to="/friends"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
+              to="/leaderboard/global"
+              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
-              <Users size={18} /> Teman
-            </Link>
-            <Link
-              to="/history"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
-            >
-              <History size={18} /> Riwayat
-            </Link>
-            <Link
-              to="/shop"
-              className="flex gap-2 items-center text-slate-600 hover:text-indigo-600 font-medium transition"
-            >
-              <ShoppingBag size={18} /> Shop
+              <Trophy size={18} /> Rank
             </Link>
           </div>
 
@@ -224,6 +221,27 @@ const Navbar = () => {
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
                     <User size={16} /> Profil Saya
+                  </Link>
+                  <Link
+                    to="/friends"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
+                    <Users size={16} /> Teman
+                  </Link>
+                  <Link
+                    to="/history"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
+                    <History size={16} /> Riwayat
+                  </Link>
+                  <Link
+                    to="/shop"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
+                  >
+                    <ShoppingBag size={16} /> Shop
                   </Link>
                   <Link
                     to="/inventory"
@@ -357,6 +375,30 @@ const Navbar = () => {
                     </div>
                     <span className="text-sm font-bold text-slate-700">
                       Riwayat
+                    </span>
+                  </Link>
+                  <Link
+                    to="/classrooms"
+                    onClick={() => setOpen(false)}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-green-300 transition active:scale-95"
+                  >
+                    <div className="bg-green-100 p-2 rounded-full text-green-600">
+                      <GraduationCap size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      Kelas
+                    </span>
+                  </Link>
+                  <Link
+                    to="/leaderboard/global"
+                    onClick={() => setOpen(false)}
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-yellow-300 transition active:scale-95"
+                  >
+                    <div className="bg-yellow-100 p-2 rounded-full text-yellow-600">
+                      <Trophy size={20} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">
+                      Rank
                     </span>
                   </Link>
                 </div>

@@ -29,6 +29,8 @@ import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import Skeleton from "../../components/ui/Skeleton";
+import CreateChallengeModal from "../../components/ui/CreateChallengeModal";
+// Moved to QuizList
 
 // --- HELPER COMPONENT: PLAYER ROW ---
 const PlayerRow = ({
@@ -39,8 +41,10 @@ const PlayerRow = ({
   isFinished,
   getRankStyle,
   getRankIcon,
+  mode,
 }) => {
   const hasPlayed = p.score !== -1;
+  const isSurvival = mode === "survival";
 
   return (
     <div
@@ -84,7 +88,7 @@ const PlayerRow = ({
         </div>
       </div>
       <div className="font-bold text-slate-700">
-        {hasPlayed ? p.score : "-"}
+        {hasPlayed ? (isSurvival ? `Streak: ${p.score}` : p.score) : "-"}
       </div>
     </div>
   );
@@ -150,16 +154,29 @@ const LobbyModal = ({
         eventSource.close();
         toast.success(data.message || "Pertandingan Dimulai!");
 
-        navigate(`/play/${data.quiz_id}`, {
-          state: {
-            isRealtime: true,
-            lobbyId: challengeId,
-            title: data.quiz_title || quizTitle,
-            timeLimit: timeLimit || 0,
-            challengeID: challengeId,
-            isChallenge: true,
-          },
-        });
+        if (data.mode === "survival") {
+          navigate("/play/survival", {
+            state: {
+              isRealtime: true,
+              lobbyId: challengeId,
+              challengeID: challengeId,
+              isChallenge: true,
+              seed: data.seed,
+              timeLimit: timeLimit || 0,
+            },
+          });
+        } else {
+          navigate(`/play/${data.quiz_id}`, {
+            state: {
+              isRealtime: true,
+              lobbyId: challengeId,
+              title: data.quiz_title || quizTitle,
+              timeLimit: timeLimit || 0,
+              challengeID: challengeId,
+              isChallenge: true,
+            },
+          });
+        }
       } catch (err) {
         console.error("Error parse game_start:", err);
       }
@@ -434,6 +451,9 @@ const ChallengeList = () => {
     fetchData(1, true);
   };
 
+  // NEW: State Create Modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
   const handleAccept = async (id, isRealtime, title, creatorId, timeLimit) => {
     try {
       await socialAPI.acceptChallenge(id);
@@ -635,6 +655,14 @@ const ChallengeList = () => {
             </div>
           </div>
         </div>
+
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center gap-2 transform hover:-translate-y-0.5"
+        >
+          <Swords className="w-5 h-5" />
+          BUAT TANTANGAN
+        </button>
       </div>
 
       {/* --- LIST CARD --- */}
@@ -770,6 +798,10 @@ const ChallengeList = () => {
                           <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded flex items-center gap-1">
                             <Users size={10} /> BATTLE ROYALE
                           </span>
+                        ) : duel.mode === "survival" ? (
+                          <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded flex items-center gap-1">
+                            <Users size={10} /> SURVIVAL
+                          </span>
                         ) : (
                           <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded flex items-center gap-1">
                             <Swords size={10} /> 1 VS 1
@@ -865,6 +897,7 @@ const ChallengeList = () => {
                             isFinished={isFinished}
                             getRankStyle={getRankStyle}
                             getRankIcon={getRankIcon}
+                            mode={duel.mode}
                           />
                         ))}
                       </div>
@@ -906,6 +939,7 @@ const ChallengeList = () => {
                             isFinished={isFinished}
                             getRankStyle={getRankStyle}
                             getRankIcon={getRankIcon}
+                            mode={duel.mode}
                           />
                         ))}
                       </div>
@@ -1022,19 +1056,36 @@ const ChallengeList = () => {
                             </button>
                           )
                         ) : isActive ? (
-                          <Link
-                            to={`/play/${duel.quiz_id}`}
-                            state={{
-                              title: duel.quiz?.title,
-                              isChallenge: true,
-                              isRealtime: isRealtime,
-                              timeLimit: duel.time_limit || 0,
-                              challengeID: duel.ID,
-                            }}
-                            className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse"
-                          >
-                            <PlayCircle size={20} /> MAINKAN SEKARANG
-                          </Link>
+                          duel.mode === "survival" ? (
+                            <Link
+                              to="/play/survival"
+                              state={{
+                                isChallenge: true,
+                                isRealtime: isRealtime,
+                                timeLimit: duel.time_limit || 0,
+                                challengeID: duel.ID,
+                                seed: duel.seed,
+                                mode: "survival",
+                              }}
+                              className="w-full py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-red-200 flex items-center justify-center gap-2 transition-all animate-pulse"
+                            >
+                              <Skull size={20} /> SURVIVAL START
+                            </Link>
+                          ) : (
+                            <Link
+                              to={`/play/${duel.quiz_id}`}
+                              state={{
+                                title: duel.quiz?.title,
+                                isChallenge: true,
+                                isRealtime: isRealtime,
+                                timeLimit: duel.time_limit || 0,
+                                challengeID: duel.ID,
+                              }}
+                              className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse"
+                            >
+                              <PlayCircle size={20} /> MAINKAN SEKARANG
+                            </Link>
+                          )
                         ) : isBattleRoyale && !allAccepted ? (
                           <div className="w-full py-3 bg-orange-50 text-orange-600 border border-orange-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
                             <Hourglass size={16} /> Menunggu semua pemain
@@ -1140,6 +1191,12 @@ const ChallengeList = () => {
             timeLimit: 0,
           })
         }
+      />
+
+      <CreateChallengeModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleRefresh}
       />
     </div>
   );
