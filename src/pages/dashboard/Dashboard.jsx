@@ -15,9 +15,9 @@ import {
   Globe,
   Play,
   AlertTriangle, // Icon Warning
-  Loader2,       // Icon Loading
-  XCircle,       // Icon Weakness
-  ArrowRight
+  Loader2, // Icon Loading
+  XCircle, // Icon Weakness
+  ArrowRight,
 } from "lucide-react";
 import { topicAPI, dailyAPI, quizAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -25,10 +25,13 @@ import toast from "react-hot-toast";
 import Skeleton from "../../components/ui/Skeleton";
 import Modal from "../../components/ui/Modal"; // Pastikan Modal diimport
 
+import { useLanguage } from "../../context/LanguageContext"; // Import useLanguage
+
 const Dashboard = () => {
+  const { t } = useLanguage(); // Destructure t
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
-  
+
   // State Data Utama
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +40,7 @@ const Dashboard = () => {
   // State Modal Remedial & Analisis
   const [showRemedialModal, setShowRemedialModal] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [weakTopics, setWeakTopics] = useState([]); 
+  const [weakTopics, setWeakTopics] = useState([]);
 
   useEffect(() => {
     document.title = "Dashboard | QuizApp";
@@ -114,17 +117,21 @@ const Dashboard = () => {
       // 2. Ekstrak nama Quiz/Topik dari soal
       // Note: Backend perlu Preload("Quiz") agar properti 'Quiz.Title' atau 'quiz.title' tersedia.
       // Jika backend belum update, akan tampil "Materi Umum" atau "Quiz ID: ..."
-      const topicsFound = questions.map(q => {
-         // Cek berbagai kemungkinan struktur response (CamelCase/SnakeCase)
-         return q.Quiz?.Title || q.quiz?.title || q.Quiz?.title || (q.quiz_id ? `Quiz Materi #${q.quiz_id}` : "Materi Umum");
+      const topicsFound = questions.map((q) => {
+        // Cek berbagai kemungkinan struktur response (CamelCase/SnakeCase)
+        return (
+          q.Quiz?.Title ||
+          q.quiz?.title ||
+          q.Quiz?.title ||
+          (q.quiz_id ? `Quiz Materi #${q.quiz_id}` : "Materi Umum")
+        );
       });
 
       // Hilangkan duplikat
       const uniqueTopics = [...new Set(topicsFound)];
-      
-      // Ambil maksimal 3 topik untuk ditampilkan
-      setWeakTopics(uniqueTopics.slice(0, 3)); 
 
+      // Ambil maksimal 3 topik untuk ditampilkan
+      setWeakTopics(uniqueTopics.slice(0, 3));
     } catch (err) {
       // Jika 404, artinya tidak ada remedial (User Aman)
       if (err.response && err.response.status === 404) {
@@ -147,10 +154,13 @@ const Dashboard = () => {
     navigate("/play/remedial");
   };
 
-  const quizStreakCount = dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
+  const quizStreakCount =
+    dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
   const isQuizDoneToday = dailyData?.streak?.is_quiz_done ?? false;
   const loginStreakDay = dailyData?.streak?.day ?? 1;
-  const isLoginRewardClaimed = dailyData?.streak?.status === "cooldown" || dailyData?.streak?.status === "claimed";
+  const isLoginRewardClaimed =
+    dailyData?.streak?.status === "cooldown" ||
+    dailyData?.streak?.status === "claimed";
 
   if (loading) {
     return (
@@ -165,7 +175,10 @@ const Dashboard = () => {
           <Skeleton className="h-8 w-48 mb-6" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+              <div
+                key={i}
+                className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-4"
+              >
                 <Skeleton className="w-12 h-12 rounded-xl" />
                 <div className="space-y-2">
                   <Skeleton className="h-6 w-3/4" />
@@ -187,11 +200,9 @@ const Dashboard = () => {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
             <Zap className="text-yellow-500 fill-yellow-500" />
-            Selamat Datang, {user?.name}!
+            {t("dashboard.welcome")} {user?.name}!
           </h1>
-          <p className="text-slate-500 mt-1">
-            Siap untuk mengasah otak hari ini?
-          </p>
+          <p className="text-slate-500 mt-1">{t("dashboard.readyToLearn")}</p>
         </div>
         <div className="flex gap-4">
           <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
@@ -200,7 +211,7 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-xs text-slate-400 font-bold uppercase">
-                Level
+                {t("dashboard.level")}
               </p>
               <p className="text-lg font-bold text-slate-800">
                 {user?.level || 1}
@@ -228,14 +239,14 @@ const Dashboard = () => {
                       : "text-slate-300"
                   }
                 />
-                <span className="font-bold">Mode Serius</span>
+                <span className="font-bold">{t("dashboard.seriousMode")}</span>
               </div>
 
               <h2 className="text-4xl font-black mb-1">
-                {quizStreakCount} Hari
+                {quizStreakCount} {t("dashboard.day")}
               </h2>
               <p className="opacity-80 text-sm font-medium">
-                Streak Quiz Beruntun
+                {t("dashboard.quizStreak")}
               </p>
 
               <div
@@ -246,8 +257,8 @@ const Dashboard = () => {
                 }`}
               >
                 {isQuizDoneToday
-                  ? "🔥 Api aman! Kamu sudah latihan hari ini."
-                  : "❄️ Api hampir padam! Kerjakan kuis sekarang."}
+                  ? t("dashboard.streakSafe")
+                  : t("dashboard.streakDanger")}
               </div>
             </div>
 
@@ -256,7 +267,8 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-indigo-100 uppercase font-bold">
-                    Hadiah Login (Hari ke-{loginStreakDay})
+                    {t("dashboard.loginGift")} ({t("dashboard.day")}{" "}
+                    {loginStreakDay})
                   </span>
                   <span className="font-bold flex items-center gap-1 text-sm">
                     <Gift size={14} className="text-yellow-300" />
@@ -272,7 +284,9 @@ const Dashboard = () => {
                       : "bg-black/20 text-white/70 cursor-not-allowed"
                   }`}
                 >
-                  {isLoginRewardClaimed ? "TERAMBIL" : "KLAIM"}
+                  {isLoginRewardClaimed
+                    ? t("dashboard.claimed")
+                    : t("dashboard.claim")}
                 </button>
               </div>
             </div>
@@ -282,11 +296,11 @@ const Dashboard = () => {
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                <CheckCircle className="text-emerald-500" size={20} /> Misi Hari
-                Ini
+                <CheckCircle className="text-emerald-500" size={20} />{" "}
+                {t("dashboard.dailyMissions")}
               </h3>
               <span className="text-xs font-medium text-slate-400">
-                Reset tiap 24 jam
+                {t("dashboard.resetDaily")}
               </span>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
@@ -340,10 +354,10 @@ const Dashboard = () => {
                       }`}
                     >
                       {mission.status === "claimed"
-                        ? "Selesai"
+                        ? t("dashboard.missionDone")
                         : mission.status === "claimable"
-                        ? "Klaim"
-                        : "Jalan"}
+                        ? t("dashboard.claim")
+                        : t("dashboard.missionGo")}
                     </button>
                   </div>
                 </div>
@@ -355,23 +369,23 @@ const Dashboard = () => {
 
       {/* MENU PINTAR (Remedial & Komunitas) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
         {/* 1. Smart Remedial (Active with Modal Insight) */}
         <div className="bg-gradient-to-r from-rose-50 to-orange-50 rounded-2xl p-6 border border-rose-100 flex items-center justify-between shadow-sm relative overflow-hidden group">
           <div className="absolute right-0 top-0 w-32 h-32 bg-rose-200/20 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2"></div>
           <div className="relative z-10">
             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <BrainCircuit className="text-rose-500" /> Smart Remedial
+              <BrainCircuit className="text-rose-500" />{" "}
+              {t("dashboard.smartRemedial")}
             </h3>
             <p className="text-sm text-slate-500 mt-1 max-w-xs">
-              AI akan mendeteksi kelemahanmu dan menyusun soal khusus.
+              {t("dashboard.aiDetect")}
             </p>
             {/* Ubah onClick ke handleOpenRemedial */}
             <button
               onClick={handleOpenRemedial}
               className="mt-4 px-5 py-2 bg-white text-rose-600 font-bold rounded-lg shadow-sm border border-rose-100 hover:shadow-md transition text-sm cursor-pointer"
             >
-              Analisis Kelemahan Saya
+              {t("dashboard.analyzeWeakness")}
             </button>
           </div>
           <div className="hidden sm:block text-rose-200 relative z-0">
@@ -384,10 +398,11 @@ const Dashboard = () => {
           <div className="flex justify-between items-start mb-2 opacity-70">
             <div>
               <h3 className="font-bold text-slate-600 flex items-center gap-2">
-                <Globe className="text-slate-400" /> Kuis Komunitas
+                <Globe className="text-slate-400" />{" "}
+                {t("dashboard.communityQuiz")}
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Coba kuis buatan pemain lain.
+                {t("dashboard.communityDesc")}
               </p>
             </div>
             <div className="p-3 bg-white rounded-full text-slate-300 border border-slate-100">
@@ -399,7 +414,7 @@ const Dashboard = () => {
             disabled
             className="w-full text-center py-2 bg-slate-200 text-slate-400 rounded-lg font-bold cursor-not-allowed text-sm border border-slate-300"
           >
-            Segera Hadir 🚧
+            {t("dashboard.soon")}
           </button>
         </div>
       </div>
@@ -408,7 +423,8 @@ const Dashboard = () => {
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <BookOpen className="text-indigo-600" /> Jelajahi Topik
+            <BookOpen className="text-indigo-600" />{" "}
+            {t("dashboard.exploreTopics")}
           </h2>
         </div>
         {topics.length > 0 ? (
@@ -435,7 +451,7 @@ const Dashboard = () => {
                 </div>
                 <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-400 group-hover:text-indigo-500 transition-colors uppercase tracking-wider">
-                    Mulai Kuis
+                    {t("dashboard.startQuiz")}
                   </span>
                   <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                     <Play size={14} fill="currentColor" />
@@ -450,7 +466,7 @@ const Dashboard = () => {
               <BookOpen size={32} className="text-slate-300" />
             </div>
             <p className="text-slate-500 font-medium">
-              Belum ada topik yang tersedia.
+              {t("dashboard.noTopics")}
             </p>
           </div>
         )}
@@ -465,57 +481,74 @@ const Dashboard = () => {
         <div className="text-center">
           {analyzing ? (
             <div className="py-8">
-                <Loader2 size={48} className="animate-spin text-indigo-500 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-slate-700">Menganalisis Jawabanmu...</h3>
-                <p className="text-sm text-slate-400">Sistem sedang mencari topik yang perlu kamu ulang.</p>
+              <Loader2
+                size={48}
+                className="animate-spin text-indigo-500 mx-auto mb-4"
+              />
+              <h3 className="text-lg font-bold text-slate-700">
+                {t("modals.analyzing")}
+              </h3>
+              <p className="text-sm text-slate-400">
+                {t("modals.analyzingDesc")}
+              </p>
             </div>
           ) : (
             <>
-                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-bounce-slow">
-                    <AlertTriangle size={32} />
-                </div>
-                
-                <h2 className="text-2xl font-black text-slate-800 mb-2">Diagnosis Selesai</h2>
-                <p className="text-slate-500 text-sm mb-6 px-4">
-                   Kamu sering melakukan kesalahan pada topik-topik berikut:
-                </p>
-                
-                {/* Daftar Topik Lemah */}
-                <div className="bg-slate-50 rounded-xl p-4 text-left border border-slate-100 mb-6">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Fokus Perbaikan Hari Ini:</h4>
-                    <div className="space-y-2">
-                        {weakTopics.length > 0 ? weakTopics.map((topicName, idx) => (
-                            <div key={idx} className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-                                <XCircle size={18} className="text-red-500 shrink-0" />
-                                <span className="font-bold text-slate-700 text-sm">{topicName}</span>
-                            </div>
-                        )) : (
-                            <div className="text-center text-slate-400 text-xs italic">
-                                Data spesifik tidak tersedia, tapi soal sudah siap dikerjakan!
-                            </div>
-                        )}
-                    </div>
-                </div>
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-bounce-slow">
+                <AlertTriangle size={32} />
+              </div>
 
-                <div className="flex gap-3">
-                    <button 
-                        onClick={() => setShowRemedialModal(false)}
-                        className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition"
-                    >
-                        Nanti Saja
-                    </button>
-                    <button 
-                        onClick={startRemedial}
-                        className="flex-1 py-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-rose-200 transition flex items-center justify-center gap-2"
-                    >
-                        Mulai Perbaikan <ArrowRight size={18} />
-                    </button>
+              <h2 className="text-2xl font-black text-slate-800 mb-2">
+                {t("modals.diagnosisComplete")}
+              </h2>
+              <p className="text-slate-500 text-sm mb-6 px-4">
+                {t("modals.weaknessFocus")}
+              </p>
+
+              {/* Daftar Topik Lemah */}
+              <div className="bg-slate-50 rounded-xl p-4 text-left border border-slate-100 mb-6">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+                  {t("modals.todayFocus")}
+                </h4>
+                <div className="space-y-2">
+                  {weakTopics.length > 0 ? (
+                    weakTopics.map((topicName, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-100 shadow-sm"
+                      >
+                        <XCircle size={18} className="text-red-500 shrink-0" />
+                        <span className="font-bold text-slate-700 text-sm">
+                          {topicName}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-slate-400 text-xs italic">
+                      {t("modals.noWeakness")}
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowRemedialModal(false)}
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition"
+                >
+                  {t("modals.later")}
+                </button>
+                <button
+                  onClick={startRemedial}
+                  className="flex-1 py-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-rose-200 transition flex items-center justify-center gap-2"
+                >
+                  {t("modals.startRemedial")} <ArrowRight size={18} />
+                </button>
+              </div>
             </>
           )}
         </div>
       </Modal>
-
     </div>
   );
 };

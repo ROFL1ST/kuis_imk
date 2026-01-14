@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -22,6 +23,7 @@ const CreateChallengeModal = ({
   preselectedTopicId,
   preselectedQuizTitle,
 }) => {
+  const { t } = useLanguage();
   const [step, setStep] = useState(1); // 1: Mode/Quiz, 2: Friends, 3: Confirm
   const [loading, setLoading] = useState(false);
 
@@ -86,7 +88,7 @@ const CreateChallengeModal = ({
       setFriends(friendsRes.data.data || []);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load initial data");
+      toast.error("Gagal memuat data awal");
     }
   };
 
@@ -102,7 +104,9 @@ const CreateChallengeModal = ({
       if (selectedOpponents.length > limit) {
         // Truncate to limit instead of clearing
         setSelectedOpponents((prev) => prev.slice(0, limit));
-        toast.success(`Mode adapted: Keeping top ${limit} selected friends`);
+        toast.success(
+          t("createChallenge.adjustMode", { limit: limit.toString() })
+        );
       }
     }
 
@@ -134,7 +138,10 @@ const CreateChallengeModal = ({
         setSelectedOpponents((prev) => [...prev, username]);
       } else {
         if (limit === 1) setSelectedOpponents([username]); // Replace if 1v1
-        else toast.error(`Max ${limit} players for this mode`);
+        else
+          toast.error(
+            t("createChallenge.maxPlayers", { limit: limit.toString() })
+          );
       }
     }
   };
@@ -154,14 +161,12 @@ const CreateChallengeModal = ({
       const res = await socialAPI.createChallenge(payload);
       console.log(res);
       if (res.data.status === "success") {
-        toast.success("Challenge created successfully!");
+        toast.success(t("createChallenge.success"));
         onCreated && onCreated();
         onClose();
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to create challenge"
-      );
+      toast.error(error.response?.data?.message || "Gagal membuat tantangan");
     } finally {
       setLoading(false);
     }
@@ -171,37 +176,37 @@ const CreateChallengeModal = ({
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-2">
-          Select Game Mode
+          {t("createChallenge.selectMode")}
         </label>
         <div className="grid grid-cols-2 gap-3">
           {[
             {
               id: "1v1",
-              label: "1 vs 1",
+              label: t("createChallenge.modes.1v1"),
               icon: Swords,
               color: "text-orange-500",
-              desc: "Duel Classic",
+              desc: t("createChallenge.modes.1v1Desc"),
             },
             {
               id: "survival",
-              label: "Survival",
+              label: t("createChallenge.modes.survival"),
               icon: Zap,
               color: "text-red-500",
-              desc: "One Life, Infinite",
+              desc: t("createChallenge.modes.survivalDesc"),
             },
             {
               id: "2v2",
-              label: "2 vs 2",
+              label: t("createChallenge.modes.2v2"),
               icon: Users,
               color: "text-blue-500",
-              desc: "Team Battle",
+              desc: t("createChallenge.modes.2v2Desc"),
             },
             {
               id: "battleroyale",
-              label: "Battle Royale",
+              label: t("createChallenge.modes.battleroyale"),
               icon: Trophy,
               color: "text-purple-500",
-              desc: "Free for All",
+              desc: t("createChallenge.modes.battleroyaleDesc"),
             },
           ].map((m) => (
             <button
@@ -226,7 +231,7 @@ const CreateChallengeModal = ({
       {selectedMode !== "survival" && !preselectedTopicId && (
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">
-            Select Topic
+            {t("createChallenge.selectTopic")}
           </label>
           <select
             className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
@@ -250,7 +255,7 @@ const CreateChallengeModal = ({
               });
             }}
           >
-            <option value="">-- Choose a Topic --</option>
+            <option value="">{t("createChallenge.placeholderTopic")}</option>
             {topics.map((t) => (
               <option key={t.ID} value={t.ID}>
                 {t.title}
@@ -258,7 +263,7 @@ const CreateChallengeModal = ({
             ))}
           </select>
           <p className="text-xs text-slate-400 mt-1">
-            *Selected topic will determine the questions.
+            {t("createChallenge.topicHint")}
           </p>
         </div>
       )}
@@ -267,14 +272,14 @@ const CreateChallengeModal = ({
         {/* Time Limit */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">
-            Time Limit (Min)
+            {t("createChallenge.timeLimit")}
           </label>
           <div className="relative">
             <Clock className="absolute left-3 top-3 text-slate-400" size={18} />
             <input
               type="number"
               min="0"
-              placeholder="0 = No Limit"
+              placeholder={t("createChallenge.timeLimitPlaceholder")}
               value={timeLimit}
               onChange={(e) => setTimeLimit(e.target.value)}
               className="w-full p-2.5 pl-10 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
@@ -285,7 +290,7 @@ const CreateChallengeModal = ({
         {/* Wager */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">
-            Wager (Coins)
+            {t("createChallenge.wager")}
           </label>
           <div className="relative">
             <Coins
@@ -318,7 +323,7 @@ const CreateChallengeModal = ({
           htmlFor="realtime"
           className="font-bold text-slate-700 text-sm cursor-pointer select-none flex-1"
         >
-          Realtime Mode (Main Bareng)
+          {t("createChallenge.realtime")}
         </label>
       </div>
 
@@ -329,7 +334,7 @@ const CreateChallengeModal = ({
         onClick={() => setStep(2)}
         className="w-full py-3 bg-indigo-600 disabled:bg-slate-300 text-white rounded-xl font-bold hover:shadow-lg transition-all flex justify-center items-center gap-2"
       >
-        Next: Select Friends <ChevronRight size={18} />
+        {t("createChallenge.next")} <ChevronRight size={18} />
       </button>
     </div>
   );
@@ -340,7 +345,7 @@ const CreateChallengeModal = ({
         <Search className="absolute left-3 top-3 text-slate-400" size={18} />
         <input
           type="text"
-          placeholder="Search friends..."
+          placeholder={t("createChallenge.searchFriend")}
           value={searchFriend}
           onChange={(e) => setSearchFriend(e.target.value)}
           className="w-full p-2.5 pl-10 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
@@ -349,7 +354,9 @@ const CreateChallengeModal = ({
 
       <div className="h-60 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
         {filteredFriends.length === 0 ? (
-          <p className="text-center text-slate-400 py-10">No friends found.</p>
+          <p className="text-center text-slate-400 py-10">
+            {t("createChallenge.noFriends")}
+          </p>
         ) : (
           filteredFriends.map((f) => {
             const isSelected = selectedOpponents.includes(f.username);
@@ -360,10 +367,10 @@ const CreateChallengeModal = ({
             if (isSelected && selectedMode === "2v2") {
               const index = selectedOpponents.indexOf(f.username);
               if (index === 0) {
-                roleLabel = "TEAMMATE";
+                roleLabel = t("createChallenge.teammate");
                 roleColor = "bg-blue-100 text-blue-700 border-blue-200";
               } else {
-                roleLabel = "ENEMY";
+                roleLabel = t("createChallenge.opponent");
                 roleColor = "bg-red-100 text-red-700 border-red-200";
               }
             }
@@ -418,7 +425,7 @@ const CreateChallengeModal = ({
           onClick={() => setStep(1)}
           className="px-4 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-xl transition"
         >
-          Back
+          {t("createChallenge.back")}
         </button>
         <button
           disabled={selectedOpponents.length === 0}
@@ -426,8 +433,8 @@ const CreateChallengeModal = ({
           className="flex-1 py-3 bg-indigo-600 disabled:bg-slate-300 text-white rounded-xl font-bold hover:shadow-lg transition-all flex justify-center items-center gap-2"
         >
           {loading
-            ? "Creating..."
-            : `Create Challenge (${selectedOpponents.length} Hosts)`}
+            ? t("createChallenge.creating")
+            : `${t("createChallenge.create")} (${selectedOpponents.length})`}
         </button>
       </div>
     </div>
@@ -453,7 +460,8 @@ const CreateChallengeModal = ({
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md pointer-events-auto overflow-hidden flex flex-col max-h-[90vh]">
               <div className="p-5 bg-white border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <Swords className="text-indigo-600" /> New Challenge
+                  <Swords className="text-indigo-600" />{" "}
+                  {t("createChallenge.title")}
                 </h2>
                 <button
                   onClick={onClose}

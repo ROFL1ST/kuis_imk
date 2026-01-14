@@ -14,9 +14,11 @@ import {
 } from "lucide-react";
 import { quizAPI } from "../../services/api";
 import toast from "react-hot-toast";
-import Skeleton from "../../components/ui/Skeleton"; // Import Skeleton
+import Skeleton from "../../components/ui/Skeleton";
+import { useLanguage } from "../../context/LanguageContext";
 
 const ReviewPage = () => {
+  const { t, language } = useLanguage();
   const { historyId } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
@@ -29,26 +31,28 @@ const ReviewPage = () => {
         setData(res.data.data);
       } catch (error) {
         console.error(error);
-        toast.error("Gagal memuat detail riwayat");
+        toast.error(t("review.loadError"));
         navigate("/history");
       } finally {
         setLoading(false);
       }
     };
     fetchDetail();
-  }, [historyId, navigate]);
+  }, [historyId, navigate, t]);
 
   const formatDuration = (seconds) => {
     if (!seconds && seconds !== 0) return "-";
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    if (m === 0) return `${s} detik`;
-    return `${m} menit ${s} detik`;
+    if (m === 0) return `${s} ${t("review.seconds")}`;
+    return `${m} ${t("review.minutes")} ${s} ${t("review.seconds")}`;
   };
 
   const formatAnswer = (answer, type) => {
     if (!answer)
-      return <span className="text-slate-400 italic">- Tidak Dijawab -</span>;
+      return (
+        <span className="text-slate-400 italic">{t("review.noAnswer")}</span>
+      );
 
     if (type === "multi_select") {
       try {
@@ -57,7 +61,7 @@ const ReviewPage = () => {
         if (ansArray.length === 0)
           return (
             <span className="text-slate-400 italic">
-              - Tidak ada opsi dipilih -
+              {t("review.noOptionSelected")}
             </span>
           );
 
@@ -196,6 +200,14 @@ const ReviewPage = () => {
 
   const wrongCount = questions.length - correctCount;
 
+  // Locale for date
+  const localeMap = {
+    id: "id-ID",
+    en: "en-US",
+    jp: "ja-JP",
+  };
+  const currentLocale = localeMap[language] || "id-ID";
+
   return (
     <div className="max-w-4xl mx-auto pb-12">
       {/* Tombol Back */}
@@ -203,7 +215,7 @@ const ReviewPage = () => {
         onClick={() => navigate("/history")}
         className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 mb-6 transition-colors font-medium"
       >
-        <ArrowLeft size={20} /> Kembali ke Riwayat
+        <ArrowLeft size={20} /> {t("review.backToHistory")}
       </button>
 
       {/* 1. Summary Card */}
@@ -242,12 +254,12 @@ const ReviewPage = () => {
             <div>
               {isDuel && (
                 <span className="inline-flex items-center gap-1 bg-orange-500 text-white px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider mb-2 shadow-sm">
-                  <Swords size={12} /> DUEL MODE
+                  <Swords size={12} /> {t("review.duelMode")}
                 </span>
               )}
               {isSurvival && (
                 <span className="inline-flex items-center gap-1 bg-purple-600 text-white px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider mb-2 shadow-sm">
-                  <Swords size={12} /> SURVIVAL MODE
+                  <Swords size={12} /> {t("review.survivalMode")}
                 </span>
               )}
               <h1 className="text-2xl font-bold text-slate-900">
@@ -273,13 +285,13 @@ const ReviewPage = () => {
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm text-slate-500 mt-2">
             <span className="flex items-center gap-1.5 bg-white/60 px-3 py-1 rounded-full border border-slate-200/50 backdrop-blur-sm">
               <Calendar size={14} />
-              {new Date(created_at).toLocaleDateString("id-ID", {
+              {new Date(created_at).toLocaleDateString(currentLocale, {
                 dateStyle: "long",
               })}
             </span>
             <span className="flex items-center gap-1.5 bg-white/60 px-3 py-1 rounded-full border border-slate-200/50 backdrop-blur-sm">
               <ListChecks size={14} />
-              {questions.length} Soal
+              {questions.length} {t("review.questionsCount")}
             </span>
           </div>
         </div>
@@ -305,7 +317,7 @@ const ReviewPage = () => {
                   : "text-indigo-400"
               }`}
             >
-              {isSurvival ? "Rounds" : "Skor Kamu"}
+              {isSurvival ? t("review.rounds") : t("review.yourScore")}
             </span>
             <span
               className={`text-4xl font-black ${
@@ -339,7 +351,7 @@ const ReviewPage = () => {
                   : "text-red-400"
               }`}
             >
-              {isSurvival ? "Hasil" : "Status"}
+              {isSurvival ? t("review.result") : t("review.status")}
             </span>
             <span
               className={`text-xl font-bold flex items-center gap-2 ${
@@ -357,14 +369,18 @@ const ReviewPage = () => {
               ) : (
                 <XCircle size={24} />
               )}
-              {isSurvival ? "SELESAI" : isPass ? "LULUS" : "GAGAL"}
+              {isSurvival
+                ? t("review.finished")
+                : isPass
+                ? t("review.passed")
+                : t("review.failed")}
             </span>
           </div>
 
           {/* Benar */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Benar
+              {t("review.correct")}
             </span>
             <span className="text-2xl font-bold text-emerald-500">
               {correctCount}
@@ -374,7 +390,7 @@ const ReviewPage = () => {
           {/* Salah */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Salah
+              {t("review.wrong")}
             </span>
             <span className="text-2xl font-bold text-red-500">
               {wrongCount}
@@ -386,7 +402,7 @@ const ReviewPage = () => {
       {/* 2. Detail Pembahasan */}
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 px-2">
-          <BookOpen className="text-indigo-600" /> Detail Jawaban
+          <BookOpen className="text-indigo-600" /> {t("review.detailedAnswers")}
         </h2>
 
         {detailedAnswers.map((q, index) => {
@@ -403,28 +419,28 @@ const ReviewPage = () => {
               <div className="flex justify-between gap-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="bg-slate-100 text-slate-500 text-xs font-bold px-3 py-1 rounded-lg h-fit">
-                    No. {index + 1}
+                    {t("review.number")} {index + 1}
                   </span>
                   {/* Badge Tipe Soal */}
                   {q.type === "multi_select" && (
                     <span className="text-[10px] font-bold bg-orange-50 text-orange-600 px-2 py-0.5 rounded border border-orange-100 flex items-center gap-1">
-                      <CheckSquare size={10} /> Multi
+                      <CheckSquare size={10} /> {t("review.typeMulti")}
                     </span>
                   )}
                   {q.type === "short_answer" && (
                     <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1">
-                      <Type size={10} /> Isian
+                      <Type size={10} /> {t("review.typeEssay")}
                     </span>
                   )}
                 </div>
 
                 {q.isCorrect ? (
                   <span className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">
-                    <CheckCircle size={14} /> Benar
+                    <CheckCircle size={14} /> {t("review.correct")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full">
-                    <XCircle size={14} /> Salah
+                    <XCircle size={14} /> {t("review.wrong")}
                   </span>
                 )}
               </div>
@@ -446,7 +462,7 @@ const ReviewPage = () => {
                 >
                   <div className="w-full">
                     <span className="text-xs font-bold uppercase opacity-60 block mb-2">
-                      Jawaban Kamu
+                      {t("review.yourAnswer")}
                     </span>
                     <div className="font-semibold text-lg leading-snug">
                       {formatAnswer(q.userAnswer, q.type)}
@@ -466,7 +482,7 @@ const ReviewPage = () => {
                   <div className="p-4 rounded-xl border bg-slate-50 border-slate-200 text-slate-700 flex justify-between items-start gap-4">
                     <div className="w-full">
                       <span className="text-xs font-bold uppercase opacity-60 block mb-2 text-slate-500">
-                        Jawaban Benar
+                        {t("review.correctAnswer")}
                       </span>
                       <div className="font-semibold text-lg leading-snug text-emerald-600">
                         {formatAnswer(q.correct, q.type)}
@@ -486,7 +502,7 @@ const ReviewPage = () => {
                   <span className="mt-0.5">💡</span>
                   <div>
                     <span className="font-bold block text-xs uppercase opacity-70 mb-0.5">
-                      Penjelasan
+                      {t("review.explanation")}
                     </span>
                     {q.hint}
                   </div>

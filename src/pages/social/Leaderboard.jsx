@@ -4,9 +4,11 @@ import { socialAPI } from "../../services/api";
 import { Medal, ArrowLeft } from "lucide-react";
 import UserAvatar from "../../components/ui/UserAvatar";
 import Skeleton from "../../components/ui/Skeleton";
+import { useLanguage } from "../../context/LanguageContext";
 
 const Leaderboard = () => {
   const { slug } = useParams();
+  const { t } = useLanguage();
   const [leaders, setLeaders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,7 +21,7 @@ const Leaderboard = () => {
   }, [slug]);
 
   useEffect(() => {
-    document.title = `Leaderboard: ${slug} | QuizApp`;
+    document.title = `Peringkat: ${slug} | QuizApp`;
   }, [slug]);
 
   const getRankStyle = (index) => {
@@ -65,14 +67,14 @@ const Leaderboard = () => {
         to={`/topic/${slug}`}
         className="inline-flex items-center gap-2 text-slate-500 hover:text-indigo-600 mb-6"
       >
-        <ArrowLeft size={18} /> Kembali ke Kuis
+        <ArrowLeft size={18} /> {t("leaderboard.backToQuiz")}
       </Link>
 
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold text-slate-800 mb-2 capitalize">
-          Top 10 {slug}
+          {t("leaderboard.top10")} {slug}
         </h1>
-        <p className="text-slate-500">Pejuang skor tertinggi di topik ini</p>
+        <p className="text-slate-500">{t("leaderboard.subtitle")}</p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -106,7 +108,7 @@ const Leaderboard = () => {
 
         {leaders.length === 0 && (
           <div className="text-center p-8 text-slate-500 bg-white rounded-xl border">
-            Belum ada data leaderboard. Jadilah yang pertama!
+            {t("leaderboard.empty")}
           </div>
         )}
       </div>

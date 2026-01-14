@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
 import UserAvatar from "../../components/ui/UserAvatar"; // [BARU] Import UserAvatar
 import ReportModal from "../../components/ui/ReportModal"; // [BARU] Import ReportModal
+import { useLanguage } from "../../context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -35,6 +36,7 @@ import Skeleton from "../../components/ui/Skeleton";
 
 const Profile = () => {
   const { username } = useParams();
+  const { t } = useLanguage();
   const { user: authUser, setUser: setAuthUser } = useAuth();
   const navigate = useNavigate();
 
@@ -171,7 +173,7 @@ const Profile = () => {
     if (!profileData) return;
     const { user } = profileData;
 
-    const title = `${user.name} (@${user.username}) | QuizApp`;
+    const title = `${user.name} (@${user.username}) | ${t("profile.title")}`;
     document.title = title;
 
     const updateMeta = (name, content) => {
@@ -236,7 +238,7 @@ const Profile = () => {
       // Fitur Share Native Browser
       if (navigator.share) {
         await navigator.share({
-          title: "QuizApp Profile",
+          title: t("profile.title"),
           text: `Lihat profil ${user.name} di QuizApp!`,
           url: window.location.href,
         });
@@ -383,7 +385,7 @@ const Profile = () => {
                   animate={isImageHover ? { scale: 1.1 } : { scale: 1 }}
                   className="absolute z-20 -bottom-2 -right-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-sm font-bold px-3 py-1.5 rounded-full border-4 border-white shadow-lg flex items-center gap-1"
                 >
-                  <Crown size={12} /> Level {currentLevel}
+                  <Crown size={12} /> {t("profile.level")} {currentLevel}
                 </motion.div>
               </div>
 
@@ -472,7 +474,7 @@ const Profile = () => {
                       onClick={() => setIsEditOpen(true)}
                       className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group shadow-md"
                     >
-                      <Edit3 size={18} /> Edit Profil{" "}
+                      <Edit3 size={18} /> {t("profile.edit")}{" "}
                       <ChevronRight
                         className="group-hover:translate-x-1 transition-transform"
                         size={16}
@@ -552,7 +554,7 @@ const Profile = () => {
                 <div className="mt-8">
                   <div className="flex justify-between text-sm mb-2">
                     <span className="font-medium text-slate-600">
-                      Progress Level {currentLevel}
+                      {t("profile.progress")} {currentLevel}
                     </span>
                     <span className="font-bold text-indigo-600">
                       {displayProgress.toFixed(1)}%
@@ -689,7 +691,8 @@ const Profile = () => {
                 className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6"
               >
                 <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                  <Award className="text-yellow-500" /> Pencapaian
+                  <Award className="text-yellow-500" />{" "}
+                  {t("profile.achievements")}
                 </h3>
                 <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                   {achievements.length > 0 ? (
@@ -817,10 +820,10 @@ const Profile = () => {
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <Award size={20} className="text-yellow-500" /> Achievements
+                    <Award size={20} className="text-yellow-500" /> Pencapaian
                   </h3>
                   <span className="text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded text-slate-500">
-                    {achievements.length} Unlocked
+                    {achievements.length} Terbuka
                   </span>
                 </div>
                 <div className="p-6">

@@ -22,7 +22,8 @@ import {
   Type as TypeIcon,
   CheckSquare,
   Flame,
-  Skull, // New Icon
+  Skull,
+  ChevronLeft, // New Icon
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LevelUpModal from "../../components/ui/LevelUpModal";
@@ -32,6 +33,10 @@ import ReviewModal from "../../components/ui/ReviewModal"; // NEW
 import { getToken } from "../../services/auth";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { survivalAPI } from "../../services/newFeatures";
+import { useLanguage } from "../../context/LanguageContext";
+import { aiService } from "../../services/aiService";
+import { detectLanguage } from "../../utils/languageDetector";
+import { Languages, RotateCcw } from "lucide-react";
 
 // Helper: Shuffle Array
 const shuffleArray = (array) => {
@@ -46,6 +51,7 @@ const shuffleArray = (array) => {
 
 const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   const { quizId } = useParams();
+  const { t } = useLanguage();
   const isRemedial = propIsRemedial || quizId === "remedial";
 
   const { user, setUser } = useAuth();
@@ -58,9 +64,9 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
 
   const originalTitle = location.state?.title || "Kuis";
   const quizTitle = isRemedial
-    ? "Smart Remedial (Perbaikan)"
+    ? t("quiz.remedial")
     : classroomName
-    ? `${originalTitle} (Class: ${classroomName})`
+    ? `${originalTitle} (${t("quiz.class")}: ${classroomName})`
     : originalTitle;
 
   const isChallenge = location.state?.isChallenge || false;
@@ -113,6 +119,97 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   const [opponentsProgress, setOpponentsProgress] = useState({});
   const [playersMap, setPlayersMap] = useState({});
   const [finishedPlayers, setFinishedPlayers] = useState({});
+
+  // AI Translation State
+  const [translation, setTranslation] = useState(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const { language } = useLanguage();
+
+  // Reset translation on question change
+  useEffect(() => {
+    setTranslation(null);
+    setShowTranslated(false);
+  }, [currentIndex, questions]);
+
+  // Check if detected language matches current language
+  const isContentSameLanguage = (text, targetLang) => {
+    const detected = detectLanguage(text);
+    // If detected matches target, return true (hidden)
+    // If detected is unknown, show button (return false)
+    if (detected === targetLang) return true;
+
+    // Special case: If target is 'id' but detected is 'en', show.
+    // Specical case: If target is 'en' but detected is 'id', show.
+    return false;
+  };
+
+  const shouldHideTranslate = isContentSameLanguage(
+    questions[currentIndex]?.question || "",
+    language
+  );
+
+  const handleTranslate = async () => {
+    if (translation) {
+      setShowTranslated(!showTranslated);
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const currentQ = questions[currentIndex];
+
+      // Prepare payload with options if they exist
+      const payload = {
+        q: currentQ.question,
+        o: currentQ.options
+          ? currentQ.options.map((opt) => {
+              if (typeof opt === "string") return opt;
+              return (
+                opt.option_text || opt.text || opt.label || JSON.stringify(opt)
+              );
+            })
+          : [],
+      };
+
+      // Only send object if options exist, otherwise just string (backward compatibility/simplicity)
+      const textToTranslate =
+        payload.o.length > 0 ? JSON.stringify(payload) : currentQ.question;
+
+      const res = await aiService.translate(textToTranslate, language);
+
+      if (res.status === "success") {
+        let result = res.data.translatedText;
+
+        // Try to parse if it was a JSON request
+        if (payload.o.length > 0) {
+          try {
+            // Remove markdown code blocks if AI adds them
+            const cleanJson = result.replace(/```json|```/g, "").trim();
+            const parsed = JSON.parse(cleanJson);
+            // Store comprehensive translation object
+            setTranslation({
+              question: parsed.q || currentQ.question,
+              options: parsed.o || [],
+            });
+          } catch (e) {
+            console.error("Failed to parse translated JSON", e);
+            // Fallback to raw text if parsing fails (unlikely if AI behaves)
+            setTranslation({ question: result, options: [] });
+          }
+        } else {
+          setTranslation({ question: result, options: [] });
+        }
+
+        setShowTranslated(true);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(t("modals.aiError"));
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   // ----------------------------------------------------------------
   // 1. LOGIC REALTIME (SSE)
@@ -301,7 +398,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
     if (timeLimit > 0 && !isFinished && !submitting) {
       if (elapsedTime >= timeLimit) {
         clearInterval(timerIntervalRef.current);
-        toast.error("Waktu Habis! Mengirim jawaban otomatis...");
+        toast.error(`${t("quiz.timeUp")} ${t("quiz.sending")}`);
         handleSubmit();
       }
     }
@@ -360,7 +457,10 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         const data = res.data.data;
         if (res.data.message === "Correct!" || data.next_question) {
           // Correct Answer
-          toast.success(`Benar! Runtunan: ${data.new_streak}`, { icon: "🔥" });
+          toast.success(
+            `${t("quiz.correct")} ${t("challenge.streak")}: ${data.new_streak}`,
+            { icon: "🔥" }
+          );
 
           // Process Next Question
           const q = data.next_question;
@@ -392,7 +492,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           }
         } else {
           // Wrong Answer / Game Over
-          toast.error("Salah! Game Over.");
+          toast.error(`${t("quiz.wrong")} ${t("quiz.gameOver")}`);
 
           const finalStreak = data.final_streak || currentStreak;
           const score = finalStreak; // Survival Score = Rounds Survived
@@ -426,7 +526,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             });
             if (resHistory.data.status === "success") {
               const data = resHistory.data.data;
-              toast.success("Nilai berhasil disimpan!");
+              toast.success(t("quiz.saved"));
               setHistoryId(data.ID);
             }
           }
@@ -443,7 +543,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error submitting answer");
+      toast.error("Gagal mengirim jawaban");
     } finally {
       setSubmitting(false);
     }
@@ -468,7 +568,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       const currentQ = questions[currentIndex];
       const ans = answers[currentQ.ID];
       if (!ans) {
-        toast.error("Pilih jawaban dulu!");
+        toast.error(t("quiz.selectAnswer"));
         return;
       }
       await handleSurvivalAnswer(ans);
@@ -737,7 +837,14 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                     >
                       {isSelected && <CheckCircle2 size={16} />}
                     </div>
-                    <span className="leading-snug">{opt}</span>
+                    <span className="leading-snug">
+                      {showTranslated &&
+                      translation &&
+                      translation.options &&
+                      translation.options[idx]
+                        ? translation.options[idx]
+                        : opt}
+                    </span>
                   </div>
                 </button>
               );
@@ -784,7 +891,14 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                       {label}
                     </div>
                   )}
-                  <span className="leading-snug">{opt}</span>
+                  <span className="leading-snug">
+                    {showTranslated &&
+                    translation &&
+                    translation.options &&
+                    translation.options[idx]
+                      ? translation.options[idx]
+                      : opt}
+                  </span>
                 </div>
                 {!isBoolean && isSelected && (
                   <CheckCircle2 size={20} className="text-indigo-600" />
@@ -1025,7 +1139,10 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
               {quizTitle}
             </h2>
             <p className="text-xs text-slate-400 font-medium">
-              Soal {currentIndex + 1} / {questions.length}
+              {t("quiz.questionOf", {
+                current: currentIndex + 1,
+                total: questions.length,
+              })}
             </p>
           </div>
         </div>
@@ -1097,24 +1214,56 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           >
             <div className="flex justify-between items-start mb-2">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
-                {currentQ.question}
+                {showTranslated && translation && translation.question ? (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-indigo-700"
+                  >
+                    {translation.question}
+                  </motion.span>
+                ) : (
+                  currentQ.question
+                )}
               </h2>
-              {currentQ.hint && (
+              <div className="flex gap-x-3 items-start">
+                {!shouldHideTranslate && (
+                  <button
+                    onClick={handleTranslate}
+                    disabled={isTranslating}
+                    className={`p-2 rounded-full transition shrink-0 ${
+                      showTranslated
+                        ? "bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
+                        : "bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-500"
+                    }`}
+                    title={showTranslated ? t("showOriginal") : t("translate")}
+                  >
+                    {isTranslating ? (
+                      <Loader2 size={20} className="animate-spin" />
+                    ) : showTranslated ? (
+                      <RotateCcw size={20} />
+                    ) : (
+                      <Languages size={20} />
+                    )}
+                  </button>
+                )}
+                {currentQ.hint && (
+                  <button
+                    onClick={() => setShowHint(!showHint)}
+                    className="p-2 rounded-full bg-slate-50 hover:bg-yellow-50 text-slate-400 hover:text-yellow-500 transition shrink-0"
+                    title="Lihat Hint"
+                  >
+                    <Lightbulb size={20} />
+                  </button>
+                )}
                 <button
-                  onClick={() => setShowHint(!showHint)}
-                  className="p-2 rounded-full bg-slate-50 hover:bg-yellow-50 text-slate-400 hover:text-yellow-500 transition shrink-0"
-                  title="Lihat Hint"
+                  onClick={() => setShowReportModal(true)}
+                  className="p-2 rounded-full bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 transition shrink-0"
+                  title="Laporkan Soal"
                 >
-                  <Lightbulb size={20} />
+                  <Flag size={20} />
                 </button>
-              )}
-              <button
-                onClick={() => setShowReportModal(true)}
-                className="p-2 rounded-full bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 transition shrink-0"
-                title="Laporkan Soal"
-              >
-                <Flag size={20} />
-              </button>
+              </div>
             </div>
 
             <div className="mb-4">
@@ -1211,7 +1360,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             disabled={currentIndex === 0}
             className="px-6 py-3 rounded-xl font-bold text-slate-400 hover:text-slate-600 disabled:opacity-30 transition"
           >
-            Sebelumnya
+            <ChevronLeft size={20} className="inline mr-1" />
+            {t("quiz.prev")}
           </button>
           <button
             onClick={handleNext}
@@ -1220,15 +1370,16 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           >
             {submitting ? (
               <>
-                <Loader2 size={18} className="animate-spin" /> Memproses...
+                <Loader2 size={18} className="animate-spin" />{" "}
+                {t("quiz.sending")}
               </>
             ) : currentIndex === questions.length - 1 ? (
               <>
-                Selesai <CheckCircle2 size={18} />
+                {t("quiz.finish")} <CheckCircle2 size={18} />
               </>
             ) : (
               <>
-                Lanjut <ArrowRight size={18} />
+                {t("quiz.next")} <ArrowRight size={18} />
               </>
             )}
           </button>

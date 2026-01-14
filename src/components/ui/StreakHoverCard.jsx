@@ -10,6 +10,7 @@ import {
   Target,
   Snowflake,
 } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 const StreakHoverCard = ({
   streakCount = 0,
@@ -18,6 +19,8 @@ const StreakHoverCard = ({
   onOpenCalendar,
   dailyStreak,
 }) => {
+  const { t } = useLanguage();
+
   const getJakartaDateString = (date) => {
     return new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Jakarta",
@@ -103,7 +106,7 @@ const StreakHoverCard = ({
 
             <div>
               <h4 className="text-xs font-bold text-orange-400 uppercase tracking-widest mb-1">
-                Streak Saat Ini
+                {t("modals.streakCurrent")}
               </h4>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-black text-slate-800 leading-none">
@@ -115,7 +118,7 @@ const StreakHoverCard = ({
           </div>
 
           <span className="text-[10px] font-bold bg-white text-orange-500 px-2 py-1 rounded-full shadow-sm border border-orange-100 flex items-center gap-1">
-            <CalendarDays size={10} /> 7 Hari Terakhir
+            <CalendarDays size={10} /> {t("modals.last7Days")}
           </span>
         </div>
       </div>
@@ -128,11 +131,13 @@ const StreakHoverCard = ({
             <div className="flex items-center gap-2">
               <Gift size={14} className="text-purple-500" />
               <span className="text-xs font-bold text-slate-700">
-                Hadiah Besar (Hari ke-{nextMilestone})
+                {t("modals.bigPrize")} ({t("dashboard.day")} {nextMilestone})
               </span>
             </div>
             <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">
-              {daysLeft === 0 ? "Hari ini!" : `${daysLeft} hari lagi`}
+              {daysLeft === 0
+                ? t("modals.today")
+                : `${daysLeft} ${t("modals.daysLeft")}`}
             </span>
           </div>
           <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
@@ -147,7 +152,7 @@ const StreakHoverCard = ({
         <div>
           <div className="flex justify-between items-center mb-2 px-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase">
-              Riwayat Aktivitas
+              {t("modals.activityHistory")}
             </span>
           </div>
           <div className="flex justify-between items-start">
@@ -191,7 +196,7 @@ const StreakHoverCard = ({
             <div className="flex items-center gap-2">
               <Target size={14} className="text-blue-500" />
               <span className="text-xs font-bold text-slate-600">
-                Misi Harian
+                {t("dashboard.dailyMissions")}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -214,7 +219,7 @@ const StreakHoverCard = ({
           onClick={onOpenCalendar}
           className="w-full py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 font-bold text-xs uppercase flex items-center justify-center gap-2 transition-all hover:shadow-sm group"
         >
-          Lihat Kalender Penuh{" "}
+          {t("modals.viewCalendar")}{" "}
           <ChevronRight
             size={14}
             className="group-hover:translate-x-1 transition-transform"

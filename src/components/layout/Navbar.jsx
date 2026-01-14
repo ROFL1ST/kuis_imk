@@ -24,6 +24,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 import Modal from "../ui/Modal";
 import UserAvatar from "../ui/UserAvatar";
 import StreakHoverCard from "../ui/StreakHoverCard";
@@ -34,6 +35,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const Navbar = () => {
   const { user, logout, unreadCount } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   // State
@@ -147,25 +149,25 @@ const Navbar = () => {
               to="/dashboard"
               className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
-              <LayoutDashboard size={18} /> Topik
+              <LayoutDashboard size={18} /> {t("navbar.topics")}
             </Link>
             <Link
               to="/classrooms"
               className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
-              <GraduationCap size={18} /> Kelas
+              <GraduationCap size={18} /> {t("navbar.classes")}
             </Link>
             <Link
               to="/challenges"
               className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
-              <Swords size={18} /> Duel
+              <Swords size={18} /> {t("navbar.duel")}
             </Link>
             <Link
               to="/leaderboard/global"
               className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
             >
-              <Trophy size={18} /> Rank
+              <Trophy size={18} /> {t("navbar.rank")}
             </Link>
           </div>
 
@@ -256,49 +258,49 @@ const Navbar = () => {
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
-                    <User size={16} /> Profil Saya
+                    <User size={16} /> {t("navbar.myProfile")}
                   </Link>
                   <Link
                     to="/friends"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
-                    <Users size={16} /> Teman
+                    <Users size={16} /> {t("navbar.friends")}
                   </Link>
                   <Link
                     to="/history"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
-                    <History size={16} /> Riwayat
+                    <History size={16} /> {t("navbar.history")}
                   </Link>
                   <Link
                     to="/shop"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
-                    <ShoppingBag size={16} /> Shop
+                    <ShoppingBag size={16} /> {t("navbar.shop")}
                   </Link>
                   <Link
                     to="/inventory"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
-                    <Package size={16} /> Inventory
+                    <Package size={16} /> {t("navbar.inventory")}
                   </Link>
                   <Link
                     to="/settings"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
-                    <Settings size={16} /> Pengaturan
+                    <Settings size={16} /> {t("navbar.settings")}
                   </Link>
                   <Link
                     to="/about"
                     onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
                   >
-                    <Info size={16} /> Tentang Aplikasi
+                    <Info size={16} /> {t("navbar.about")}
                   </Link>
                   <div className="h-px bg-slate-100 my-1"></div>
                   <button
@@ -308,7 +310,7 @@ const Navbar = () => {
                     }}
                     className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition font-medium"
                   >
-                    <LogOut size={16} /> Keluar
+                    <LogOut size={16} /> {t("navbar.logout")}
                   </button>
                 </div>
               )}
@@ -362,7 +364,7 @@ const Navbar = () => {
               {/* Menu Utama */}
               <div>
                 <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">
-                  Menu Utama
+                  {t("navbar.mainMenu")}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <Link
@@ -374,7 +376,7 @@ const Navbar = () => {
                       <LayoutDashboard size={20} />
                     </div>
                     <span className="text-sm font-bold text-slate-700">
-                      Topik
+                      {t("navbar.topics")}
                     </span>
                   </Link>
                   <Link
@@ -386,7 +388,7 @@ const Navbar = () => {
                       <Swords size={20} />
                     </div>
                     <span className="text-sm font-bold text-slate-700">
-                      Duel
+                      {t("navbar.duel")}
                     </span>
                   </Link>
                   <Link
@@ -398,7 +400,7 @@ const Navbar = () => {
                       <Users size={20} />
                     </div>
                     <span className="text-sm font-bold text-slate-700">
-                      Teman
+                      {t("navbar.friends")}
                     </span>
                   </Link>
                   <Link
@@ -410,7 +412,7 @@ const Navbar = () => {
                       <History size={20} />
                     </div>
                     <span className="text-sm font-bold text-slate-700">
-                      Riwayat
+                      {t("navbar.history")}
                     </span>
                   </Link>
                   <Link
@@ -422,7 +424,7 @@ const Navbar = () => {
                       <GraduationCap size={20} />
                     </div>
                     <span className="text-sm font-bold text-slate-700">
-                      Kelas
+                      {t("navbar.classes")}
                     </span>
                   </Link>
                   <Link
@@ -434,7 +436,7 @@ const Navbar = () => {
                       <Trophy size={20} />
                     </div>
                     <span className="text-sm font-bold text-slate-700">
-                      Rank
+                      {t("navbar.rank")}
                     </span>
                   </Link>
                 </div>
@@ -558,24 +560,22 @@ const Navbar = () => {
             <AlertTriangle size={24} />
           </div>
           <h2 className="text-lg font-bold text-slate-800">
-            Konfirmasi Keluar
+            {t("navbar.confirmLogout")}
           </h2>
         </div>
-        <p className="text-slate-600 mb-6 text-sm">
-          Apakah kamu yakin ingin keluar dari aplikasi?
-        </p>
+        <p className="text-slate-600 mb-6 text-sm">{t("navbar.logoutDesc")}</p>
         <div className="flex gap-3">
           <button
             onClick={() => setIsLogoutModalOpen(false)}
             className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition"
           >
-            Batal
+            {t("navbar.cancel")}
           </button>
           <button
             onClick={handleLogout}
             className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
           >
-            Ya, Keluar
+            {t("navbar.yesLogout")}
           </button>
         </div>
       </Modal>

@@ -1,6 +1,7 @@
 // src/pages/social/ChallengeList.jsx
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 import { socialAPI } from "../../services/api";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -43,6 +44,7 @@ const PlayerRow = ({
   getRankIcon,
   mode,
 }) => {
+  const { t } = useLanguage();
   const hasPlayed = p.score !== -1;
   const isSurvival = mode === "survival";
 
@@ -68,27 +70,33 @@ const PlayerRow = ({
               isMe ? "text-indigo-700" : "text-slate-700"
             }`}
           >
-            {isMe ? "KAMU" : p.user?.name}
+            {isMe ? t("challenge.you") : p.user?.name}
           </p>
           <div className="text-[10px] font-medium mt-0.5">
             {p.status === "rejected" ? (
-              <span className="text-red-500">Menolak</span>
+              <span className="text-red-500">{t("challenge.rejected")}</span>
             ) : p.status === "pending" ? (
-              <span className="text-orange-500">Menunggu...</span>
+              <span className="text-orange-500">{t("challenge.pending")}</span>
             ) : hasPlayed ? (
               <span className="text-slate-400">{p.time_taken}s</span>
             ) : p.status === "accepted" ? (
               isFinished || p.status === "rejected" ? (
-                <span className="text-slate-400 italic">Tidak jadi main</span>
+                <span className="text-slate-400 italic">
+                  {t("challenge.cancelled")}
+                </span>
               ) : (
-                <span className="text-blue-600">Siap / Mengerjakan...</span>
+                <span className="text-blue-600">{t("challenge.ready")}</span>
               )
             ) : null}
           </div>
         </div>
       </div>
       <div className="font-bold text-slate-700">
-        {hasPlayed ? (isSurvival ? `Streak: ${p.score}` : p.score) : "-"}
+        {hasPlayed
+          ? isSurvival
+            ? `${t("challenge.streak")}: ${p.score}`
+            : p.score
+          : "-"}
       </div>
     </div>
   );
@@ -103,6 +111,7 @@ const LobbyModal = ({
   isHost,
   timeLimit,
 }) => {
+  const { t } = useLanguage();
   const [lobbyPlayers, setLobbyPlayers] = useState([]);
   const [countdown, setCountdown] = useState(null);
   const [status, setStatus] = useState("waiting");
@@ -245,7 +254,9 @@ const LobbyModal = ({
             <div className="text-8xl font-black text-indigo-600 animate-ping mb-4">
               {countdown}
             </div>
-            <p className="text-slate-500 font-bold">Game dimulai dalam...</p>
+            <p className="text-slate-500 font-bold">
+              {t("challenge.gameStartDelay") || "Game dimulai dalam..."}
+            </p>
           </div>
         ) : (
           <>
@@ -265,20 +276,20 @@ const LobbyModal = ({
             <p className="text-sm text-slate-500 mb-6 flex items-center justify-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               {isHost
-                ? "Menunggu pemain lain bergabung..."
-                : "Menunggu Host Memulai..."}
+                ? t("challenge.waitingPlayers")
+                : t("challenge.waitingHost")}
             </p>
 
             <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left max-h-60 overflow-y-auto border border-slate-200">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-xs font-bold text-slate-400 uppercase">
-                  Pemain ({lobbyPlayers.length})
+                  {t("challenge.players")} ({lobbyPlayers.length})
                 </h3>
               </div>
 
               {lobbyPlayers.length === 0 ? (
                 <p className="text-center text-slate-400 italic text-sm py-4">
-                  Menghubungkan...
+                  {t("challenge.connecting")}
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -298,15 +309,15 @@ const LobbyModal = ({
                       <div>
                         {p.status === "rejected" ? (
                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-red-100 text-red-600">
-                            REJECTED
+                            {t("challenge.rejected").toUpperCase()}
                           </span>
                         ) : p.status === "accepted" ? (
                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-green-100 text-green-600">
-                            READY
+                            {t("challenge.ready").toUpperCase()}
                           </span>
                         ) : (
                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-orange-100 text-orange-600">
-                            JOINING...
+                            BERGABUNG...
                           </span>
                         )}
                       </div>
@@ -330,27 +341,28 @@ const LobbyModal = ({
                 ) : (
                   <Gamepad2 size={20} />
                 )}
-                {startingGame ? "Memulai..." : "MULAI GAME"}
+                {startingGame ? t("challenge.pending") : t("challenge.start")}
               </button>
             ) : (
               <button
                 disabled
                 className="w-full py-3 bg-slate-200 text-slate-500 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Loader2 className="animate-spin" size={18} /> Menunggu Host...
+                <Loader2 className="animate-spin" size={18} />{" "}
+                {t("challenge.waitingHost")}
               </button>
             )}
             <button
               onClick={handleLeaveLobby}
               className="w-full py-3 mt-2 bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 rounded-xl font-bold transition flex items-center justify-center gap-2"
             >
-              <LogOut size={18} /> Keluar Lobby
+              <LogOut size={18} /> {t("challenge.leaveLobby")}
             </button>
             {isHost &&
               lobbyPlayers.filter((p) => p.status === "accepted").length <
                 2 && (
                 <p className="text-xs text-red-400 mt-2 text-center">
-                  Minimal 2 pemain harus READY.
+                  {t("challenge.minimalPlayers")}
                 </p>
               )}
           </>
@@ -362,6 +374,7 @@ const LobbyModal = ({
 
 // --- UTAMA: LIST CHALLENGE (INFINITE SCROLL) ---
 const ChallengeList = () => {
+  const { t } = useLanguage();
   const [challenges, setChallenges] = useState([]);
   // [BARU] State untuk Statistik & Pagination
   const [stats, setStats] = useState({ total: 0, wins: 0, win_rate: 0 });
@@ -619,11 +632,9 @@ const ChallengeList = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-            <Swords className="text-orange-600" /> Arena Duel
+            <Swords className="text-orange-600" /> {t("challenge.arenaTitle")}
           </h1>
-          <p className="text-slate-500 mt-1">
-            Tantang temanmu dan buktikan siapa yang paling jenius!
-          </p>
+          <p className="text-slate-500 mt-1">{t("challenge.arenaDesc")}</p>
         </div>
 
         {/* Quick Stats (Menggunakan Data dari Backend) */}
@@ -634,10 +645,10 @@ const ChallengeList = () => {
             </div>
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                Total Duel
+                {t("challenge.totalDuel")}
               </p>
               <p className="text-sm font-bold text-slate-800">
-                {stats.total} Main
+                {stats.total} {t("challenge.played")}
               </p>
             </div>
           </div>
@@ -647,7 +658,7 @@ const ChallengeList = () => {
             </div>
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                Menang
+                {t("challenge.won")}
               </p>
               <p className="text-sm font-bold text-slate-800">
                 {stats.wins}x ({stats.win_rate}%)
@@ -661,7 +672,7 @@ const ChallengeList = () => {
           className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center gap-2 transform hover:-translate-y-0.5"
         >
           <Swords className="w-5 h-5" />
-          BUAT TANTANGAN
+          {t("challenge.createChallenge")}
         </button>
       </div>
 
@@ -672,16 +683,16 @@ const ChallengeList = () => {
             <Swords size={32} className="text-slate-300" />
           </div>
           <h3 className="text-lg font-bold text-slate-700">
-            Belum ada duel aktif
+            {t("challenge.noActiveDuel")}
           </h3>
           <p className="text-slate-500 text-sm mb-4">
-            Buat tantangan baru atau tunggu teman mengajakmu.
+            {t("challenge.noDuelDesc")}
           </p>
           <Link
             to="/"
             className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-full font-bold hover:shadow-lg transition text-sm"
           >
-            Cari Lawan
+            {t("challenge.findOpponent")}
           </Link>
         </div>
       ) : (
@@ -741,10 +752,12 @@ const ChallengeList = () => {
 
             if (isFinished) {
               if (is2v2) {
-                if (duel.winning_team === "A") winnerText = "TEAM A WINS!";
-                else if (duel.winning_team === "B") winnerText = "TEAM B WINS!";
+                if (duel.winning_team === "A")
+                  winnerText = t("challenge.winnerTeamA");
+                else if (duel.winning_team === "B")
+                  winnerText = t("challenge.winnerTeamB");
                 else if (duel.winning_team === "DRAW")
-                  winnerText = "DRAW MATCH";
+                  winnerText = t("challenge.winnerDraw");
 
                 if (myParticipant?.team === duel.winning_team) {
                   winnerColorClass =
@@ -752,16 +765,18 @@ const ChallengeList = () => {
                 }
               } else {
                 if (duel.winner_id === user.ID) {
-                  winnerText = "YOU WIN!";
+                  winnerText = t("challenge.winnerYou");
                   winnerColorClass =
                     "bg-yellow-100 text-yellow-700 border-yellow-300";
                 } else if (duel.winner_id) {
                   const winnerP = participants.find(
                     (p) => p.user_id === duel.winner_id
                   );
-                  winnerText = `${winnerP?.user?.name || "Lawan"} WINS!`;
+                  winnerText = `${winnerP?.user?.name || "Lawan"} ${t(
+                    "challenge.won"
+                  ).toUpperCase()}!`;
                 } else {
-                  winnerText = "DRAW";
+                  winnerText = t("challenge.winnerDraw");
                 }
               }
             }
@@ -792,7 +807,7 @@ const ChallengeList = () => {
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         {duel.mode === "2v2" ? (
                           <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded flex items-center gap-1">
-                            <Users size={10} /> 2 VS 2 TEAM
+                            <Users size={10} /> TIM 2 VS 2
                           </span>
                         ) : duel.mode === "battleroyale" ? (
                           <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded flex items-center gap-1">
@@ -989,7 +1004,7 @@ const ChallengeList = () => {
                             className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg transition flex items-center justify-center gap-2"
                           >
                             <CheckCircle2 size={18} />
-                            {is2v2 ? "Gabung Tim" : "Terima Tantangan"}
+                            {is2v2 ? "Gabung Tim" : t("challenge.accept")}
                           </button>
                           <button
                             onClick={() =>
@@ -1001,7 +1016,7 @@ const ChallengeList = () => {
                             }
                             className="px-5 py-3 bg-white border-2 border-red-100 text-red-500 rounded-xl font-bold hover:bg-red-50 transition"
                           >
-                            Tolak
+                            {t("challenge.reject")}
                           </button>
                         </div>
                       </div>
@@ -1019,7 +1034,9 @@ const ChallengeList = () => {
                         className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg flex items-center justify-center gap-2 transition-all"
                       >
                         <LogIn size={20} />{" "}
-                        {isMyCreated ? "BUKA LOBBY (HOST)" : "MASUK LOBBY"}
+                        {isMyCreated
+                          ? t("challenge.enterLobby")
+                          : t("challenge.enterLobby")}
                       </button>
                     )}
                     {/* KONDISI 2: Sudah Accepted, Belum Main */}
@@ -1051,8 +1068,8 @@ const ChallengeList = () => {
                             >
                               <LogIn size={20} />{" "}
                               {isMyCreated
-                                ? "BUKA LOBBY (HOST)"
-                                : "MASUK LOBBY"}
+                                ? t("challenge.enterLobby")
+                                : t("challenge.enterLobby")}
                             </button>
                           )
                         ) : isActive ? (
@@ -1083,7 +1100,7 @@ const ChallengeList = () => {
                               }}
                               className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse"
                             >
-                              <PlayCircle size={20} /> MAINKAN SEKARANG
+                              <PlayCircle size={20} /> {t("quizList.play")}
                             </Link>
                           )
                         ) : isBattleRoyale && !allAccepted ? (
@@ -1164,13 +1181,13 @@ const ChallengeList = () => {
             onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
             className="flex-1 px-4 py-2 bg-slate-100 font-bold rounded-lg text-slate-700"
           >
-            Batal
+            {t("challenge.cancel")}
           </button>
           <button
             onClick={handleRefuse}
             className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg"
           >
-            Tolak
+            {t("challenge.reject")}
           </button>
         </div>
       </Modal>

@@ -15,9 +15,11 @@ import {
   Zap,
 } from "lucide-react";
 import Modal from "../../components/ui/Modal";
+import { useLanguage } from "../../context/LanguageContext";
 
 const Login = () => {
   const { login, loading } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", password: "" });
   const [rewardData, setRewardData] = useState(null);
@@ -38,7 +40,7 @@ const Login = () => {
         });
         setShowRewardModal(true);
       } else {
-        toast.success("Login Berhasil!");
+        toast.success(t("auth.success"));
         navigate("/dashboard");
       }
     } else {
@@ -77,9 +79,7 @@ const Login = () => {
               QuizApp
             </span>
           </div>
-          <p className="text-slate-600 mt-2">
-            Uji pengetahuanmu dengan kuis seru!
-          </p>
+          <p className="text-slate-600 mt-2">{t("auth.loginSubtitle")}</p>
         </motion.div>
 
         {/* Form Card */}
@@ -93,7 +93,9 @@ const Login = () => {
           {/* Form Header */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <LogIn className="h-6 w-6 text-indigo-600" />
-            <h2 className="text-2xl font-bold text-slate-800">Masuk ke Akun</h2>
+            <h2 className="text-2xl font-bold text-slate-800">
+              {t("auth.loginTitle")}
+            </h2>
           </div>
 
           {/* Input Fields */}

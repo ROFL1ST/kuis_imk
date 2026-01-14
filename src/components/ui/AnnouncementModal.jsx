@@ -1,8 +1,10 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { Megaphone, X, Info, AlertTriangle, CheckCircle } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function AnnouncementModal({ isOpen, onClose, announcement }) {
+  const { t, language } = useLanguage();
   if (!announcement) return null;
 
   const getStyle = (type) => {
@@ -41,6 +43,14 @@ export default function AnnouncementModal({ isOpen, onClose, announcement }) {
   };
 
   const style = getStyle(announcement.type || "info");
+
+  // Localize date
+  const localeMap = {
+    id: "id-ID",
+    en: "en-US",
+    jp: "ja-JP",
+  };
+  const currentLocale = localeMap[language] || "id-ID";
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -102,13 +112,13 @@ export default function AnnouncementModal({ isOpen, onClose, announcement }) {
                       className={`inline-flex w-full justify-center rounded-xl border border-transparent px-4 py-3 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition shadow-lg ${style.btn}`}
                       onClick={onClose}
                     >
-                      Saya Mengerti
+                      {t("modals.understand")}
                     </button>
                   </div>
 
                   <p className="text-[10px] text-slate-400 mt-4">
                     {new Date(announcement.CreatedAt).toLocaleDateString(
-                      "id-ID",
+                      currentLocale,
                       {
                         weekday: "long",
                         year: "numeric",
