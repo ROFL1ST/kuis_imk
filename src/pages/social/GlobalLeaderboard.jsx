@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { leaderboardAPI } from "../../services/newFeatures";
 import { motion } from "framer-motion";
 import { Medal, Trophy, User } from "lucide-react";
+import UserAvatar from "../../components/ui/UserAvatar";
+import { useLanguage } from "../../context/LanguageContext";
 
 const GlobalLeaderboard = () => {
+  const { t } = useLanguage();
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,8 +46,10 @@ const GlobalLeaderboard = () => {
         >
           <Trophy className="w-12 h-12 text-yellow-600" />
         </motion.div>
-        <h1 className="text-3xl font-bold text-gray-800">Global Leaderboard</h1>
-        <p className="text-gray-500 mt-2">Top students across the platform</p>
+        <h1 className="text-3xl font-bold text-gray-800">
+          {t("globalLeaderboard.title")}
+        </h1>
+        <p className="text-gray-500 mt-2">{t("globalLeaderboard.subtitle")}</p>
       </div>
 
       {loading ? (
@@ -60,7 +65,7 @@ const GlobalLeaderboard = () => {
         <div className="space-y-4">
           {leaderboard.length === 0 ? (
             <div className="text-center py-10 text-slate-500">
-              No data available.
+              {t("globalLeaderboard.empty")}
             </div>
           ) : (
             leaderboard.map((user, index) => (
@@ -76,9 +81,7 @@ const GlobalLeaderboard = () => {
                   {getRankIcon(index)}
                 </div>
                 <div className="ml-4 flex-1 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center border-2 border-indigo-200 overflow-hidden">
-                    <User className="w-6 h-6 text-indigo-500" />
-                  </div>
+                  <UserAvatar user={user} size="md" />
                   <div>
                     <h3 className="font-bold text-gray-800 text-lg">
                       {user.name}

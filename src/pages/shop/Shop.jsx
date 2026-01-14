@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { shopAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import {
   ShoppingBag,
@@ -19,6 +20,7 @@ import Skeleton from "../../components/ui/Skeleton";
 
 const Shop = () => {
   const { user, setUser } = useAuth(); // Kita butuh setUser untuk update koin real-time
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,11 +58,11 @@ const Shop = () => {
     if (!selectedItem) return;
 
     if (user.coins < item.price) {
-      toast.error("Koin tidak cukup!");
+      toast.error(t("shop.insufficient"));
       return;
     }
     setConfirmLoading(true);
-   
+
     try {
       const res = await shopAPI.buyItem(item.ID);
 
@@ -70,7 +72,7 @@ const Shop = () => {
       // Update User Coins di Context
       setUser({ ...user, coins: res.data.data.coins_left });
 
-      toast.success(`Berhasil membeli ${selectedItem.name}!`);
+      toast.success(t("shop.successBuy", { item: selectedItem.name }));
     } catch (error) {
       toast.error(error.response?.data?.message || "Gagal membeli item");
     } finally {
@@ -90,32 +92,40 @@ const Shop = () => {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8">
-         {/* Banner/Header Toko */}
-         <Skeleton className="w-full h-40 rounded-3xl mb-8" />
-         
-         {/* Categories Tabs */}
-         <div className="flex gap-3 mb-6 overflow-x-auto">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="w-24 h-10 rounded-full flex-shrink-0" />)}
-         </div>
+        {/* Banner/Header Toko */}
+        <Skeleton className="w-full h-40 rounded-3xl mb-8" />
 
-         {/* Items Grid */}
-         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-               <div key={i} className="bg-white p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
-                  {/* Image Placeholder */}
-                  <Skeleton className="w-full aspect-square rounded-xl" />
-                  
-                  {/* Title & Price */}
-                  <div className="space-y-2 mt-2">
-                     <Skeleton className="h-4 w-3/4" />
-                     <Skeleton className="h-4 w-1/2" />
-                  </div>
-                  
-                  {/* Button Beli */}
-                  <Skeleton className="h-9 w-full rounded-lg mt-auto" />
-               </div>
-            ))}
-         </div>
+        {/* Categories Tabs */}
+        <div className="flex gap-3 mb-6 overflow-x-auto">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton
+              key={i}
+              className="w-24 h-10 rounded-full flex-shrink-0"
+            />
+          ))}
+        </div>
+
+        {/* Items Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div
+              key={i}
+              className="bg-white p-4 rounded-2xl border border-slate-100 flex flex-col gap-3"
+            >
+              {/* Image Placeholder */}
+              <Skeleton className="w-full aspect-square rounded-xl" />
+
+              {/* Title & Price */}
+              <div className="space-y-2 mt-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+
+              {/* Button Beli */}
+              <Skeleton className="h-9 w-full rounded-lg mt-auto" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -126,13 +136,15 @@ const Shop = () => {
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 text-white mb-8 shadow-xl relative overflow-hidden">
         <div className="relative z-10">
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <ShoppingBag /> Item Shop
+            <ShoppingBag /> {t("shop.title")}
           </h1>
-          <p className="opacity-90 mt-2">Tukarkan koinmu dengan item keren!</p>
+          <p className="opacity-90 mt-2">{t("shop.subtitle")}</p>
 
           <div className="mt-6 inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30">
             <Coins className="text-yellow-300" />
-            <span className="font-bold text-xl">{user?.coins} Coins</span>
+            <span className="font-bold text-xl">
+              {user?.coins} {t("shop.coins")}
+            </span>
           </div>
         </div>
         {/* Dekorasi */}
@@ -151,7 +163,7 @@ const Shop = () => {
                 : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
             }`}
           >
-            {tab.replace("_", " ")}
+            {t(`shop.tabs.${tab}`)}
           </button>
         ))}
       </div>
@@ -160,7 +172,7 @@ const Shop = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {filteredItems.map((item) => {
           const isOwned = inventory.includes(item.ID);
-         
+
           return (
             <motion.div
               key={item.ID}
@@ -210,7 +222,7 @@ const Shop = () => {
                     disabled
                     className="w-full py-2 bg-green-100 text-green-700 font-bold rounded-lg text-sm cursor-default"
                   >
-                    Dimiliki
+                    {t("shop.owned")}
                   </button>
                 ) : (
                   <button
@@ -239,7 +251,7 @@ const Shop = () => {
       <Modal
         isOpen={isBuyModalOpen}
         onClose={() => setIsBuyModalOpen(false)}
-        title="Konfirmasi Pembelian"
+        title={t("shop.confirmTitle")}
         maxWidth="max-w-sm" // Kita buat agak kecil agar rapi
       >
         {selectedItem && (
@@ -253,7 +265,10 @@ const Shop = () => {
                     user={{
                       name: user.name,
                       equipped_items: [
-                        { type: "avatar_frame", asset_url: selectedItem.asset_url },
+                        {
+                          type: "avatar_frame",
+                          asset_url: selectedItem.asset_url,
+                        },
                       ],
                     }}
                     size="xl"
@@ -276,19 +291,21 @@ const Shop = () => {
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-500 flex items-center gap-2">
-                  <Wallet size={16} /> Saldo Saat Ini
+                  <Wallet size={16} /> {t("shop.currentBalance")}
                 </span>
                 <span className="font-bold text-slate-700">{user.coins}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Harga Item</span>
+                <span className="text-slate-500">{t("shop.price")}</span>
                 <span className="font-bold text-red-500">
                   -{selectedItem.price}
                 </span>
               </div>
               <div className="h-px bg-slate-200 my-2"></div>
               <div className="flex justify-between items-center">
-                <span className="font-bold text-slate-800">Sisa Saldo</span>
+                <span className="font-bold text-slate-800">
+                  {t("shop.remainingBalance")}
+                </span>
                 <div className="flex items-center gap-2">
                   <span
                     className={`font-bold ${
@@ -313,14 +330,14 @@ const Shop = () => {
                 onClick={() => setIsBuyModalOpen(false)}
                 className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition"
               >
-                Batal
+                {t("shop.cancel")}
               </button>
               <button
                 onClick={() => handleBuy(selectedItem)}
                 disabled={user.coins < selectedItem.price}
                 className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Beli Sekarang <ArrowRight size={16} />
+                {t("shop.buy")} <ArrowRight size={16} />
               </button>
             </div>
           </div>

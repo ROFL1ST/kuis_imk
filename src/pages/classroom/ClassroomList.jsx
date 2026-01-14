@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import { classroomAPI } from "../../services/newFeatures";
 import { Plus, Users, BookOpen, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
 const ClassroomList = () => {
+  const { t } = useLanguage();
   const [classrooms, setClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joinCode, setJoinCode] = useState("");
@@ -22,9 +24,9 @@ const ClassroomList = () => {
         setClassrooms(res.data.data);
       } else {
         toast.error(res.data.message);
-      } 
+      }
     } catch (error) {
-      console.error("Failed to fetch classrooms", error);
+      console.error("Gagal memuat data kelas", error);
     } finally {
       setLoading(false);
     }
@@ -35,19 +37,19 @@ const ClassroomList = () => {
     if (!joinCode.trim()) return;
 
     try {
-      const loadingToast = toast.loading("Joining class...");
+      const loadingToast = toast.loading("Bergabung ke kelas...");
       const res = await classroomAPI.joinClassroom(joinCode.toLowerCase());
       toast.dismiss(loadingToast);
 
-      if (res.data.status === "success" ) {
-        toast.success("Joined classroom successfully!");
+      if (res.data.status === "success") {
+        toast.success("Berhasil bergabung ke kelas!");
         setShowJoinModal(false);
         setJoinCode("");
         fetchClassrooms();
       }
     } catch (error) {
       toast.dismiss();
-      toast.error(error.response?.data?.message || "Failed to join classroom");
+      toast.error(error.response?.data?.message || "Gagal bergabung ke kelas");
     }
   };
 
@@ -55,15 +57,17 @@ const ClassroomList = () => {
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">My Classrooms</h1>
-          <p className="text-gray-500">Manage your classes and assignments</p>
+          <h1 className="text-3xl font-bold text-gray-800">
+            {t("classroom.title")}
+          </h1>
+          <p className="text-gray-500">{t("classroom.subtitle")}</p>
         </div>
         <button
           onClick={() => setShowJoinModal(true)}
           className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
-          Join Class
+          {t("classroom.join")}
         </button>
       </div>
 
@@ -80,9 +84,9 @@ const ClassroomList = () => {
         <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-300">
           <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-700">
-            No Classrooms Found
+            {t("classroom.noClass")}
           </h3>
-          <p className="text-gray-500">Join a class to get started!</p>
+          <p className="text-gray-500">{t("classroom.joinPromo")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -111,7 +115,7 @@ const ClassroomList = () => {
                   <div className="mt-auto pt-4 flex items-center justify-between text-gray-500 text-sm border-t border-gray-50">
                     <div className="flex items-center gap-1.5">
                       <Users className="w-4 h-4" />
-                      <span>Members</span>
+                      <span>{t("classroom.members")}</span>
                     </div>
                     <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-indigo-500" />
                   </div>
@@ -131,12 +135,12 @@ const ClassroomList = () => {
             className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
           >
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Join Classroom
+              Gabung Kelas
             </h2>
             <form onSubmit={handleJoinClass}>
               <input
                 type="text"
-                placeholder="Enter Class Code (e.g. ABC1234)"
+                placeholder="Masukkan Kode Kelas (misal: ABC1234)"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl font-mono text-center text-lg tracking-widest focus:ring-2 focus:ring-indigo-500 outline-none mb-6 uppercase"
@@ -147,13 +151,13 @@ const ClassroomList = () => {
                   onClick={() => setShowJoinModal(false)}
                   className="flex-1 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors"
                 >
-                  Join Class
+                  Gabung
                 </button>
               </div>
             </form>

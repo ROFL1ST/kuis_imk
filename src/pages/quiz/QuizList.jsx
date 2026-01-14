@@ -18,8 +18,10 @@ import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
 import Skeleton from "../../components/ui/Skeleton";
 import CreateChallengeModal from "../../components/ui/CreateChallengeModal"; // Import New Modal
+import { useLanguage } from "../../context/LanguageContext";
 
 const QuizList = () => {
+  const { t } = useLanguage();
   const { slug } = useParams();
   const { user } = useAuth();
   const [quizzes, setQuizzes] = useState([]);
@@ -82,29 +84,27 @@ const QuizList = () => {
         to="/"
         className="inline-flex items-center gap-2 text-slate-500 hover:text-indigo-600 mb-6"
       >
-        <ArrowLeft size={18} /> Kembali ke Topik
+        <ArrowLeft size={18} /> {t("quizList.backToTopic")}
       </Link>
 
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 capitalize">
-            Kuis: {slug}
+            {t("quiz.question")}: {slug}
           </h1>
-          <p className="text-slate-500">
-            Pilih kuis untuk mulai mengerjakan atau menantang teman.
-          </p>
+          <p className="text-slate-500">{t("quizList.chooseQuiz")}</p>
         </div>
         <Link
           to={`/leaderboard/${slug}`}
           className="flex items-center gap-2 px-5 py-2.5 bg-yellow-100 text-yellow-700 rounded-full font-bold hover:bg-yellow-200 transition"
         >
-          <Trophy size={18} /> Leaderboard
+          <Trophy size={18} /> {t("quizList.leaderboard")}
         </Link>
       </div>
 
       {quizzes.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-xl shadow-sm">
-          <p className="text-slate-500">Belum ada kuis di topik ini.</p>
+          <p className="text-slate-500">{t("quizList.empty")}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -125,14 +125,14 @@ const QuizList = () => {
                   onClick={() => openChallengeModal(quiz.ID, quiz.title)}
                   className="flex-1 sm:flex-none px-4 py-2 bg-orange-100 text-orange-700 rounded-lg font-bold hover:bg-orange-200 flex items-center justify-center gap-2 transition"
                 >
-                  <Swords size={18} /> Tantang
+                  <Swords size={18} /> {t("quizList.challenge")}
                 </button>
                 <Link
                   to={`/play/${quiz.ID}`}
                   state={{ title: quiz.title }}
                   className="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 transition"
                 >
-                  <PlayCircle size={18} /> Main
+                  <PlayCircle size={18} /> {t("quizList.play")}
                 </Link>
               </div>
             </div>

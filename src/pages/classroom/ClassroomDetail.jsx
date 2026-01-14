@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { classroomAPI } from "../../services/newFeatures";
+import { useLanguage } from "../../context/LanguageContext";
 import { Users, FileText, Clock, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ClassroomDetail = () => {
   const { id } = useParams();
+  const { t } = useLanguage();
   const [classroom, setClassroom] = useState(null);
   const [assignments, setAssignments] = useState([]);
   const [mySubmissions, setMySubmissions] = useState({});
@@ -24,7 +26,7 @@ const ClassroomDetail = () => {
         setMySubmissions(res.data.data.my_submissions || {});
       }
     } catch (error) {
-      console.error("Failed to fetch details", error);
+      console.error("Gagal memuat detail", error);
     } finally {
       setLoading(false);
     }
@@ -35,7 +37,7 @@ const ClassroomDetail = () => {
   if (!classroom)
     return (
       <div className="p-8 text-center text-red-500 font-bold">
-        Classroom not found or you don't have permission to view it.
+        {t("classroom.notFound")}
       </div>
     );
 
@@ -52,13 +54,16 @@ const ClassroomDetail = () => {
         <div className="relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-mono font-bold tracking-wider border border-white/20 w-fit">
-              CODE: {classroom.code}
+              {t("classroom.code")}: {classroom.code}
             </div>
             <div className="text-xs font-medium bg-black/20 px-3 py-1 rounded-full w-fit">
               {classroom.admin_id ? (
-                <span>Created by Admin</span>
+                <span>{t("classroom.createdByAdmin")}</span>
               ) : (
-                <span>Teacher: {classroom.teacher?.name || "Unknown"}</span>
+                <span>
+                  {t("classroom.teacher")}:{" "}
+                  {classroom.teacher?.name || "Tidak Diketahui"}
+                </span>
               )}
             </div>
           </div>
@@ -68,7 +73,9 @@ const ClassroomDetail = () => {
           </h1>
           <div className="flex items-center gap-2 opacity-90 font-medium">
             <Users className="w-4 h-4" />
-            <span>{classroom.members?.length || 0} Members</span>
+            <span>
+              {classroom.members?.length || 0} {t("classroom.members")}
+            </span>
           </div>
         </div>
       </motion.div>
@@ -79,10 +86,10 @@ const ClassroomDetail = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <FileText className="w-5 h-5 text-indigo-600" />
-              Assignments
+              {t("classroom.assignments")}
             </h2>
             <span className="text-sm font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-              {assignments.length} Active
+              {assignments.length} Aktif
             </span>
           </div>
 
@@ -92,11 +99,9 @@ const ClassroomDetail = () => {
                 <FileText size={20} />
               </div>
               <h3 className="font-bold text-gray-800 mb-1">
-                No Assignments Yet
+                {t("classroom.noAssignments")}
               </h3>
-              <p className="text-gray-500 text-sm">
-                Relax! There are no tasks due right now.
-              </p>
+              <p className="text-gray-500 text-sm">{t("classroom.relax")}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -114,13 +119,13 @@ const ClassroomDetail = () => {
                 >
                   <div className="flex-1">
                     <h3 className="font-bold text-gray-800 text-lg mb-2 group-hover:text-indigo-600 transition-colors">
-                      {assignment.quiz?.title || "Untitled Quiz"}
+                      {assignment.quiz?.title || "Kuis Tanpa Judul"}
                     </h3>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-2 py-1 rounded-md text-xs font-bold">
                         <Clock className="w-3.5 h-3.5" />
                         <span>
-                          Due:{" "}
+                          {t("classroom.deadline")}:{" "}
                           {new Date(assignment.deadline).toLocaleDateString(
                             "id-ID",
                             {
@@ -133,27 +138,29 @@ const ClassroomDetail = () => {
                         </span>
                       </div>
                       <span className="text-xs bg-gray-100 px-2 py-1 rounded-md font-medium text-gray-600">
-                        {assignment.quiz?.questions?.length || "?"} Questions
+                        {assignment.quiz?.questions?.length || "?"}{" "}
+                        {t("classroom.questions")}
                       </span>
                     </div>
                   </div>
 
                   {mySubmissions[assignment.ID] ? (
                     <div className="px-5 py-2.5 bg-green-100 ring-1 ring-green-200 text-green-700 font-bold rounded-xl flex items-center gap-2 text-sm cursor-default shadow-sm">
-                      Done ({mySubmissions[assignment.ID].score})
+                      {t("classroom.completed")} (
+                      {mySubmissions[assignment.ID].score})
                     </div>
                   ) : (
                     <Link
                       to={`/play/${assignment.quiz_id}`}
                       state={{
-                        title: assignment.quiz?.title || "Assignment Quiz",
+                        title: assignment.quiz?.title || "Kuis Tugas",
                         assignmentId: assignment.ID,
                         classroomId: classroom.ID,
                         classroomName: classroom.name,
                       }}
                       className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm"
                     >
-                      Start
+                      {t("classroom.start")}
                       <ChevronRight className="w-4 h-4" />
                     </Link>
                   )}
@@ -167,7 +174,7 @@ const ClassroomDetail = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-6">
             <Users className="w-5 h-5 text-purple-600" />
-            Classmates
+            {t("classroom.classmates")}
           </h2>
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -175,7 +182,7 @@ const ClassroomDetail = () => {
             className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-fit sticky top-24"
           >
             <div className="mb-4 text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Student List ({classroom.members?.length || 0})
+              {t("classroom.studentList")} ({classroom.members?.length || 0})
             </div>
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {classroom.members?.map((member) => (
@@ -191,14 +198,14 @@ const ClassroomDetail = () => {
                       {member.student?.name}
                     </p>
                     <p className="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full w-fit mt-0.5">
-                      Student
+                      {t("classroom.student")}
                     </p>
                   </div>
                 </div>
               ))}
               {(!classroom.members || classroom.members.length === 0) && (
                 <p className="text-center text-gray-400 text-sm py-4">
-                  No other students yet.
+                  {t("classroom.noStudents")}
                 </p>
               )}
             </div>

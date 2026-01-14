@@ -15,12 +15,17 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
+
+import { changelogData } from "../../data/changelog";
 
 const WhatsNew = () => {
   const navigate = useNavigate();
   useEffect(() => {
     document.title = "Apa yang Baru? | QuizApp";
   }, []);
+
+  const { t, language } = useLanguage();
 
   const roadmap = [
     {
@@ -49,274 +54,12 @@ const WhatsNew = () => {
     },
   ];
 
-  const updates = [
-    {
-      version: "1.6.0",
-      date: "03 Jan 2026",
-      title: "Indonesian Localization, Reports System & Admin Revamp",
-      highlight: true,
-      changes: [
-        {
-          type: "new",
-          text: "Sistem Laporan & Ulasan: Kamu sekarang bisa melaporkan soal/pengguna yang melanggar aturan, serta memberikan rating bintang untuk kuis yang telah dimainkan.",
-        },
-        {
-          type: "new",
-          text: "Mode Baru: Mode survival baru yang memberikan tantangan yang lebih seru dan menantang.", 
-        },
-        {
-          type: "improvement",
-          text: "Full Bahasa Indonesia: Seluruh antarmuka aplikasi kini tersedia dalam Bahasa Indonesia yang baku dan mudah dipahami.",
-        },
-        {
-          type: "improvement",
-          text: "Admin Dashboard 2.0: Tampilan baru dashboard admin dengan grafik analitik mingguan, distribusi topik, dan statistik performa soal.",
-        },
-        {
-          type: "new",
-          text: "Realtime Broadcasts: Pengumuman dari admin kini muncul secara realtime dengan kategori (Info, Warning, Danger) dan tampilan visual yang menarik.",
-        },
-        {
-          type: "new",
-          text: "Sistem Classroom: Buat kelas belajar virtual, bagikan kode kelas, dan kerjakan kuis bersama teman sekelas.",
-        },
-        {
-          type: "new",
-          text: "Global Leaderboard: Bandingkan skormu dengan pemain lain di seluruh dunia dan raih puncak klasemen!",
-        },
-        {
-          type: "improvement",
-          text: "Admin Reports Enhanced: Admin kini dapat melihat username pelapor dan judul target secara detail untuk penanganan laporan yang lebih cepat.",
-        },
-      ],
-    },
-    {
-      version: "1.5.3",
-      date: "26 Des 2025",
-      title: "Leave Lobby, Bug Fixes & Performance Improvements",
-      highlight: false,
-      changes: [
-        {
-          type: "new",
-          text: "Fitur Leave Lobby: Kini kamu bisa keluar dari lobi tantangan sebelum memulai duel tanpa harus menunggu lawan.",
-        },
-        {
-          type: "improvement",
-          text: "Peningkatan Performa Aplikasi: Optimalisasi kode untuk pengalaman pengguna yang lebih lancar dan responsif.",
-        },
-        {
-          type: "fix",
-          text: "Perbaikan bug minor dan peningkatan performa aplikasi secara keseluruhan.",
-        },
-      ],
-    },
-    {
-      version: "1.5.2",
-      date: "24 Des 2025",
-      title: "Visual Overhaul: Skeleton, Inventory & 3D Avatars",
-      highlight: false,
-      description:
-        "Pembaruan fokus pada keindahan visual dan kenyamanan pengguna. Aplikasi kini terasa lebih cepat dan hidup!",
-      changes: [
-        {
-          type: "new",
-          text: "Skeleton Loading System: Transisi antar halaman kini jauh lebih mulus dengan animasi skeleton modern (tidak ada lagi layar putih berkedip).",
-        },
-        {
-          type: "new",
-          text: "Inventory 2.0: Tampilan Tas baru dengan 'Live Preview'. Coba bingkai dan gelar langsung di avatar-mu sebelum memakainya.",
-        },
-        {
-          type: "new",
-          text: "3D Avatar Frames: Bingkai avatar kini hidup dengan efek animasi visual nyata (Neon Pulse, Gold Shine, Glitch Effect, dll).",
-        },
-        {
-          type: "improvement",
-          text: "Logo Loader: Animasi loading awal aplikasi (splash screen) yang lebih profesional dan branded.",
-        },
-        {
-          type: "fix",
-          text: "Streak Logic Fix: Perbaikan perhitungan streak harian (menghapus bug double count) dan sinkronisasi kalender yang lebih akurat.",
-        },
-      ],
-    },
-    {
-      version: "1.5.1",
-      date: "22 Des 2025",
-      title: "Mobile Experience Upgrade & Activity Calendar",
-      highlight: false,
-      changes: [
-        {
-          type: "new",
-          text: "Interactive Activity Calendar: Lihat detail riwayat streak dan aktivitas harian melalui kalender visual interaktif.",
-        },
-        {
-          type: "new",
-          text: "Smart Remedial: Sistem remedial otomatis berdasarkan analisis kelemahan jawabanmu.",
-        },
-        {
-          type: "improvement",
-          text: "Login Streak Optimization: Perbaikan sistem pencatatan streak harian untuk mengakomodasi zona waktu pengguna secara lebih akurat.",
-        },
-        {
-          type: "improvement",
-          text: "Quiz Streak Optimization: Perbaikan sistem pencatatan streak kuis harian agar lebih andal dan minim bug.",
-        },
-        {
-          type: "improvement",
-          text: "Mobile Navigation Overhaul: Desain ulang menu mobile menjadi Full Screen Drawer dengan layout grid yang lebih ramah sentuhan.",
-        },
-        {
-          type: "improvement",
-          text: "Sticky Mobile Stats: Informasi Streak, Level, dan Koin kini selalu tampil (sticky) di bagian atas menu mobile.",
-        },
-        {
-          type: "improvement",
-          text: "UX Streak Mobile: Badge streak di menu mobile kini dapat diklik untuk membuka detail kalender.",
-        },
-        {
-          type: "fix",
-          text: "Scroll Lock: Perbaikan UX untuk mencegah halaman belakang bergulir (scroll) saat menu mobile sedang terbuka.",
-        },
-      ],
-    },
-    {
-      version: "1.5.0",
-      date: "20 Des 2025",
-      title: "Variasi Soal, Admin Tools & Security Upgrade",
-      highlight: false,
-      changes: [
-        {
-          type: "new",
-          text: "Variasi Soal Lengkap: Kini mendukung tipe soal Isian Singkat, Benar/Salah, dan Multi Select (Jawaban > 1).",
-        },
-        {
-          type: "improvement",
-          text: "Admin Question Tools: Fitur filter soal per kuis, upload massal via CSV yang lebih cerdas, dan form input soal dinamis.",
-        },
-        {
-          type: "improvement",
-          text: "Keamanan Stream Realtime: Koneksi notifikasi dan lobi game kini menggunakan Cookie (bukan URL token) untuk keamanan maksimal.",
-        },
-        {
-          type: "improvement",
-          text: "Update Notifikasi: Penambahan fitur 'Tandai Semua Dibaca' dan perbaikan tampilan responsif di mobile.",
-        },
-        {
-          type: "fix",
-          text: "Perbaikan sinkronisasi item Inventory saat equip/unequip agar data lokal selalu akurat.",
-        },
-        {
-          type: "fix",
-          text: "Isolasi Skor Challenge: Mengerjakan kuis di mode latihan tidak akan lagi mengganggu progres/skor di Challenge yang sedang aktif.",
-        },
-      ],
-    },
-    {
-      version: "1.4.0",
-      date: "19 Des 2025",
-      title: "Daily Reward, Daily Missions, Infinite Scroll & Randomized Quiz",
-      highlight: false,
-      changes: [
-        {
-          type: "new",
-          text: "Daily Rewards dan Daily Missions: Dapatkan bonus Koin setiap hari dengan login dan menyelesaikan misi harian.",
-        },
-        {
-          type: "improvement",
-          text: "Tampilan Baru navigation bar mobile untuk akses lebih mudah ke fitur utama.",
-        },
-        {
-          type: "improvement",
-          text: "Tampilan Baru di Dashboard: Desain card topik yang lebih segar dan informatif.",
-        },
-        {
-          type: "improvement",
-          text: "Infinite Scroll pada Duel Arena: Load data lebih ringan dan cepat tanpa perlu klik halaman.",
-        },
-        {
-          type: "improvement",
-          text: "Statistik Duel Akurat: Data kemenangan dan total duel kini dihitung langsung dari server.",
-        },
-        {
-          type: "improvement",
-          text: "Acak Jawaban Kuis: Posisi opsi jawaban (A, B, C, D) kini diacak otomatis setiap kali bermain.",
-        },
-        {
-          type: "fix",
-          text: "Perbaikan bug pada perhitungan win rate di mode 2v2.",
-        },
-      ],
-    },
-    {
-      version: "1.3.0",
-      date: "18 Des 2025",
-      title: "Social Search, Streak & 3D Avatar",
-      highlight: false,
-      changes: [
-        {
-          type: "new",
-          text: "Global Search: Cari teman baru, cek status (Pending/Friend) & Add Friend instan.",
-        },
-        {
-          type: "new",
-          text: "Daily Streak: Login harian berturut-turut untuk bonus Koin melimpah.",
-        },
-        {
-          type: "new",
-          text: "Sistem Coin & Shop: Beli item frame avatar dan title keren dengan koin hasil bermain.",
-        },
-        {
-          type: "improvement",
-          text: "Rombak visual Social Hub agar lebih menarik dan interaktif.",
-        },
-        {
-          type: "improvement",
-          text: "Update status pemain secara realtime setelah selesai duel.",
-        },
-      ],
-    },
-    {
-      version: "1.2.1",
-      date: "18 Des 2025",
-      title: "Realtime Progress Update",
-      highlight: false,
-      changes: [
-        {
-          type: "improvement",
-          text: "Tampilkan progress bar lawan secara realtime saat duel berlangsung.",
-        },
-        { type: "fix", text: "Perbaikan sinkronisasi timer antar pemain." },
-      ],
-    },
-    {
-      version: "1.2.0",
-      date: "17 Des 2025",
-      title: "Realtime Challenge & Mode Duel",
-      highlight: false,
-      changes: [
-        { type: "new", text: "Fitur Challenge: Tantang teman 1v1 atau 2v2." },
-        {
-          type: "new",
-          text: "Mode Realtime: Sinkronisasi waktu mulai & hasil duel menggunakan Server-Sent Events (SSE).",
-        },
-        {
-          type: "improvement",
-          text: "Notifikasi Realtime dengan Badge di Navbar.",
-        },
-      ],
-    },
-    {
-      version: "1.0.0",
-      date: "5 Des 2025",
-      title: "Grand Launching",
-      highlight: false,
-      changes: [
-        { type: "new", text: "Rilis perdana QuizApp!" },
-        { type: "new", text: "Sistem Kuis Dasar, Kategori, dan History." },
-      ],
-    },
-  ];
+  // Helper untuk mendapatkan teks berdasarkan bahasa (fallback ke 'en' atau 'id')
+  const getLocalizedText = (textObj) => {
+    if (!textObj) return "";
+    if (typeof textObj === "string") return textObj; // Legacy support
+    return textObj[language] || textObj["en"] || textObj["id"] || "";
+  };
 
   // Helper untuk icon & warna tipe perubahan
   const getTypeConfig = (type) => {
@@ -360,8 +103,10 @@ const WhatsNew = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-lg font-bold text-slate-800">Apa yang Baru?</h1>
-            <p className="text-xs text-slate-500">Riwayat pembaruan aplikasi</p>
+            <h1 className="text-lg font-bold text-slate-800">
+              {t("whatsNew.title")}
+            </h1>
+            <p className="text-xs text-slate-500">{t("whatsNew.subtitle")}</p>
           </div>
         </div>
       </div>
@@ -371,7 +116,9 @@ const WhatsNew = () => {
         <div className="mb-20">
           <div className="flex items-center justify-center gap-2 mb-8">
             <Rocket className="text-indigo-600" />
-            <h2 className="text-2xl font-bold text-slate-800">Coming Soon</h2>
+            <h2 className="text-2xl font-bold text-slate-800">
+              {t("whatsNew.comingSoon")}
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -474,12 +221,12 @@ const WhatsNew = () => {
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-slate-400 text-sm">
-            Punya ide fitur baru?{" "}
+            {t("whatsNew.idea")}{" "}
             <a
               href="https://github.com/ROFL1ST"
               className="text-indigo-600 font-bold hover:underline"
             >
-              Hubungi Kami
+              {t("whatsNew.contactUs")}
             </a>
           </p>
         </div>

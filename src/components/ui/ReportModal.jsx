@@ -3,14 +3,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Flag, AlertOctagon } from "lucide-react";
 import toast from "react-hot-toast";
 import { reportAPI } from "../../services/newFeatures";
+import { useLanguage } from "../../context/LanguageContext";
 
 const ReportModal = ({ isOpen, onClose, targetId, targetType }) => {
+  const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!reason.trim()) return toast.error("Mohon berikan alasan");
+    if (!reason.trim()) return toast.error(t("modals.noReason"));
 
     setLoading(true);
     try {
@@ -21,12 +23,12 @@ const ReportModal = ({ isOpen, onClose, targetId, targetType }) => {
       });
 
       if (res.data.status === "success") {
-        toast.success("Laporan berhasil dikirim");
+        toast.success(t("modals.successReport"));
         onClose();
         setReason("");
       }
     } catch (error) {
-      toast.error("Gagal mengirim laporan");
+      toast.error(t("modals.errorReport"));
     } finally {
       setLoading(false);
     }
@@ -56,7 +58,9 @@ const ReportModal = ({ isOpen, onClose, targetId, targetType }) => {
                     <Flag className="w-5 h-5 text-red-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Laporkan Konten</h3>
+                    <h3 className="font-bold text-gray-900">
+                      {t("modals.reportTitle")}
+                    </h3>
                     <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mt-0.5">
                       {targetType}
                     </p>
@@ -73,12 +77,12 @@ const ReportModal = ({ isOpen, onClose, targetId, targetType }) => {
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mengapa Anda melaporkan ini?
+                    {t("modals.reportReason")}
                   </label>
                   <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder="Jelaskan masalahnya..."
+                    placeholder={t("modals.placeholderReason")}
                     className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none h-32 text-gray-700"
                   />
                 </div>
@@ -89,7 +93,7 @@ const ReportModal = ({ isOpen, onClose, targetId, targetType }) => {
                     onClick={onClose}
                     className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
                   >
-                    Batal
+                    {t("modals.cancel")}
                   </button>
                   <button
                     type="submit"
@@ -97,11 +101,11 @@ const ReportModal = ({ isOpen, onClose, targetId, targetType }) => {
                     className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
                   >
                     {loading ? (
-                      "Mengirim..."
+                      t("modals.sending")
                     ) : (
                       <>
                         <AlertOctagon className="w-4 h-4" />
-                        Kirim Laporan
+                        {t("modals.sendReport")}
                       </>
                     )}
                   </button>

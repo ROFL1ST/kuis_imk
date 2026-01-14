@@ -22,13 +22,15 @@ import {
   Infinity,
   Layers,
   Database,
-  Gamepad2
+  Gamepad2,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { useLanguage } from "../../context/LanguageContext";
 
 // --- KOMPONEN MINI DEMO ---
 const MiniQuizDemo = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
@@ -39,18 +41,13 @@ const MiniQuizDemo = () => {
 
   const questions = [
     {
-      text: "Apa singkatan dari 'IMK' dalam konteks kuliah IT?",
+      text: t("landing.demo.q1"),
       options: [
-        "Interaksi Manusia & Komputer",
-        "Ilmu Manajemen Keuangan",
-        "Ikatan Mahasiswa Kreatif",
+        t("landing.demo.opt1a"),
+        t("landing.demo.opt1b"),
+        t("landing.demo.opt1c"),
       ],
       answer: 0,
-    },
-    {
-      text: "Bahasa pemrograman apa yang digunakan untuk pengembangan web frontend?",
-      options: ["Python", "JavaScript", "C++"],
-      answer: 1,
     },
   ];
 
@@ -89,11 +86,11 @@ const MiniQuizDemo = () => {
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Live Preview
+            {t("landing.livePreview")}
           </span>
         </div>
         <div className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold">
-          Soal {currentQuestionIndex + 1}/{questions.length}
+          {t("landing.question")} {currentQuestionIndex + 1}/{questions.length}
         </div>
       </div>
 
@@ -579,10 +576,7 @@ const LandingPage = () => {
 
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="bg-slate-700/50 p-3 rounded-xl border border-slate-600">
-                  <Trophy
-                    className="mx-auto text-yellow-400 mb-2"
-                    size={20}
-                  />
+                  <Trophy className="mx-auto text-yellow-400 mb-2" size={20} />
                   <div className="font-bold text-lg">15</div>
                   <div className="text-[10px] text-slate-400 uppercase">
                     Wins
@@ -668,25 +662,23 @@ const LandingPage = () => {
 
 // Kartu Statistik Baru (Card Style)
 const StatItem = ({ icon, number, label, desc, color, delay }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.5 }}
     whileHover={{ y: -5 }}
     className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col items-center text-center group hover:border-indigo-100 transition-all"
   >
-    <div className={`w-12 h-12 mb-4 rounded-2xl ${color} bg-opacity-10 text-opacity-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+    <div
+      className={`w-12 h-12 mb-4 rounded-2xl ${color} bg-opacity-10 text-opacity-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+    >
       {icon}
     </div>
-    <div className="text-3xl font-black text-slate-900 mb-1">
-      {number}
-    </div>
+    <div className="text-3xl font-black text-slate-900 mb-1">{number}</div>
     <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
       {label}
     </div>
-    <p className="text-xs text-slate-400 font-medium">
-      {desc}
-    </p>
+    <p className="text-xs text-slate-400 font-medium">{desc}</p>
   </motion.div>
 );
 

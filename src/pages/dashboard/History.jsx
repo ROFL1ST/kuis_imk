@@ -14,8 +14,10 @@ import {
 import { quizAPI } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import Skeleton from "../../components/ui/Skeleton";
+import { useLanguage } from "../../context/LanguageContext";
 
 const History = () => {
+  const { t } = useLanguage();
   const [histories, setHistories] = useState([]);
   const [stats, setStats] = useState({ total_quiz: 0, average_score: 0 }); // State untuk statistik
 
@@ -31,9 +33,12 @@ const History = () => {
   const observer = useRef();
 
   useEffect(() => {
-    document.title = "Riwayat Aktivitas | QuizApp";
-    fetchHistory(1);
+    document.title = "History | QuizApp";
   }, []);
+
+  useEffect(() => {
+    fetchHistory(page);
+  }, [page]);
 
   const fetchHistory = async (pageNum) => {
     setLoading(true);
@@ -74,11 +79,7 @@ const History = () => {
 
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => {
-            const nextPage = prevPage + 1;
-            fetchHistory(nextPage);
-            return nextPage;
-          });
+          setPage((prevPage) => prevPage + 1);
         }
       });
 
@@ -99,7 +100,7 @@ const History = () => {
     return `${m}m ${s}s`;
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Title Skeleton */}
@@ -144,11 +145,9 @@ const History = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-            <HistoryIcon className="text-indigo-600" /> Riwayat Aktivitas
+            <HistoryIcon className="text-indigo-600" /> {t("history.title")}
           </h1>
-          <p className="text-slate-500 mt-1">
-            Lihat perjalanan belajar dan evaluasi hasil kuismu.
-          </p>
+          <p className="text-slate-500 mt-1">{t("history.subtitle")}</p>
         </div>
 
         {/* Stats Card (Menggunakan Data dari Backend) */}
@@ -160,7 +159,7 @@ const History = () => {
               </div>
               <div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  Total
+                  {t("history.totalQuiz")}
                 </p>
                 <p className="text-sm font-bold text-slate-800">
                   {stats.total_quiz} Kuis
@@ -173,7 +172,7 @@ const History = () => {
               </div>
               <div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  Rata-rata
+                  {t("history.averageScore")}
                 </p>
                 <p className="text-sm font-bold text-slate-800">
                   {stats.average_score}
@@ -189,7 +188,7 @@ const History = () => {
         <div className="flex flex-col items-center justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-4"></div>
           <p className="text-slate-500 text-sm font-medium">
-            Memuat riwayat...
+            {t("history.loading")}
           </p>
         </div>
       ) : histories.length === 0 ? (
@@ -198,10 +197,10 @@ const History = () => {
             <Clock size={40} />
           </div>
           <h3 className="text-lg font-bold text-slate-700">
-            Belum ada riwayat
+            {t("history.empty")}
           </h3>
           <p className="text-slate-500 max-w-xs mx-auto mt-1">
-            Kamu belum mengerjakan kuis apapun.
+            {t("history.emptyDesc")}
           </p>
         </div>
       ) : (
@@ -285,11 +284,11 @@ const History = () => {
                       <Swords size={12} className="mt-0.5 opacity-60" />
                     ) : isSurvival ? (
                       <span className="text-[9px] font-bold uppercase mt-0.5 opacity-80">
-                        ROUNDS
+                        {t("history.rounds")}
                       </span>
                     ) : (
                       <span className="text-[9px] font-bold uppercase mt-0.5 opacity-80">
-                        {isPass ? "Lulus" : "Gagal"}
+                        {isPass ? t("history.passed") : t("history.failed")}
                       </span>
                     )}
                   </div>
@@ -299,7 +298,7 @@ const History = () => {
                     <div className="flex items-center gap-2 mb-1">
                       {isDuel && (
                         <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                          <Swords size={10} /> DUEL MODE
+                          <Swords size={10} /> {t("history.duelMode")}
                         </span>
                       )}
                       <h3

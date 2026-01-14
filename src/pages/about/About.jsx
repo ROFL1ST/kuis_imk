@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Rocket,
   Zap,
@@ -14,13 +14,50 @@ import {
   BrainCircuit,
   Sparkles,
   ChevronRight,
+  ArrowLeft,
+  Code2,
+  Smartphone,
 } from "lucide-react";
 import { useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 
 const About = () => {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+
   useEffect(() => {
-    document.title = "Tentang Kami | QuizApp";
-  }, []);
+    document.title = t("about.title") + " | QuizApp";
+  }, [t]);
+
+  const features = [
+    {
+      icon: <BrainCircuit className="text-indigo-600" size={32} />,
+      title: t("about.feature1"),
+      description: t("about.feature1Desc"),
+      color: "bg-indigo-50",
+    },
+    {
+      icon: <Swords className="text-orange-500" size={32} />,
+      title: t("about.feature2"),
+      description: t("about.feature2Desc"),
+      color: "bg-orange-50",
+    },
+    {
+      icon: <Trophy className="text-yellow-500" size={32} />,
+      title: t("about.feature3"),
+      description: t("about.feature3Desc"),
+      color: "bg-yellow-50",
+    },
+  ];
+
+  const TechBadge = ({ label, color, bg }) => (
+    <div
+      className={`flex items-center justify-center gap-2 p-4 rounded-xl ${bg} border border-slate-100 font-bold ${color}`}
+    >
+      <Code size={18} /> {label}
+    </div>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -34,6 +71,26 @@ const About = () => {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-200 rounded-full blur-3xl opacity-20"></div>
       </div>
 
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-10 mb-8 rounded-b-2xl">
+        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-full hover:bg-slate-100 transition text-slate-600"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h1 className="text-lg font-bold text-slate-800">
+              {t("about.title")}
+            </h1>
+          </div>
+          <span className="text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full">
+            {t("about.version")}
+          </span>
+        </div>
+      </div>
+
       {/* 1. HERO SECTION */}
       <div className="text-center py-16">
         <motion.div
@@ -41,46 +98,45 @@ const About = () => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <span className="inline-block py-1 px-3 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-4 border border-indigo-100">
-            Versi 1.6.0 (Beta)
-          </span>
-          <h1 className="text-4xl md:text-6xl font-black text-slate-800 mb-6 leading-tight">
-            Belajar Jadi Lebih <br />
+          <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl mx-auto flex items-center justify-center shadow-xl mb-6 rotate-3 hover:rotate-6 transition-transform duration-500">
+            <Zap size={48} className="text-white fill-white" />
+          </div>
+          <h2 className="text-4xl md:text-6xl font-black text-slate-800 mb-6 leading-tight">
+            {t("about.heroTitle1")} <br />
             <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Seru & Menantang
+              {t("about.heroTitle2")}
             </span>
-          </h1>
+          </h2>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            QuizApp adalah platform gamifikasi edukasi yang dirancang untuk
-            menguji pengetahuanmu, menantang teman, dan melacak perkembangan
-            belajarmu dengan cara yang menyenangkan.
+            {t("about.heroDesc")}
           </p>
         </motion.div>
       </div>
 
       {/* 2. FITUR UTAMA */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-        <FeatureCard
-          icon={<BrainCircuit className="text-white" size={24} />}
-          title="Kuis Interaktif"
-          desc="Ribuan soal dari berbagai topik menarik untuk mengasah otakmu setiap hari."
-          color="bg-blue-500"
-          delay={0.3}
-        />
-        <FeatureCard
-          icon={<Swords className="text-white" size={24} />}
-          title="Mode Duel"
-          desc="Tantang temanmu dalam pertarungan pengetahuan real-time 1vs1."
-          color="bg-purple-500"
-          delay={0.4}
-        />
-        <FeatureCard
-          icon={<Trophy className="text-white" size={24} />}
-          title="Sistem Rank"
-          desc="Naikkan level, raih achievement, dan jadilah yang teratas di Global Leaderboard."
-          color="bg-yellow-500"
-          delay={0.5}
-        />
+        {features.map((feature, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 + idx * 0.1 }}
+            whileHover={{ y: -5 }}
+            className="bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100"
+          >
+            <div
+              className={`w-12 h-12 ${feature.color} rounded-xl flex items-center justify-center mb-4 shadow-md rotate-3`}
+            >
+              {feature.icon}
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">
+              {feature.title}
+            </h3>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              {feature.description}
+            </p>
+          </motion.div>
+        ))}
       </div>
 
       {/* 3. STORY / MISSION */}
@@ -95,33 +151,25 @@ const About = () => {
         <div className="flex flex-col md:flex-row items-center gap-10">
           <div className="flex-1">
             <h2 className="text-3xl font-bold text-slate-800 mb-6 flex items-center gap-3">
-              <Rocket className="text-indigo-600" /> Misi Kami
+              <Code2 className="text-indigo-600" /> {t("about.missionTitle")}
             </h2>
             <div className="space-y-4 text-slate-600 leading-relaxed">
-              <p>
-                Kami percaya bahwa belajar tidak harus membosankan. Dengan
-                menggabungkan elemen permainan (gamifikasi) ke dalam proses
-                pembelajaran, kami ingin menciptakan ekosistem di mana pengguna
-                termotivasi untuk terus mencari ilmu.
-              </p>
-              <p>
-                Aplikasi ini dibangun sebagai proyek untuk mendemonstrasikan
-                integrasi teknologi web modern, performa tinggi, dan pengalaman
-                pengguna (UX) yang intuitif.
-              </p>
+              <p>{t("about.missionP1")}</p>
+              <p>{t("about.missionP2")}</p>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-4">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-700 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                <CheckCircle size={16} className="text-green-500" /> Free to
-                Play
+                <CheckCircle size={16} className="text-green-500" />{" "}
+                {t("about.freeToPlay")}
               </div>
               <div className="flex items-center gap-2 text-sm font-bold text-slate-700 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                <CheckCircle size={16} className="text-green-500" /> Real-time
+                <CheckCircle size={16} className="text-green-500" />{" "}
+                {t("about.realtime")}
               </div>
               <div className="flex items-center gap-2 text-sm font-bold text-slate-700 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                <CheckCircle size={16} className="text-green-500" /> Mobile
-                Friendly
+                <CheckCircle size={16} className="text-green-500" />{" "}
+                {t("about.mobileFriendly")}
               </div>
             </div>
           </div>
@@ -163,7 +211,7 @@ const About = () => {
             <Github size={20} />
           </a>
           <a
-            href=""
+            href="#"
             className="p-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition hover:scale-110"
           >
             <Globe size={20} />
@@ -171,12 +219,12 @@ const About = () => {
         </div>
 
         <p className="text-slate-400 text-sm flex items-center justify-center gap-1">
-          Dibuat dengan{" "}
+          {t("about.madeWith")}{" "}
           <Heart
             size={14}
             className="text-red-500 fill-red-500 animate-pulse"
           />{" "}
-          oleh Tim QuizApp
+          {t("about.byTeam")}
         </p>
       </div>
 
@@ -191,9 +239,9 @@ const About = () => {
               <Sparkles size={20} />
             </div>
             <div>
-              <p className="font-bold text-slate-800">What's New</p>
+              <p className="font-bold text-slate-800">{t("about.whatsNew")}</p>
               <p className="text-xs text-slate-500">
-                Cek fitur terbaru di versi 1.6.0
+                {t("about.checkFeatures")}
               </p>
             </div>
           </div>
@@ -205,32 +253,6 @@ const About = () => {
       </div>
     </motion.div>
   );
-};  
-
-const FeatureCard = ({ icon, title, desc, color, delay }) => (
-  <motion.div
-    initial={{ y: 20, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{ delay }}
-    whileHover={{ y: -5 }}
-    className="bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100"
-  >
-    <div
-      className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center mb-4 shadow-md rotate-3`}
-    >
-      {icon}
-    </div>
-    <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
-    <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
-  </motion.div>
-);
-
-const TechBadge = ({ label, color, bg }) => (
-  <div
-    className={`flex items-center justify-center gap-2 p-4 rounded-xl ${bg} border border-slate-100 font-bold ${color}`}
-  >
-    <Code size={18} /> {label}
-  </div>
-);
+};
 
 export default About;

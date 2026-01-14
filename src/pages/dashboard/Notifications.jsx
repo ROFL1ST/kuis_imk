@@ -16,8 +16,10 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
 import Skeleton from "../../components/ui/Skeleton";
+import { useLanguage } from "../../context/LanguageContext"; // Fixed import
 
 const Notifications = () => {
+  const { t } = useLanguage();
   const [notifs, setNotifs] = useState([]);
   const [announcements, setAnnouncements] = useState([]); // State Broadcasts
   const [activeTab, setActiveTab] = useState("notifications"); // Tab State
@@ -26,8 +28,8 @@ const Notifications = () => {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   useEffect(() => {
-    document.title = "Notifikasi | QuizApp";
-  }, []);
+    document.title = t("notifications.title") + " | QuizApp";
+  }, [t]);
 
   // 1. Fetch Notifikasi Awal
   const fetchNotifs = async () => {
@@ -119,7 +121,7 @@ const Notifications = () => {
     // Cek apakah ada yang belum dibaca agar tidak spam API
     const hasUnread = notifs.some((n) => !n.is_read);
     if (!hasUnread) {
-      toast("Semua notifikasi sudah dibaca");
+      toast(t("notifications.allReadSuccess"));
       return;
     }
 
@@ -128,10 +130,10 @@ const Notifications = () => {
       setNotifs((prev) => prev.map((n) => ({ ...n, is_read: true })));
 
       await notificationAPI.markAllRead();
-      toast.success("Semua ditandai sudah dibaca");
+      toast.success(t("notifications.markedAllRead"));
     } catch (err) {
       console.error(err);
-      toast.error("Gagal update status");
+      toast.error(t("notifications.failedClear")); // Reusing failed message generic
       // Revert/Fetch ulang jika gagal (optional)
       fetchNotifs();
     }
@@ -142,10 +144,10 @@ const Notifications = () => {
     try {
       await notificationAPI.clearAll();
       setNotifs([]);
-      toast.success("Notifikasi dibersihkan");
+      toast.success(t("notifications.clearedSuccess"));
     } catch (err) {
       console.error(err);
-      toast.error("Gagal membersihkan");
+      toast.error(t("notifications.failedClear"));
     } finally {
       setConfirmModal({ isOpen: false });
     }
@@ -180,11 +182,16 @@ const Notifications = () => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
-    if (diffInSeconds < 60) return "Baru saja";
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m lalu`;
+    if (diffInSeconds < 60) return t("notifications.time.justNow");
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)}${t("notifications.time.mAgo")}`;
     if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)}j lalu`;
-    return `${Math.floor(diffInSeconds / 86400)}h lalu`;
+      return `${Math.floor(diffInSeconds / 3600)}${t(
+        "notifications.time.hAgo"
+      )}`;
+    return `${Math.floor(diffInSeconds / 86400)}${t(
+      "notifications.time.dAgo"
+    )}`;
   };
 
   if (loading) {
@@ -233,10 +240,10 @@ const Notifications = () => {
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-slate-800">
-              Notifikasi
+              {t("notifications.title")}
             </h1>
             <p className="text-slate-500 text-xs md:text-sm">
-              Aktivitas terbaru Anda
+              {t("notifications.subtitle")}
             </p>
           </div>
         </div>
@@ -251,7 +258,7 @@ const Notifications = () => {
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            Notifikasi
+            {t("notifications.tabs.notif")}
           </button>
           <button
             onClick={() => setActiveTab("broadcasts")}
@@ -261,9 +268,9 @@ const Notifications = () => {
                 : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            Siaran{" "}
+            {t("notifications.tabs.broadcast")}{" "}
             <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">
-              Live
+              {t("notifications.tabs.live")}
             </span>
           </button>
         </div>
@@ -277,7 +284,9 @@ const Notifications = () => {
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 py-2 text-xs md:text-sm font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition border border-indigo-100"
             >
               <CheckCheck size={16} />
-              <span className="whitespace-nowrap">Baca Semua</span>
+              <span className="whitespace-nowrap">
+                {t("notifications.readAll")}
+              </span>
             </button>
 
             {/* Tombol Hapus */}
@@ -286,7 +295,7 @@ const Notifications = () => {
               className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 py-2 text-xs md:text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition border border-red-100"
             >
               <Trash2 size={16} />
-              <span>Hapus</span>
+              <span>{t("notifications.clear")}</span>
             </button>
           </div>
         )}
@@ -301,10 +310,10 @@ const Notifications = () => {
                 <Bell size={28} />
               </div>
               <h3 className="font-bold text-slate-700 text-base md:text-lg">
-                Tidak ada notifikasi
+                {t("notifications.emptyTitle")}
               </h3>
               <p className="text-slate-400 text-xs md:text-sm mt-1">
-                Saat ini belum ada update baru untukmu.
+                {t("notifications.emptyDesc")}
               </p>
             </div>
           ) : (
@@ -364,7 +373,7 @@ const Notifications = () => {
                           </span>
                           {n.link && (
                             <span className="text-[10px] md:text-xs font-bold text-indigo-500 hover:underline">
-                              Buka &rarr;
+                              {t("notifications.open")} &rarr;
                             </span>
                           )}
                         </div>
@@ -385,10 +394,10 @@ const Notifications = () => {
                 <Bell size={28} />
               </div>
               <h3 className="font-bold text-slate-700 text-base md:text-lg">
-                Belum ada siaran
+                {t("notifications.emptyBroadcastTitle")}
               </h3>
               <p className="text-slate-400 text-xs md:text-sm mt-1">
-                Admin belum mengirimkan pengumuman apapun.
+                {t("notifications.emptyBroadcastDesc")}
               </p>
             </div>
           ) : (
@@ -472,24 +481,23 @@ const Notifications = () => {
             <Trash2 size={24} />
           </div>
           <h3 className="text-lg font-bold text-slate-800 mb-2">
-            Hapus Semua?
+            {t("notifications.confirmClearTitle")}
           </h3>
           <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-            Semua notifikasi akan dihapus permanen. Tindakan ini tidak bisa
-            dibatalkan.
+            {t("notifications.confirmClearDesc")}
           </p>
           <div className="flex gap-3">
             <button
               onClick={() => setConfirmModal({ isOpen: false })}
               className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition text-sm"
             >
-              Batal
+              {t("modals.cancel")}
             </button>
             <button
               onClick={handleClearAll}
               className="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition text-sm"
             >
-              Ya, Hapus
+              {t("notifications.clear")}
             </button>
           </div>
         </div>

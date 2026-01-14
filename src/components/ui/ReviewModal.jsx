@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import { reviewAPI } from "../../services/newFeatures";
+import { useLanguage } from "../../context/LanguageContext";
 
 const ReviewModal = ({ isOpen, onClose, quizId }) => {
+  const { t } = useLanguage();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
@@ -12,7 +14,7 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (rating === 0) return toast.error("Mohon pilih penilaian");
+    if (rating === 0) return toast.error(t("modals.selectRating"));
 
     setLoading(true);
     try {
@@ -21,14 +23,14 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
         comment: comment,
       });
 
-      if (res.data.success) {
-        toast.success("Terima kasih atas masukan Anda!", { icon: "⭐" });
+      if (res.data.status == "success") {
+        toast.success(t("modals.successReview"), { icon: "⭐" });
         onClose();
         setRating(0);
         setComment("");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Gagal mengirim ulasan");
+      toast.error(error.response?.data?.message || t("modals.errorReview"));
     } finally {
       setLoading(false);
     }
@@ -59,10 +61,10 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900">
-                      Beri Nilai Kuis Ini
+                      {t("modals.reviewTitle")}
                     </h3>
                     <p className="text-xs text-gray-500 font-medium mt-0.5">
-                      Bagikan pengalaman Anda
+                      {t("modals.shareExperience")}
                     </p>
                   </div>
                 </div>
@@ -98,13 +100,13 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
 
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Komentar (Opsional)
+                    {t("modals.commentLabel")}
                   </label>
                   <div className="relative">
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      placeholder="Apa pendapat Anda tentang soal-soalnya?"
+                      placeholder={t("modals.placeholderComment")}
                       className="w-full p-3 pl-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none resize-none h-24 text-gray-700"
                     />
                     <MessageSquare className="absolute top-3.5 left-3 w-4 h-4 text-gray-400" />
@@ -116,7 +118,7 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
                   disabled={loading}
                   className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-yellow-500/30"
                 >
-                  {loading ? "Mengirim..." : "Kirim Ulasan"}
+                  {loading ? t("modals.sending") : t("modals.sendReview")}
                 </button>
               </form>
             </div>

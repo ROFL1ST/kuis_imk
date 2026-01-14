@@ -2,8 +2,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Crown, Star, X, Share2 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 
 const LevelUpModal = ({ isOpen, onClose, newLevel }) => {
+  const { t } = useLanguage();
   useEffect(() => {
     if (isOpen) {
       // Efek Confetti "School Pride"
@@ -98,11 +100,11 @@ const LevelUpModal = ({ isOpen, onClose, newLevel }) => {
               transition={{ delay: 0.2 }}
               className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-orange-600 mb-1 uppercase tracking-wider"
             >
-              Naik Level!
+              {t("modals.levelUp")}
             </motion.h2>
 
             <p className="text-slate-500 font-medium mb-6">
-              Kamu mencapai level baru
+              {t("modals.newLevel")}
             </p>
 
             <motion.div
@@ -115,7 +117,7 @@ const LevelUpModal = ({ isOpen, onClose, newLevel }) => {
             </motion.div>
 
             <div className="inline-block bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-1 rounded-full text-xs font-bold mb-8">
-              SANG PENAKLUK KUIS
+              {t("modals.conqueror")}
             </div>
 
             <motion.button
@@ -124,7 +126,7 @@ const LevelUpModal = ({ isOpen, onClose, newLevel }) => {
               onClick={onClose}
               className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-indigo-500/30 transition-all flex items-center justify-center gap-2"
             >
-              Lanjutkan <Share2 size={18} />
+              {t("modals.continue")} <Share2 size={18} />
             </motion.button>
           </div>
         </motion.div>
