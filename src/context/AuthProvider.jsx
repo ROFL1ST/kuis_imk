@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 import { authAPI, notificationAPI } from "../services/api";
-import {
-  getToken,
-  setToken,
-  removeToken,
-  getUser,
-  setUser as saveUser,
-} from "../services/auth";
+import { getUser, setUser as saveUser, removeToken } from "../services/auth";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { EventSourcePolyfill } from "event-source-polyfill"; // Pastikan import ini ada
@@ -15,7 +9,6 @@ import LogoLoader from "../components/ui/LogoLoader";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getUser());
-  const [token, setTokenState] = useState(getToken());
 
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
@@ -23,7 +16,7 @@ export const AuthProvider = ({ children }) => {
 
   // Fungsi fetch notifikasi (Initial Load)
   const fetchUnreadCount = async () => {
-    if (!token) return;
+    if (!user) return; // Check user instead of token
     try {
       const res = await notificationAPI.getList();
       // Hitung manual client-side
@@ -55,23 +48,21 @@ export const AuthProvider = ({ children }) => {
     const isNotifEnabled =
       savedSettings !== null ? JSON.parse(savedSettings) : true;
 
-    if (token) {
-      // Load data awal
+    if (user) {
+      // Load data notifikasi awal
       fetchUnreadCount();
-      refreshProfile();
+      // refreshProfile(); // <--- REMOVED: Redundant and causes infinite loop with initAuth
 
       if (isNotifEnabled) {
         const baseURL =
           import.meta.env.VITE_API_URL || "http://localhost:8000/api";
         const url = `${baseURL}/notifications/stream`;
 
-        // [UPDATE] Gunakan EventSourcePolyfill & Header Authorization
-        // Tidak perlu document.cookie lagi
+        // [UPDATE] Gunakan EventSourcePolyfill
+        // Cookie otomatis terkirim jika withCredentials: true
         eventSource = new EventSourcePolyfill(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          heartbeatTimeout: 120000, // Timeout 2 menit
+          withCredentials: true,
+          heartbeatTimeout: 120000,
         });
 
         eventSource.onmessage = (event) => {
@@ -143,28 +134,25 @@ export const AuthProvider = ({ children }) => {
     return () => {
       if (eventSource) eventSource.close();
     };
-  }, [token, navigate]);
+    // Depend on user.id/username instead of the whole object to prevent deep equal issues,
+    // although removing refreshProfile should fix the main loop.
+  }, [user?.id, navigate]);
 
-  // Init Auth
+  // Init Auth - Validasi Session via Cookie
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = getToken();
-      if (storedToken) {
-        try {
-          const res = await authAPI.authMe();
-          const { token: newToken, user: newUser } = res.data.data;
-          setTokenState(newToken);
-          setUser(newUser);
-          setToken(newToken);
-          saveUser(newUser);
-        } catch (error) {
-          console.error("Sesi tidak valid:", error);
-          logout();
-        }
-      } else {
-        logout();
+      try {
+        const res = await authAPI.authMe();
+        const { user: newUser } = res.data.data;
+        setUser(newUser);
+        saveUser(newUser);
+      } catch (error) {
+        // Silent fail (not logged in or session expired)
+        setUser(null);
+        removeToken(); // Clears user from LS
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     initAuth();
   }, []);
@@ -174,11 +162,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authAPI.login(credentials);
 
-      const { token: newToken, user: newUser, streak_message } = res.data.data;
+      // Backend sets cookie automatically
+      const { user: newUser, streak_message } = res.data.data;
 
-      setTokenState(newToken);
       setUser(newUser);
-      setToken(newToken);
       saveUser(newUser);
 
       return {
@@ -195,11 +182,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setTokenState(null);
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
     setUser(null);
     setUnreadCount(0);
-    removeToken();
+    removeToken(); // Clears user from LS
+    window.location.href = "/login"; // Force reload to clear any memory states
   };
 
   const updateUser = (userData) => {
@@ -210,11 +202,10 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     setUser: updateUser,
-    token,
     login,
     logout,
     loading,
-    isAuthenticated: !!token,
+    isAuthenticated: !!user, // Check user object existence
     unreadCount,
     refreshNotifications: fetchUnreadCount,
     refreshProfile,

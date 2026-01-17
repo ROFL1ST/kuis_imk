@@ -36,7 +36,7 @@ import { survivalAPI } from "../../services/newFeatures";
 import { useLanguage } from "../../context/LanguageContext";
 import { aiService } from "../../services/aiService";
 import { detectLanguage } from "../../utils/languageDetector";
-import { Languages, RotateCcw } from "lucide-react";
+import { Languages, RotateCcw, Sparkles } from "lucide-react";
 
 // Helper: Shuffle Array
 const shuffleArray = (array) => {
@@ -124,13 +124,31 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   const [translation, setTranslation] = useState(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
+
+  // Bulk Translation State
+  const [bulkTranslations, setBulkTranslations] = useState({}); // { [id]: { question, options } }
+  const [isBulkTranslating, setIsBulkTranslating] = useState(false);
+
   const { language } = useLanguage();
 
   // Reset translation on question change
   useEffect(() => {
+    // If we have bulk translation for this question, use it automatically?
+    // Or just let user toggle local view.
+    // Let's reset purely local single translation, but check bulk.
     setTranslation(null);
-    setShowTranslated(false);
-  }, [currentIndex, questions]);
+    // Keep showTranslated true if user prefers? For now reset to be safe/simple.
+    // If bulk is available, we might want to default to showing it if the user clicked "Translate All" which implies intent.
+    // But for now, let's keep manual toggle logic consistent or auto-show if exists in bulk.
+    if (
+      questions[currentIndex] &&
+      bulkTranslations[questions[currentIndex].ID]
+    ) {
+      setShowTranslated(true);
+    } else {
+      setShowTranslated(false);
+    }
+  }, [currentIndex, questions, bulkTranslations]);
 
   // Check if detected language matches current language
   const isContentSameLanguage = (text, targetLang) => {
@@ -150,7 +168,11 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   );
 
   const handleTranslate = async () => {
-    if (translation) {
+    // Check if we have local translation OR bulk translation
+    if (
+      translation ||
+      (questions[currentIndex] && bulkTranslations[questions[currentIndex].ID])
+    ) {
       setShowTranslated(!showTranslated);
       return;
     }
@@ -162,6 +184,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       // Prepare payload with options if they exist
       const payload = {
         q: currentQ.question,
+        h: currentQ.hint || "",
         o: currentQ.options
           ? currentQ.options.map((opt) => {
               if (typeof opt === "string") return opt;
@@ -190,6 +213,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             // Store comprehensive translation object
             setTranslation({
               question: parsed.q || currentQ.question,
+              hint: parsed.h || currentQ.hint,
               options: parsed.o || [],
             });
           } catch (e) {
@@ -208,6 +232,49 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       toast.error(t("modals.aiError"));
     } finally {
       setIsTranslating(false);
+    }
+  };
+
+  const handleBulkTranslate = async () => {
+    setIsBulkTranslating(true);
+    const toastId = toast.loading(t("quiz.translating"));
+    try {
+      const itemsToTranslate = questions.map((q) => ({
+        id: q.ID,
+        text: q.question,
+        hint: q.hint || "",
+        options: q.options || [],
+      }));
+
+      const res = await aiService.translateBulk(itemsToTranslate, language);
+      if (res.status === "success" && res.data.translatedData) {
+        let parsedData = [];
+        try {
+          parsedData = JSON.parse(res.data.translatedData);
+        } catch (e) {
+          console.error("Failed to parse bulk JSON", e);
+          throw new Error("Invalid AI Response");
+        }
+
+        // Map array back to object
+        const newTranslations = {};
+        parsedData.forEach((item) => {
+          newTranslations[item.id] = {
+            question: item.text,
+            hint: item.hint,
+            options: item.options,
+          };
+        });
+
+        setBulkTranslations(newTranslations);
+        toast.success(t("quiz.translateSuccess"), { id: toastId });
+        setShowTranslated(true); // Auto show for current question
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(t("modals.aiError"), { id: toastId });
+    } finally {
+      setIsBulkTranslating(false);
     }
   };
 
@@ -839,10 +906,14 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                     </div>
                     <span className="leading-snug">
                       {showTranslated &&
-                      translation &&
-                      translation.options &&
-                      translation.options[idx]
-                        ? translation.options[idx]
+                      ((translation &&
+                        translation.options &&
+                        translation.options[idx]) ||
+                        (bulkTranslations[currentQ.ID] &&
+                          bulkTranslations[currentQ.ID].options &&
+                          bulkTranslations[currentQ.ID].options[idx]))
+                        ? translation?.options?.[idx] ||
+                          bulkTranslations[currentQ.ID]?.options?.[idx]
                         : opt}
                     </span>
                   </div>
@@ -893,10 +964,14 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                   )}
                   <span className="leading-snug">
                     {showTranslated &&
-                    translation &&
-                    translation.options &&
-                    translation.options[idx]
-                      ? translation.options[idx]
+                    ((translation &&
+                      translation.options &&
+                      translation.options[idx]) ||
+                      (bulkTranslations[currentQ.ID] &&
+                        bulkTranslations[currentQ.ID].options &&
+                        bulkTranslations[currentQ.ID].options[idx]))
+                      ? translation?.options?.[idx] ||
+                        bulkTranslations[currentQ.ID]?.options?.[idx]
                       : opt}
                   </span>
                 </div>
@@ -1197,7 +1272,12 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                   Bantuan
                 </p>
                 <p className="text-sm font-medium leading-relaxed">
-                  {currentQ.hint}
+                  {showTranslated &&
+                  ((translation && translation.hint) ||
+                    (bulkTranslations[currentQ.ID] &&
+                      bulkTranslations[currentQ.ID].hint))
+                    ? translation?.hint || bulkTranslations[currentQ.ID]?.hint
+                    : currentQ.hint}
                 </p>
               </div>
             </motion.div>
@@ -1214,13 +1294,17 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           >
             <div className="flex justify-between items-start mb-2">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
-                {showTranslated && translation && translation.question ? (
+                {showTranslated &&
+                ((translation && translation.question) ||
+                  (bulkTranslations[currentQ.ID] &&
+                    bulkTranslations[currentQ.ID].question)) ? (
                   <motion.span
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="text-indigo-700"
                   >
-                    {translation.question}
+                    {translation?.question ||
+                      bulkTranslations[currentQ.ID]?.question}
                   </motion.span>
                 ) : (
                   currentQ.question
@@ -1247,6 +1331,24 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                     )}
                   </button>
                 )}
+                {!shouldHideTranslate &&
+                  Object.keys(bulkTranslations).length === 0 && (
+                    <button
+                      onClick={handleBulkTranslate}
+                      disabled={isBulkTranslating}
+                      className="p-2 rounded-full bg-slate-50 hover:bg-purple-50 text-slate-400 hover:text-purple-600 transition shrink-0"
+                      title={t("quiz.translateAll")}
+                    >
+                      {isBulkTranslating ? (
+                        <Loader2
+                          size={20}
+                          className="animate-spin text-purple-600"
+                        />
+                      ) : (
+                        <Sparkles size={20} />
+                      )}
+                    </button>
+                  )}
                 {currentQ.hint && (
                   <button
                     onClick={() => setShowHint(!showHint)}

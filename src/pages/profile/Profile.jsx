@@ -190,12 +190,16 @@ const Profile = () => {
       el.setAttribute("content", content);
     };
 
-    const desc = `Lihat profil ${user.name} di QuizApp! Level ${user.level} • ${user.xp} XP.`;
+    const desc = t("profile.viewProfileDesc", {
+      name: user.name,
+      level: user.level,
+      xp: user.xp,
+    });
     updateMeta("description", desc);
     updateMeta("og:title", title);
     updateMeta("og:description", desc);
     updateMeta("og:url", window.location.href);
-  }, [profileData]);
+  }, [profileData, t]);
 
   // Handler Update (Own Profile)
   const handleUpdate = async (e) => {
@@ -206,7 +210,7 @@ const Profile = () => {
       const freshRes = await userAPI.getProfile();
       const freshData = freshRes.data.data;
 
-      toast.success("Profil berhasil diperbarui!");
+      toast.success(t("profile.updateSuccess"));
       setProfileData((prev) => ({ ...prev, user: freshData.user }));
       if (form.username !== cleanUrlUsername) {
         navigate(`/@${form.username}`, { replace: true });
@@ -214,7 +218,7 @@ const Profile = () => {
       setAuthUser(res.data.data);
       setIsEditOpen(false);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Gagal update profil");
+      toast.error(err.response?.data?.message || t("profile.updateFail"));
     }
   };
 
@@ -223,10 +227,10 @@ const Profile = () => {
     try {
       await socialAPI.addFriend(profileData.user.username);
       setFriendStatus("pending");
-      toast.success("Permintaan pertemanan dikirim!");
+      toast.success(t("profile.reqSent"));
     } catch (err) {
       console.error(err);
-      toast.error("Gagal mengirim request");
+      toast.error(t("profile.reqFail"));
     }
   };
 
@@ -239,17 +243,21 @@ const Profile = () => {
       if (navigator.share) {
         await navigator.share({
           title: t("profile.title"),
-          text: `Lihat profil ${user.name} di QuizApp!`,
+          text: t("profile.viewProfileDesc", {
+            name: user.name,
+            level: user.level,
+            xp: user.xp,
+          }),
           url: window.location.href,
         });
       } else {
         // Fallback Copy Clipboard
         navigator.clipboard.writeText(window.location.href);
-        toast.success("Link profil disalin! (+Misi Share)");
+        toast.success(t("profile.shareSuccess"));
       }
     } catch (error) {
       console.error("Share failed", error);
-      toast.error("Gagal membagikan profil");
+      toast.error(t("profile.shareFail"));
     }
   };
 
@@ -488,14 +496,14 @@ const Profile = () => {
                           disabled
                           className="px-6 py-3 bg-green-100 text-green-700 font-bold rounded-xl flex items-center gap-2 border border-green-200 cursor-default opacity-80"
                         >
-                          <UserCheck size={18} /> Teman
+                          <UserCheck size={18} /> {t("profile.friend")}
                         </button>
                       ) : friendStatus === "pending" ? (
                         <button
                           disabled
                           className="px-6 py-3 bg-orange-100 text-orange-600 font-bold rounded-xl flex items-center gap-2 border border-orange-200 cursor-default opacity-80"
                         >
-                          <Hourglass size={18} /> Menunggu
+                          <Hourglass size={18} /> {t("profile.pending")}
                         </button>
                       ) : (
                         <motion.button
@@ -504,14 +512,14 @@ const Profile = () => {
                           onClick={handleAddFriend}
                           className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group shadow-md"
                         >
-                          <UserPlus size={18} /> Tambah Teman
+                          <UserPlus size={18} /> {t("profile.addFriend")}
                         </motion.button>
                       )}
 
                       <button
                         onClick={() => setShowReportModal(true)}
                         className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 hover:text-red-500 transition"
-                        title="Laporkan User"
+                        title={t("profile.report")}
                       >
                         <Flag size={20} />
                       </button>
@@ -543,7 +551,7 @@ const Profile = () => {
                   >
                     <Target className="text-orange-600" size={18} />
                     <span className="font-bold text-orange-700">
-                      {user.streak_count || 0} Runtunan
+                      {user.streak_count || 0} {t("profile.streak")}
                     </span>
                   </motion.div>
                 )}
@@ -583,7 +591,7 @@ const Profile = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
               icon={<BrainCircuit className="h-6 w-6 text-blue-500" />}
-              label="Total Kuis"
+              label={t("profile.totalQuiz")}
               value={stats.total_quizzes}
               change="+12%"
               color="blue"
@@ -591,7 +599,7 @@ const Profile = () => {
             />
             <StatCard
               icon={<TrendingUp className="h-6 w-6 text-green-500" />}
-              label="Rata-rata Skor"
+              label={t("profile.avgScore")}
               value={`${Math.round(stats.average_score)}%`}
               change="+5%"
               color="green"
@@ -599,7 +607,7 @@ const Profile = () => {
             />
             <StatCard
               icon={<Crown className="h-6 w-6 text-yellow-500" />}
-              label="Kemenangan"
+              label={t("profile.win")}
               value={stats.total_wins}
               change="+8%"
               color="yellow"
@@ -607,7 +615,7 @@ const Profile = () => {
             />
             <StatCard
               icon={<Star className="h-6 w-6 text-purple-500" />}
-              label="Topik Favorit"
+              label={t("profile.favTopic")}
               value={stats.favorite_topic || "-"}
               color="purple"
               delay={0.5}
@@ -626,10 +634,11 @@ const Profile = () => {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <BarChart2 className="text-indigo-600" /> Performa Topik
+                    <BarChart2 className="text-indigo-600" />{" "}
+                    {t("profile.topicPerf")}
                   </h3>
                   <p className="text-slate-500 text-sm">
-                    Analisis kemampuan berdasarkan topik
+                    {t("profile.topicPerfDesc")}
                   </p>
                 </div>
                 <TargetIcon className="text-indigo-400" size={24} />
@@ -637,9 +646,7 @@ const Profile = () => {
               <div className="space-y-6">
                 {topic_performance?.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-slate-400">
-                      Mulai kerjakan kuis untuk melihat performa!
-                    </p>
+                    <p className="text-slate-400">{t("profile.startQuiz")}</p>
                   </div>
                 ) : (
                   topic_performance?.map((topic, idx) => (
@@ -660,7 +667,7 @@ const Profile = () => {
                               {topic.topic_name}
                             </span>
                             <p className="text-xs text-slate-500">
-                              {topic.total_quizzes} kuis dikerjakan
+                              {topic.total_quizzes} {t("profile.quizTaken")}
                             </p>
                           </div>
                         </div>
@@ -707,7 +714,7 @@ const Profile = () => {
                     ))
                   ) : (
                     <div className="text-center py-8 text-slate-400">
-                      <p>Belum ada achievement.</p>
+                      <p>{t("profile.noAch")}</p>
                     </div>
                   )}
                 </div>
@@ -720,12 +727,12 @@ const Profile = () => {
                 className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6"
               >
                 <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                  <Shield className="text-slate-600" /> Info Akun
+                  <Shield className="text-slate-600" /> {t("profile.accInfo")}
                 </h3>
                 <div className="space-y-4">
                   <InfoItem
                     icon={<Calendar className="h-4 w-4" />}
-                    label="Bergabung"
+                    label={t("profile.joined")}
                     value={
                       user.CreatedAt
                         ? new Date(user.CreatedAt).toLocaleDateString("id-ID", {
@@ -738,10 +745,10 @@ const Profile = () => {
                   />
                   <InfoItem
                     icon={<Star className="h-4 w-4" />}
-                    label="Status"
+                    label={t("profile.status")}
                     value={
                       <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 px-3 py-1 rounded-full text-sm font-bold">
-                        <CheckCircle size={12} /> Pengguna Aktif
+                        <CheckCircle size={12} /> {t("profile.activeUser")}
                       </span>
                     }
                     isComponent
@@ -766,7 +773,7 @@ const Profile = () => {
                   <Zap size={20} />
                 </div>
                 <span className="text-sm font-bold text-slate-400 uppercase">
-                  Total XP
+                  {t("profile.totalXp")}
                 </span>
               </div>
               <p className="text-2xl font-black text-slate-800">
@@ -779,7 +786,7 @@ const Profile = () => {
                   <Crown size={20} />
                 </div>
                 <span className="text-sm font-bold text-slate-400 uppercase">
-                  Menang
+                  {t("profile.wins")}
                 </span>
               </div>
               <p className="text-2xl font-black text-slate-800">
@@ -792,7 +799,7 @@ const Profile = () => {
                   <BrainCircuit size={20} />
                 </div>
                 <span className="text-sm font-bold text-slate-400 uppercase">
-                  Kuis
+                  {t("profile.quizzes")}
                 </span>
               </div>
               <p className="text-2xl font-black text-slate-800">
@@ -805,7 +812,7 @@ const Profile = () => {
                   <Target size={20} />
                 </div>
                 <span className="text-sm font-bold text-slate-400 uppercase">
-                  Streak
+                  {t("profile.streak")}
                 </span>
               </div>
               <p className="text-2xl font-black text-slate-800">
@@ -820,10 +827,11 @@ const Profile = () => {
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <Award size={20} className="text-yellow-500" /> Pencapaian
+                    <Award size={20} className="text-yellow-500" />{" "}
+                    {t("profile.achievements")}
                   </h3>
                   <span className="text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded text-slate-500">
-                    {achievements.length} Terbuka
+                    {achievements.length} {t("profile.unlocked")}
                   </span>
                 </div>
                 <div className="p-6">
@@ -841,7 +849,7 @@ const Profile = () => {
                     </div>
                   ) : (
                     <div className="text-center py-12 text-slate-400">
-                      Belum ada achievement yang dibuka.
+                      {t("profile.noAchPublic")}
                     </div>
                   )}
                 </div>
@@ -852,11 +860,13 @@ const Profile = () => {
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <Shield size={18} /> Detail User
+                  <Shield size={18} /> {t("profile.accInfo")}
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Bergabung</span>
+                    <span className="text-slate-500">
+                      {t("profile.joined")}
+                    </span>
                     <span className="font-bold text-slate-700">
                       {user.CreatedAt
                         ? new Date(user.CreatedAt).toLocaleDateString()
@@ -864,7 +874,9 @@ const Profile = () => {
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Bahasa</span>
+                    <span className="text-slate-500">
+                      {t("settings.preferences.langTitle")}
+                    </span>
                     <span className="font-bold text-slate-700">
                       Indonesia 🇮🇩
                     </span>
@@ -882,8 +894,8 @@ const Profile = () => {
           <Modal
             isOpen={isEditOpen}
             onClose={() => setIsEditOpen(false)}
-            title="Edit Profil"
-            description="Perbarui informasi akunmu"
+            title={t("profile.edit")}
+            description={t("profile.updateDesc")}
           >
             <motion.form
               initial={{ opacity: 0, y: 20 }}
@@ -894,7 +906,7 @@ const Profile = () => {
             >
               <div>
                 <label className="text-sm font-medium text-slate-700 block mb-2 flex items-center gap-2">
-                  <User size={16} /> Nama Lengkap
+                  <User size={16} /> {t("profile.fullName")}
                 </label>
                 <div className="relative">
                   <input
@@ -911,7 +923,7 @@ const Profile = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700 block mb-2 flex items-center gap-2">
-                  <Mail size={16} /> Username
+                  <Mail size={16} /> {t("auth.username")}
                 </label>
                 <div className="relative">
                   <input
@@ -937,7 +949,7 @@ const Profile = () => {
                   onClick={() => setIsEditOpen(false)}
                   className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition"
                 >
-                  Batal
+                  {t("profile.cancel")}
                 </motion.button>
                 <motion.button
                   type="submit"
@@ -945,7 +957,7 @@ const Profile = () => {
                   whileTap={{ scale: 0.98 }}
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition flex items-center justify-center gap-2"
                 >
-                  <CheckCircle size={18} /> Simpan Perubahan
+                  <CheckCircle size={18} /> {t("profile.save")}
                 </motion.button>
               </div>
             </motion.form>

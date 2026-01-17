@@ -1,72 +1,59 @@
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
-  Star,
+  Sparkles,
   Zap,
+  Layout,
+  Globe,
   Bug,
   Calendar,
-  GitCommit,
-  Coins,
-  Trophy,
-  Palette,
-  Rocket,
-  LayoutList,
-  BarChart2,
+  Construction,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
-
-import { changelogData } from "../../data/changelog";
+import { changelogData, APP_VERSION } from "../../data/changelog";
 
 const WhatsNew = () => {
   const navigate = useNavigate();
-  useEffect(() => {
-    document.title = "Apa yang Baru? | QuizApp";
-  }, []);
-
   const { t, language } = useLanguage();
 
-  const roadmap = [
+  useEffect(() => {
+    document.title = `${t("whatsNew.title")} | QuizApp`;
+  }, [t]);
+
+  // Helper to get text based on language
+  const getText = (item) => {
+    if (!item) return "";
+    if (typeof item === "string") return item;
+    return item[language] || item.id || item.en || "";
+  };
+
+  const features = [
     {
-      title: "Challenge Rewards",
+      icon: <Globe className="text-blue-500" size={24} />,
+      title: t("whatsNew.feature1Title") || "Multi-Language",
       description:
-        "Menang duel lawan teman atau player lain akan memberikan hadiah Koin. Buktikan siapa yang paling pintar!",
-      icon: <Coins className="text-yellow-500" size={24} />,
-      bg: "bg-yellow-50",
-      border: "border-yellow-200",
+        t("whatsNew.feature1Desc") || "Support English, Indonesia, Japan",
     },
     {
-      title: "Advanced Achievement System",
-      description:
-        "Selesaikan misi unik dan raih Achievement Badge. Setiap achievement yang terbuka memberikan bonus XP dan Koin.",
-      icon: <Trophy className="text-purple-500" size={24} />,
-      bg: "bg-purple-50",
-      border: "border-purple-200",
+      icon: <Sparkles className="text-amber-500" size={24} />,
+      title: t("whatsNew.feature2Title") || "AI Genius Mode",
+      description: t("whatsNew.feature2Desc") || "Generate quizzes with AI",
     },
     {
-      title: "Theme Customization",
-      description:
-        "Bosan dengan tampilan standar? Nantinya Anda bisa mengganti tema aplikasi (Dark Mode, Light Mode, dan tema spesial lainnya).",
-      icon: <Palette className="text-pink-500" size={24} />,
-      bg: "bg-pink-50",
-      border: "border-pink-200",
+      icon: <Layout className="text-purple-500" size={24} />,
+      title: t("whatsNew.feature3Title") || "New UI Design",
+      description: t("whatsNew.feature3Desc") || "Fresh look and feel",
     },
   ];
-
-  // Helper untuk mendapatkan teks berdasarkan bahasa (fallback ke 'en' atau 'id')
-  const getLocalizedText = (textObj) => {
-    if (!textObj) return "";
-    if (typeof textObj === "string") return textObj; // Legacy support
-    return textObj[language] || textObj["en"] || textObj["id"] || "";
-  };
 
   // Helper untuk icon & warna tipe perubahan
   const getTypeConfig = (type) => {
     switch (type) {
       case "new":
         return {
-          icon: <Star size={14} />,
+          icon: <Sparkles size={14} />,
           color: "text-amber-500 bg-amber-100",
           label: "Baru",
         };
@@ -84,7 +71,7 @@ const WhatsNew = () => {
         };
       default:
         return {
-          icon: <GitCommit size={14} />,
+          icon: <Construction size={14} />,
           color: "text-slate-500 bg-slate-100",
           label: "Misc",
         };
@@ -111,39 +98,30 @@ const WhatsNew = () => {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Roadmap */}
-        <div className="mb-20">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <Rocket className="text-indigo-600" />
-            <h2 className="text-2xl font-bold text-slate-800">
-              {t("whatsNew.comingSoon")}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {roadmap.map((item, index) => (
-              <div
-                key={index}
-                className={`p-6 rounded-2xl border ${item.border} ${item.bg} hover:shadow-md transition-shadow`}
-              >
-                <div className="bg-white w-12 h-12 rounded-xl flex items-center justify-center shadow-sm mb-4">
-                  {item.icon}
-                </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {item.description}
-                </p>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Featured Highlights */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          {features.map((item, idx) => (
+            <div
+              key={idx}
+              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition"
+            >
+              <div className="bg-white w-12 h-12 rounded-xl flex items-center justify-center shadow-sm mb-4">
+                {item.icon}
               </div>
-            ))}
-          </div>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">
+                {item.title}
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {item.description}
+              </p>
+            </div>
+          ))}
         </div>
 
         {/* Timeline Pembaruan */}
         <div className="relative pl-4 sm:pl-8 border-l-2 border-slate-200 space-y-12">
-          {updates.map((update, idx) => (
+          {changelogData.map((update, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, x: -20 }}
@@ -159,76 +137,83 @@ const WhatsNew = () => {
                     ? "bg-indigo-600 ring-4 ring-indigo-100"
                     : "bg-slate-400"
                 }`}
-              />
+              ></div>
 
-              {/* Header Versi */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-bold text-slate-800">
-                      v{update.version}
-                    </h2>
-                    {update.highlight && (
-                      <span className="bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
-                        Terbaru
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-slate-600 font-medium">{update.title}</h3>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-400 text-sm bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm w-fit">
-                  <Calendar size={14} />
-                  <span>{update.date}</span>
-                </div>
-              </div>
-
-              {/* List Perubahan */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-1 shadow-sm overflow-hidden">
-                {update.changes.map((change, cIdx) => {
-                  const config = getTypeConfig(change.type);
-                  return (
-                    <div
-                      key={cIdx}
-                      className="flex items-start gap-3 p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition"
-                    >
-                      <div
-                        className={`shrink-0 p-1.5 rounded-lg ${config.color} mt-0.5`}
+              {/* Content Card */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          update.highlight
+                            ? "bg-indigo-100 text-indigo-700"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
                       >
-                        {config.icon}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
+                        v{update.version}
+                      </span>
+                      <span className="text-sm text-slate-400">
+                        {getText(update.date)}
+                      </span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-800">
+                      {getText(update.title)}
+                    </h2>
+                  </div>
+                </div>
+
+                {getText(update.description) && (
+                  <p className="text-slate-600 mb-6 leading-relaxed bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200">
+                    {getText(update.description)}
+                  </p>
+                )}
+
+                <div className="space-y-4">
+                  {update.changes.map((change, cIdx) => {
+                    const config = getTypeConfig(change.type);
+                    return (
+                      <div key={cIdx} className="flex gap-4">
+                        <div className="mt-1 flex-shrink-0">
                           <span
-                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded border border-transparent ${config.color
-                              .replace("bg-", "border-")
-                              .replace("100", "200")}`}
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
+                              config.color
+                                .replace("text-", "bg-")
+                                .replace("100", "100")
+                                .split(" ")[1]
+                            } ${config.color.split(" ")[0]}`}
                           >
-                            {config.label}
+                            {config.icon}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-600 leading-relaxed">
-                          {change.text}
-                        </p>
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-sm mb-1 uppercase tracking-wider">
+                            {config.label}
+                          </h4>
+                          <p className="text-slate-600 text-sm leading-relaxed">
+                            {getText(change.text)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="mt-12 text-center">
-          <p className="text-slate-400 text-sm">
-            {t("whatsNew.idea")}{" "}
-            <a
-              href="https://github.com/ROFL1ST"
-              className="text-indigo-600 font-bold hover:underline"
-            >
+        {/* Footer CTA */}
+        <div className="mt-20 text-center bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+              {t("whatsNew.idea")}
+            </h2>
+            <button className="px-8 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition shadow-lg">
               {t("whatsNew.contactUs")}
-            </a>
-          </p>
+            </button>
+          </div>
+          <Sparkles className="absolute -top-10 -right-10 text-white/10 w-64 h-64 rotate-12" />
         </div>
       </div>
     </div>

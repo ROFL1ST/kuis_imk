@@ -135,12 +135,12 @@ const ClassroomList = () => {
             className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
           >
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Gabung Kelas
+              {t("classroom.join")}
             </h2>
             <form onSubmit={handleJoinClass}>
               <input
                 type="text"
-                placeholder="Masukkan Kode Kelas (misal: ABC1234)"
+                placeholder={t("classroom.codePlaceholder")}
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl font-mono text-center text-lg tracking-widest focus:ring-2 focus:ring-indigo-500 outline-none mb-6 uppercase"
@@ -151,13 +151,13 @@ const ClassroomList = () => {
                   onClick={() => setShowJoinModal(false)}
                   className="flex-1 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors"
                 >
-                  Batal
+                  {t("classroom.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors"
                 >
-                  Gabung
+                  {t("classroom.joinBtn")}
                 </button>
               </div>
             </form>

@@ -1,15 +1,17 @@
 import axios from "axios";
-import { getToken, removeToken } from "./auth";
+// import { getToken, removeToken } from "./auth"; // Token handling removed
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 const api = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true, // Enable sending cookies
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Interceptor Request: Sisipkan Token
+// Interceptor Request: Sisipkan Token (REMOVED for Cookie Auth)
+/*
 api.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -22,14 +24,17 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+*/
 
 // Interceptor Response: Handle 401 (Unauthorized)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      removeToken();
-      window.location.href = "/login";
+      // removeToken(); // No longer needed
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
@@ -40,6 +45,7 @@ export const authAPI = {
   login: (credentials) => api.post("/login", credentials),
   register: (userData) => api.post("/register", userData),
   adminLogin: (credentials) => api.post("/admin/login", credentials), //
+  logout: () => api.post("/logout"),
   authMe: () => api.get("/auth/me"),
 };
 
@@ -156,6 +162,11 @@ export const dailyAPI = {
 
   claimMission: (missionId) =>
     api.post("/daily/claim-mission", { mission_id: missionId }),
+};
+
+export const translationAPI = {
+  getPublic: () => api.get("/public/translations"),
+  sync: (data) => api.post("/admin/translations/sync", data),
 };
 
 export default api;

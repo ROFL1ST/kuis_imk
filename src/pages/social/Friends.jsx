@@ -20,10 +20,12 @@ import Modal from "../../components/ui/Modal";
 import UserHoverCard from "../../components/ui/UserHoverCard";
 import UserAvatar from "../../components/ui/UserAvatar";
 import { useAuth } from "../../hooks/useAuth";
+import { useLanguage } from "../../context/LanguageContext";
 import Skeleton from "../../components/ui/Skeleton";
 
 const Friends = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   // Data State
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -44,9 +46,9 @@ const Friends = () => {
   });
 
   useEffect(() => {
-    document.title = "Sosial | QuizApp";
+    document.title = `${t("social.title")} | QuizApp`;
     fetchData();
-  }, []);
+  }, [t]);
 
   const fetchData = () => {
     setLoading(true);
@@ -63,7 +65,7 @@ const Friends = () => {
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Gagal memuat data sosial");
+        toast.error(t("modals.aiError")); // Reusing error msg or create generic one
         setLoading(false);
       });
   };
@@ -81,7 +83,7 @@ const Friends = () => {
       const res = await userAPI.searchUsers(searchQuery);
       setSearchResults(res.data.data || []);
     } catch (error) {
-      toast.error("User tidak ditemukan");
+      toast.error(t("social.noUserFound"));
     }
   };
 
@@ -96,12 +98,12 @@ const Friends = () => {
   const handleAddFriend = async (targetUsername) => {
     try {
       await socialAPI.addFriend(targetUsername);
-      toast.success(`Permintaan dikirim ke @${targetUsername}`);
+      toast.success(t("social.successSent"));
       // Refresh data sent requests agar status tombol berubah
       const sentRes = await socialAPI.getSentRequests();
       setSentRequests(sentRes.data.data || []);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Gagal mengirim permintaan");
+      toast.error(err.response?.data?.message || t("social.failedSent"));
     }
   };
 
@@ -109,44 +111,44 @@ const Friends = () => {
   const handleConfirmFriend = async (requesterId) => {
     try {
       await socialAPI.confirmFriend(requesterId);
-      toast.success("Pertemanan diterima!");
+      toast.success(t("social.successAccept"));
       fetchData();
     } catch (err) {
       console.log(err);
-      toast.error("Gagal menerima pertemanan");
+      toast.error(t("modals.aiError"));
     }
   };
 
   const handleRefuseFriend = async (requesterId) => {
     try {
       await socialAPI.refuseFriend(requesterId);
-      toast.success("Permintaan ditolak");
+      toast.success(t("social.successRefuse"));
       fetchData();
     } catch (err) {
       console.log(err);
-      toast.error("Gagal menolak permintaan");
+      toast.error(t("modals.aiError"));
     }
   };
 
   const handleCancelRequest = async (friendId) => {
     try {
       await socialAPI.cancelRequest(friendId);
-      toast.success("Permintaan dibatalkan");
+      toast.success(t("social.successCancel"));
       fetchData();
     } catch (err) {
       console.log(err);
-      toast.error("Gagal membatalkan permintaan");
+      toast.error(t("modals.aiError"));
     }
   };
 
   const executeRemoveFriend = async () => {
     try {
       await socialAPI.removeFriend(confirmModal.friendId);
-      toast.success("Teman dihapus");
+      toast.success(t("social.successDelete"));
       fetchData();
     } catch (err) {
       console.log(err);
-      toast.error("Gagal menghapus teman");
+      toast.error(t("modals.aiError"));
     } finally {
       setConfirmModal({ isOpen: false, friendId: null, friendName: "" });
     }
@@ -213,17 +215,18 @@ const Friends = () => {
           {/* Title */}
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Users className="text-indigo-200" size={32} /> Social Hub
+              <Users className="text-indigo-200" size={32} />{" "}
+              {t("social.title")}
             </h1>
             <p className="text-indigo-100 mt-2 max-w-md">
-              Cari teman baru dan kelola interaksi sosialmu.
+              {t("social.subtitle")}
             </p>
           </div>
 
           {/* SEARCH BAR (Menggantikan form add friend lama) */}
           <div className="w-full md:w-auto bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-lg">
             <label className="block text-xs font-bold text-indigo-200 mb-2 uppercase tracking-wide">
-              Cari User Baru
+              {t("social.searchUser")}
             </label>
             <form
               onSubmit={handleGlobalSearch}
@@ -235,7 +238,7 @@ const Friends = () => {
               />
               <input
                 type="text"
-                placeholder="Cari username..."
+                placeholder={t("social.searchPlaceholder")}
                 className="pl-10 pr-10 py-3 bg-white/10 border border-white/20 rounded-l-xl focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 text-white placeholder-white/50 w-full transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -253,7 +256,7 @@ const Friends = () => {
               )}
 
               <button className="px-6 py-3 bg-white text-indigo-600 font-bold rounded-r-xl hover:bg-indigo-50 transition shadow-lg">
-                Cari
+                {t("social.btnSearch")}
               </button>
             </form>
           </div>
@@ -268,7 +271,8 @@ const Friends = () => {
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <h2 className="font-bold text-slate-800 mb-4 flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <Bell className="text-amber-500" size={18} /> Permintaan Masuk
+                <Bell className="text-amber-500" size={18} />{" "}
+                {t("social.incomingRequests")}
               </span>
               {requests.length > 0 && (
                 <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
@@ -280,7 +284,7 @@ const Friends = () => {
             {requests.length === 0 ? (
               <div className="text-center py-8 text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
                 <Clock size={24} className="mx-auto mb-2 opacity-50" />
-                Tidak ada permintaan baru.
+                {t("social.noIncoming")}
               </div>
             ) : (
               <div className="space-y-3">
@@ -307,7 +311,7 @@ const Friends = () => {
                         }
                         className="flex-1 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition flex items-center justify-center gap-1"
                       >
-                        <Check size={14} /> Terima
+                        <Check size={14} /> {t("social.accept")}
                       </button>
                       <button
                         onClick={() =>
@@ -315,7 +319,7 @@ const Friends = () => {
                         }
                         className="flex-1 py-1.5 bg-white text-red-600 border border-red-200 text-xs font-bold rounded-lg hover:bg-red-50 transition flex items-center justify-center gap-1"
                       >
-                        <X size={14} /> Tolak
+                        <X size={14} /> {t("social.refuse")}
                       </button>
                     </div>
                   </div>
@@ -328,8 +332,8 @@ const Friends = () => {
           {sentRequests.length > 0 && (
             <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
               <h2 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Clock className="text-blue-500" size={18} /> Menunggu
-                Konfirmasi
+                <Clock className="text-blue-500" size={18} />{" "}
+                {t("social.pendingRequests")}
               </h2>
               <div className="space-y-3">
                 {sentRequests.map((req) => (
@@ -369,14 +373,15 @@ const Friends = () => {
             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               {isSearching ? (
                 <>
-                  <Search className="text-indigo-600" /> Hasil Pencarian
+                  <Search className="text-indigo-600" />{" "}
+                  {t("social.searchResults")}
                   <span className="text-slate-400 text-sm font-normal">
                     "{searchQuery}"
                   </span>
                 </>
               ) : (
                 <>
-                  <User className="text-indigo-600" /> Daftar Teman
+                  <User className="text-indigo-600" /> {t("social.friendList")}
                   <span className="text-slate-400 text-sm font-normal bg-slate-100 px-2 py-0.5 rounded-full">
                     {friends.length}
                   </span>
@@ -390,7 +395,7 @@ const Friends = () => {
                 onClick={clearSearch}
                 className="text-sm text-red-500 font-bold hover:underline flex items-center gap-1"
               >
-                <X size={14} /> Tutup Pencarian
+                <X size={14} /> {t("social.closeSearch")}
               </button>
             )}
           </div>
@@ -404,7 +409,7 @@ const Friends = () => {
               {isSearching ? (
                 searchResults.length === 0 ? (
                   <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
-                    <p className="text-slate-500">User tidak ditemukan.</p>
+                    <p className="text-slate-500">{t("social.noUserFound")}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -456,7 +461,7 @@ const Friends = () => {
                                 to={`/@${userResult.username}`}
                                 className="flex-1 py-2 text-center text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition"
                               >
-                                Lihat Profil
+                                {t("social.viewProfile")}
                               </Link>
 
                               {/* Logic Tombol Kanan menggantikan tombol "Chat" */}
@@ -466,21 +471,22 @@ const Friends = () => {
                                     disabled
                                     className="w-full h-full bg-green-50 text-green-600 rounded-lg text-xs font-bold cursor-default flex items-center justify-center gap-1 border border-green-100"
                                   >
-                                    <UserCheck size={14} /> Teman
+                                    <UserCheck size={14} /> {t("social.friend")}
                                   </button>
                                 ) : isSent ? (
                                   <button
                                     disabled
                                     className="w-full h-full bg-orange-50 text-orange-500 rounded-lg text-xs font-bold cursor-default flex items-center justify-center gap-1 border border-orange-100"
                                   >
-                                    <Clock size={14} /> Pending
+                                    <Clock size={14} /> {t("social.pending")}
                                   </button>
                                 ) : isIncoming ? (
                                   <button
                                     disabled
                                     className="w-full h-full bg-blue-50 text-blue-500 rounded-lg text-xs font-bold cursor-default flex items-center justify-center gap-1 border border-blue-100"
                                   >
-                                    <Bell size={14} /> Cek Request
+                                    <Bell size={14} />{" "}
+                                    {t("social.checkRequest")}
                                   </button>
                                 ) : (
                                   <button
@@ -489,7 +495,7 @@ const Friends = () => {
                                     }
                                     className="w-full h-full bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition flex items-center justify-center gap-1 shadow-sm"
                                   >
-                                    <UserPlus size={14} /> Add
+                                    <UserPlus size={14} /> {t("social.add")}
                                   </button>
                                 )}
                               </div>
@@ -505,9 +511,7 @@ const Friends = () => {
                   <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
                     <User size={32} />
                   </div>
-                  <p className="text-slate-500">
-                    Belum ada teman. Cari user baru di kolom pencarian di atas!
-                  </p>
+                  <p className="text-slate-500">{t("social.noFriends")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -557,13 +561,13 @@ const Friends = () => {
                           to={`/@${friend.username}`}
                           className="flex-1 py-2 text-center text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition"
                         >
-                          Lihat Profil
+                          {t("social.viewProfile")}
                         </Link>
                         <button
                           disabled
                           className="flex-1 py-2 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed rounded-lg"
                         >
-                          <Construction size={14} /> Chat
+                          <Construction size={14} /> {t("social.chat")}
                         </button>
                       </div>
                     </div>
@@ -588,14 +592,13 @@ const Friends = () => {
             <Trash2 size={24} />
           </div>
           <h3 className="text-lg font-bold text-slate-800 mb-2">
-            Hapus Teman?
+            {t("social.deleteFriendTitle")}
           </h3>
           <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-            Apakah Anda yakin ingin menghapus{" "}
-            <span className="font-bold text-slate-800">
-              {confirmModal.friendName}
-            </span>{" "}
-            dari daftar teman?
+            {t("social.deleteFriendDesc").replace(
+              "{name}",
+              confirmModal.friendName
+            )}
           </p>
           <div className="flex gap-3">
             <button
@@ -608,13 +611,13 @@ const Friends = () => {
               }
               className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition"
             >
-              Batal
+              {t("social.cancelBtn")}
             </button>
             <button
               onClick={executeRemoveFriend}
               className="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition"
             >
-              Ya, Hapus
+              {t("social.deleteBtn")}
             </button>
           </div>
         </div>
