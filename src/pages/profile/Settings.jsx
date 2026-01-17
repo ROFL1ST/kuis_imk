@@ -52,8 +52,6 @@ const Settings = () => {
   const [preferences, setPreferences] = useState({
     notifications: true,
     darkMode: false,
-    notifications: true,
-    darkMode: false,
   });
 
   const [loading, setLoading] = useState(false);
