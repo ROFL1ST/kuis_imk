@@ -37,7 +37,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth Endpoints
@@ -58,6 +58,7 @@ export const topicAPI = {
 // Gameplay Endpoints
 export const quizAPI = {
   getQuestions: (quizId) => api.get(`/quizzes/${quizId}/questions`), //
+  getNextAdaptiveQuestion: (data) => api.post("/quiz/adaptive/next", data), //
   submitScore: (historyData) => api.post("/history", historyData), //
   getMyHistory: (page = 1, limit = 10) =>
     api.get(`/history?page=${page}&limit=${limit}`), //

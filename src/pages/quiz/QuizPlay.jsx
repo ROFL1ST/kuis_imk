@@ -66,8 +66,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   const quizTitle = isRemedial
     ? t("quiz.remedial")
     : classroomName
-    ? `${originalTitle} (${t("quiz.class")}: ${classroomName})`
-    : originalTitle;
+      ? `${originalTitle} (${t("quiz.class")}: ${classroomName})`
+      : originalTitle;
 
   const isChallenge = location.state?.isChallenge || false;
   const isRealtime = location.state?.isRealtime || false;
@@ -79,8 +79,17 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
     location.state?.mode ||
     (location.pathname.includes("survival") ? "survival" : "classic");
 
+  // Adaptive Mode is Default now (unless remedial or survival or specific challenge)
+  const isAdaptive =
+    location.state?.isAdaptive !== undefined
+      ? location.state.isAdaptive
+      : !isRemedial && mode !== "survival" && !isChallenge && !isRealtime;
+  const [targetDifficulty, setTargetDifficulty] = useState(0.5);
+  const [predictionMsg, setPredictionMsg] = useState("");
+
   // State Data
   const [questions, setQuestions] = useState([]);
+  const [totalQuestions, setTotalQuestions] = useState(0); // For Progress Bar
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
 
@@ -162,10 +171,12 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
     return false;
   };
 
-  const shouldHideTranslate = isContentSameLanguage(
-    questions[currentIndex]?.question || "",
-    language
-  );
+  const shouldHideTranslate = false;
+  // Disable auto-hide for now to ensure button is visible as requested
+  // const shouldHideTranslate = isContentSameLanguage(
+  //   questions[currentIndex]?.question || "",
+  //   language,
+  // );
 
   const handleTranslate = async () => {
     // Check if we have local translation OR bulk translation
@@ -293,7 +304,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           Authorization: `Bearer ${token}`,
         },
         heartbeatTimeout: 120000,
-      }
+      },
     );
 
     eventSource.onmessage = (event) => {
@@ -401,7 +412,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             // Just keep existing timer logic for "Duration" tracking.
             timerIntervalRef.current = setInterval(() => {
               const currentElapsed = Math.floor(
-                (Date.now() - startTime.current) / 1000
+                (Date.now() - startTime.current) / 1000,
               );
               setElapsedTime(currentElapsed);
             }, 1000);
@@ -410,6 +421,63 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         .catch((err) => {
           console.error(err);
           toast.error("Gagal memulai survival.");
+          navigate("/dashboard");
+        })
+        .finally(() => setLoading(false));
+
+      return () => clearInterval(timerIntervalRef.current);
+      return () => clearInterval(timerIntervalRef.current);
+    } else if (isAdaptive) {
+      // Adaptive Mode Initial Fetch
+      setLoading(true);
+
+      const payload = {
+        quiz_id: parseInt(quizId),
+        answers: [],
+      };
+
+      // Helper: Fetch total count manually for progress bar
+      quizAPI
+        .getQuestions(quizId)
+        .then((res) => {
+          const total = res.data?.data?.length || 0;
+          setTotalQuestions(total);
+        })
+        .catch(console.error);
+
+      quizAPI
+        .getNextAdaptiveQuestion(payload)
+        .then((res) => {
+          if (res.data.data) {
+            const { question, target_difficulty, prediction_msg } =
+              res.data.data;
+            setTargetDifficulty(target_difficulty);
+            setPredictionMsg(prediction_msg);
+
+            // Process Options logic
+            let options = question.options;
+            if (question.type === "mcq" || question.type === "multi_select") {
+              options = shuffleArray(options);
+            }
+            const processedQ = { ...question, options };
+
+            setQuestions([processedQ]);
+            startTime.current = Date.now();
+
+            timerIntervalRef.current = setInterval(() => {
+              const currentElapsed = Math.floor(
+                (Date.now() - startTime.current) / 1000,
+              );
+              setElapsedTime(currentElapsed);
+            }, 1000);
+          } else {
+            // Finished immediately (rare)
+            setIsFinished(true);
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Gagal memulai mode adaptif.");
           navigate("/dashboard");
         })
         .finally(() => setLoading(false));
@@ -441,11 +509,12 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           });
 
           setQuestions(processedQuestions);
+          setTotalQuestions(processedQuestions.length);
           startTime.current = Date.now();
 
           timerIntervalRef.current = setInterval(() => {
             const currentElapsed = Math.floor(
-              (Date.now() - startTime.current) / 1000
+              (Date.now() - startTime.current) / 1000,
             );
             setElapsedTime(currentElapsed);
           }, 1000);
@@ -526,7 +595,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           // Correct Answer
           toast.success(
             `${t("quiz.correct")} ${t("challenge.streak")}: ${data.new_streak}`,
-            { icon: "🔥" }
+            { icon: "🔥" },
           );
 
           // Process Next Question
@@ -639,6 +708,78 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         return;
       }
       await handleSurvivalAnswer(ans);
+      await handleSurvivalAnswer(ans);
+    } else if (isAdaptive) {
+      // Adaptive Logic: Submit current, fetch next
+      const currentQ = questions[currentIndex];
+
+      // Prepare current answers history
+      // Note: answers state is { [qID]: val }
+      // Validated payload format: [ {question_id, user_answer} ]
+      const currentAnswersPayload = questions.map((q) => {
+        const ansVal = answers[q.ID];
+        let finalAnswer = ansVal;
+        if (Array.isArray(ansVal)) {
+          finalAnswer = JSON.stringify(ansVal);
+        }
+        return {
+          question_id: q.ID,
+          user_answer: finalAnswer || "", // Ensure string
+        };
+      });
+
+      // Check if current question is answered locally (already checked by disabled button, but safe to check)
+      if (!answers[currentQ.ID]) {
+        toast.error(t("quiz.selectAnswer"));
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        const payload = {
+          quiz_id: parseInt(quizId),
+          answers: currentAnswersPayload,
+        };
+
+        const res = await quizAPI.getNextAdaptiveQuestion(payload);
+
+        if (!res.data.data || res.data.message === "Quiz Completed") {
+          // No more questions -> Finish
+          await handleSubmit();
+        } else {
+          const {
+            question,
+            target_difficulty,
+            prediction_msg,
+            last_is_correct,
+          } = res.data.data;
+          setTargetDifficulty(target_difficulty);
+          setPredictionMsg(prediction_msg);
+
+          // Feedback UI
+          if (last_is_correct === true) {
+            toast.success(t("quiz.correct") || "Benar!", { icon: "🎉" });
+          } else if (last_is_correct === false) {
+            toast.error(t("quiz.wrong") || "Salah!", { icon: "❌" });
+          }
+
+          // Process Options logic
+          let options = question.options;
+          if (question.type === "mcq" || question.type === "multi_select") {
+            options = shuffleArray(options);
+          }
+          const processedQ = { ...question, options };
+
+          setQuestions((prev) => [...prev, processedQ]);
+          setCurrentIndex((prev) => prev + 1);
+          setShowHint(false);
+        }
+      } catch (e) {
+        console.error(e);
+        toast.error("Gagal memuat soal berikutnya.");
+      } finally {
+        setSubmitting(false);
+      }
     } else {
       // Classic Logic
       if (currentIndex < questions.length - 1) {
@@ -762,7 +903,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
 
       const backendScore = finalHistory.score;
       const officialCorrectCount = Math.round(
-        (backendScore / 100) * questions.length
+        (backendScore / 100) * questions.length,
       );
 
       if (backendScore >= 70) {
@@ -853,7 +994,12 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
               type="text"
               value={currentAnswer || ""}
               onChange={handleTextChange}
-              placeholder="Ketik jawabanmu di sini..."
+              value={currentAnswer || ""}
+              onChange={handleTextChange}
+              placeholder={
+                t("quiz.placeholderShort") || "Ketik jawabanmu di sini..."
+              }
+              className="w-full p-5 pl-12 rounded-xl border-2 border-slate-200 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none text-lg font-medium transition-all"
               className="w-full p-5 pl-12 rounded-xl border-2 border-slate-200 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none text-lg font-medium transition-all"
               autoFocus
               onKeyDown={(e) => {
@@ -868,7 +1014,11 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             />
           </div>
           <p className="text-xs text-slate-400 mt-3 ml-2 flex items-center gap-1">
-            <CheckCircle2 size={12} /> Jawaban tidak sensitif huruf besar/kecil
+            <p className="text-xs text-slate-400 mt-3 ml-2 flex items-center gap-1">
+              <CheckCircle2 size={12} />{" "}
+              {t("quiz.insensitive") ||
+                "Jawaban tidak sensitif huruf besar/kecil"}
+            </p>
           </p>
         </div>
       );
@@ -879,7 +1029,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       return (
         <div className="grid grid-cols-1 gap-3 mt-4">
           <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1">
-            <CheckSquare size={16} /> Pilih semua jawaban yang benar:
+            <CheckSquare size={16} />{" "}
+            {t("quiz.selectAllCorrect") || "Pilih semua jawaban yang benar:"}
           </p>
           {currentQ.options &&
             currentQ.options.map((opt, idx) => {
@@ -992,11 +1143,16 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   if (loading)
     return (
       <div className="h-screen flex items-center justify-center font-medium text-slate-500 gap-2">
-        <Loader2 className="animate-spin text-indigo-600" /> Memuat Soal...
+        <Loader2 className="animate-spin text-indigo-600" />{" "}
+        {t("quiz.loading") || "Memuat Soal..."}
       </div>
     );
   if (questions.length === 0)
-    return <div className="text-center mt-20 text-slate-500">Soal kosong.</div>;
+    return (
+      <div className="text-center mt-20 text-slate-500">
+        {t("quiz.empty") || "Soal kosong."}
+      </div>
+    );
 
   // VIEW 1: HASIL AKHIR
   if (isFinished && resultData) {
@@ -1020,7 +1176,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
               <div className="absolute top-4 left-0 w-full flex justify-center">
                 <span className="px-3 py-1 bg-orange-100 text-orange-600 text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1 border border-orange-200">
                   <Swords size={12} />{" "}
-                  {isSurvival ? "Survival Run" : "Duel Mode"}
+                  {isSurvival ? t("review.survivalMode") : t("review.duelMode")}
                 </span>
               </div>
             )}
@@ -1037,7 +1193,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                   {isSurvival ? resultData.correct : resultData.score}
                 </span>
                 <span className="text-xs font-bold tracking-widest opacity-60 mt-1">
-                  {isSurvival ? "RONDE" : "POIN"}
+                  {isSurvival ? t("quiz.round") : t("quiz.points")}
                 </span>
                 {isPass && (
                   <motion.div
@@ -1063,29 +1219,31 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             >
               {isSurvival
                 ? isPass
-                  ? "Luar Biasa!"
-                  : "Permainan Berakhir"
+                  ? t("quiz.excellent")
+                  : t("quiz.gameOver")
                 : isPass
-                ? "Kerja Bagus!"
-                : "Jangan Menyerah!"}
+                  ? t("quiz.greatJob")
+                  : t("quiz.keepGoing")}
             </h1>
             <p className="text-slate-400 text-sm font-medium mb-6">
-              Kamu telah menyelesaikan kuis ini.
+              {t("quiz.completedMsg")}
             </p>
 
             <div className="grid grid-cols-3 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
               <div className="text-center">
                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">
-                  Waktu
+                  {t("quiz.time")}
                 </div>
                 <div className="font-bold text-slate-700 flex justify-center items-center gap-1">
                   <Clock size={14} />{" "}
-                  {duration > 60 ? formatTime(duration) : `${duration}s`}
+                  {duration > 60
+                    ? formatTime(duration)
+                    : `${duration}${t("review.seconds")}`}
                 </div>
               </div>
               <div className="text-center border-l border-r border-slate-200">
                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">
-                  Benar (Est)
+                  {t("quiz.correctEst")}
                 </div>
                 <div className="font-bold text-green-600 flex justify-center items-center gap-1">
                   <CheckCircle2 size={14} /> {resultData.correct}
@@ -1093,7 +1251,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
               </div>
               <div className="text-center">
                 <div className="text-xs text-slate-400 font-bold uppercase mb-1">
-                  Salah (Est)
+                  {t("quiz.wrongEst")}
                 </div>
                 <div className="font-bold text-red-500 flex justify-center items-center gap-1">
                   <XCircle size={14} /> {resultData.wrong}
@@ -1111,12 +1269,12 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
               >
                 {allDone ? (
                   <>
-                    <CheckCircle2 size={14} /> Semua pemain selesai!
+                    <CheckCircle2 size={14} /> {t("quiz.allFinished")}
                   </>
                 ) : (
                   <>
-                    <Loader2 size={14} className="animate-spin" /> Menunggu
-                    lawan lain selesai...
+                    <Loader2 size={14} className="animate-spin" />{" "}
+                    {t("quiz.waitingOthers")}
                   </>
                 )}
               </div>
@@ -1128,21 +1286,21 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                   onClick={() => navigate("/challenges")}
                   className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold shadow-lg shadow-orange-200 hover:shadow-orange-300 transition flex items-center justify-center gap-2"
                 >
-                  <Swords size={18} /> KEMBALI KE ARENA
+                  <Swords size={18} /> {t("quiz.backToArena")}
                 </button>
               ) : (
                 <Link
                   to="/dashboard"
                   className="w-full py-3.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 transition flex items-center justify-center gap-2"
                 >
-                  <Home size={18} /> Kembali ke Dashboard
+                  <Home size={18} /> {t("quiz.backToDashboard")}
                 </Link>
               )}
               <button
                 onClick={() => goToReview(historyId)}
                 className="text-slate-400 text-sm font-bold hover:text-slate-600 py-2"
               >
-                Review Jawaban
+                {t("quiz.reviewAnswers")}
               </button>
               <button
                 onClick={() => setShowReviewModal(true)}
@@ -1151,7 +1309,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                 <div className="w-4 h-4">
                   <Flame size={16} />
                 </div>{" "}
-                Beri Nilai Kuis
+                {t("quiz.rateQuiz")}
               </button>
             </div>
           </motion.div>
@@ -1180,7 +1338,12 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
 
   // VIEW 2: GAMEPLAY
   const currentQ = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
+  // Progress Logic:
+  // If Classic: questions.length is total.
+  // If Adaptive: Use totalQuestions state (if available) or questions.length
+  const totalCount = totalQuestions > 0 ? totalQuestions : questions.length;
+  const progress = ((currentIndex + 1) / totalCount) * 100;
+
   const remainingTime =
     timeLimit > 0 ? Math.max(0, timeLimit - elapsedTime) : 0;
   const isUrgent = timeLimit > 0 && remainingTime < 30;
@@ -1209,14 +1372,33 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             <XCircle size={20} />
           </button>
           <div>
-            <h2 className="font-bold text-slate-700 text-sm leading-tight flex items-center gap-1">
-              {isChallenge && <Swords size={14} className="text-orange-500" />}{" "}
+            <h2 className="font-bold text-slate-700 text-sm leading-tight flex items-center gap-2">
+              {isChallenge && <Swords size={14} className="text-orange-500" />}
               {quizTitle}
+
+              {/* Difficulty Indicator */}
+              {currentQ && (
+                <span
+                  className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-md border tracking-wider ${
+                    (currentQ.difficulty || targetDifficulty || 0.5) < 0.4
+                      ? "bg-green-100 text-green-700 border-green-200"
+                      : (currentQ.difficulty || targetDifficulty || 0.5) > 0.7
+                        ? "bg-red-100 text-red-700 border-red-200"
+                        : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                  }`}
+                >
+                  {(currentQ.difficulty || targetDifficulty || 0.5) < 0.4
+                    ? t("difficulty.easy") || "Easy"
+                    : (currentQ.difficulty || targetDifficulty || 0.5) > 0.7
+                      ? t("difficulty.hard") || "Hard"
+                      : t("difficulty.medium") || "Medium"}
+                </span>
+              )}
             </h2>
             <p className="text-xs text-slate-400 font-medium">
               {t("quiz.questionOf", {
                 current: currentIndex + 1,
-                total: questions.length,
+                total: totalQuestions > 0 ? totalQuestions : questions.length,
               })}
             </p>
           </div>
@@ -1226,8 +1408,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             isUrgent
               ? "bg-red-600 text-white border-red-600 animate-pulse scale-110"
               : isRealtime
-              ? "bg-blue-50 text-blue-600 border-blue-100"
-              : "bg-white text-slate-600 border-slate-200"
+                ? "bg-blue-50 text-blue-600 border-blue-100"
+                : "bg-white text-slate-600 border-slate-200"
           }`}
         >
           {isUrgent ? (
@@ -1320,7 +1502,11 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                         ? "bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
                         : "bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-500"
                     }`}
-                    title={showTranslated ? t("showOriginal") : t("translate")}
+                    title={
+                      showTranslated
+                        ? t("quiz.showOriginal")
+                        : t("quiz.translate")
+                    }
                   >
                     {isTranslating ? (
                       <Loader2 size={20} className="animate-spin" />
@@ -1353,7 +1539,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                   <button
                     onClick={() => setShowHint(!showHint)}
                     className="p-2 rounded-full bg-slate-50 hover:bg-yellow-50 text-slate-400 hover:text-yellow-500 transition shrink-0"
-                    title="Lihat Hint"
+                    title={t("quiz.hintLabel")}
                   >
                     <Lightbulb size={20} />
                   </button>
@@ -1361,7 +1547,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                 <button
                   onClick={() => setShowReportModal(true)}
                   className="p-2 rounded-full bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 transition shrink-0"
-                  title="Laporkan Soal"
+                  title={t("quiz.report")}
                 >
                   <Flag size={20} />
                 </button>
@@ -1371,17 +1557,17 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             <div className="mb-4">
               {currentQ.type === "short_answer" && (
                 <span className="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">
-                  Isian Singkat
+                  {t("quiz.shortAnswer") || "Isian Singkat"}
                 </span>
               )}
               {currentQ.type === "boolean" && (
                 <span className="text-[10px] uppercase font-bold text-purple-500 bg-purple-50 px-2 py-1 rounded">
-                  Benar / Salah
+                  {t("quiz.boolean") || "Benar / Salah"}
                 </span>
               )}
               {currentQ.type === "multi_select" && (
                 <span className="text-[10px] uppercase font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded">
-                  Pilih Banyak
+                  {t("quiz.multiSelect") || "Pilih Banyak"}
                 </span>
               )}
             </div>
@@ -1475,7 +1661,11 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                 <Loader2 size={18} className="animate-spin" />{" "}
                 {t("quiz.sending")}
               </>
-            ) : currentIndex === questions.length - 1 ? (
+            ) : (
+                totalQuestions > 0
+                  ? currentIndex === totalQuestions - 1
+                  : !isAdaptive && currentIndex === questions.length - 1
+              ) ? (
               <>
                 {t("quiz.finish")} <CheckCircle2 size={18} />
               </>
@@ -1487,6 +1677,14 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           </button>
         </div>
       </div>
+
+      {/* Modals */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        questionId={currentQ.ID}
+        questionText={currentQ.question}
+      />
     </div>
   );
 };

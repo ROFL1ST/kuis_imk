@@ -146,6 +146,7 @@ function App() {
             />
             {/* Gameplay Fullscreen */}
             <Route path="/play/:quizId" element={<QuizPlay />} />
+            
             {/* <Route
               path="/about"
               element={
