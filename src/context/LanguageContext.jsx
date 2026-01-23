@@ -7,7 +7,7 @@ const LanguageContext = createContext();
 export const LanguageProvider = ({ children }) => {
   // Default to Indonesian ('id') if no preference saved
   const [language, setLanguage] = useState(
-    localStorage.getItem("language") || "id"
+    localStorage.getItem("language") || "id",
   );
 
   // State for translations (default + fetched)
@@ -42,23 +42,27 @@ export const LanguageProvider = ({ children }) => {
           const apiData = res.data.data;
 
           // Deep merge API data ON TOP of default translations
-          // We create a deep copy of defaultTranslations first to avoid mutating imports
           const mergedData = deepMerge(
             JSON.parse(JSON.stringify(defaultTranslations)),
-            apiData
+            apiData,
           );
 
           setTranslationsData(mergedData);
           localStorage.setItem(
             "translations_cache",
-            JSON.stringify(mergedData)
+            JSON.stringify(mergedData),
           );
+        } else {
+          // Fallback if data empty
+          setTranslationsData(defaultTranslations);
         }
       } catch (err) {
         console.error(
           "Failed to fetch dynamic translations, using fallback:",
-          err
+          err,
         );
+        // FORCE FALLBACK TO LOCAL FILE
+        setTranslationsData(defaultTranslations);
       }
     };
 

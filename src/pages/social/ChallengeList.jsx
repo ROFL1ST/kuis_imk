@@ -28,9 +28,11 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
-import { EventSourcePolyfill } from "event-source-polyfill";
+// import { EventSourcePolyfill } from "event-source-polyfill"; // Removed
+import { KeyRound } from "lucide-react"; // Added KeyRound
 import Skeleton from "../../components/ui/Skeleton";
 import CreateChallengeModal from "../../components/ui/CreateChallengeModal";
+import JoinLobbyModal from "../../components/ui/JoinLobbyModal"; // NEW
 // Moved to QuizList
 
 // --- HELPER COMPONENT: PLAYER ROW ---
@@ -102,275 +104,7 @@ const PlayerRow = ({
   );
 };
 
-// --- KOMPONEN LOBBY & COUNTDOWN (SSE) ---
-const LobbyModal = ({
-  isOpen,
-  onClose,
-  challengeId,
-  quizTitle,
-  isHost,
-  timeLimit,
-}) => {
-  const { t } = useLanguage();
-  const [lobbyPlayers, setLobbyPlayers] = useState([]);
-  const [countdown, setCountdown] = useState(null);
-  const [status, setStatus] = useState("waiting");
-  const [startingGame, setStartingGame] = useState(false);
-  const eventSourceRef = useRef(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isOpen || !challengeId) return;
-
-    const sseUrl = `${
-      import.meta.env.VITE_API_URL
-    }/challenges/${challengeId}/lobby-stream`;
-    const token = localStorage.getItem("token");
-
-    const eventSource = new EventSourcePolyfill(sseUrl, {
-      headers: {
-        Authorization: `Bearer ${token}`, // Kirim Token di Header
-      },
-      heartbeatTimeout: 120000,
-    });
-    eventSourceRef.current = eventSource;
-
-    eventSource.onopen = () => console.log("✅ Terhubung ke Lobby Realtime");
-
-    eventSource.addEventListener("player_update", (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        setLobbyPlayers(data.players || []);
-      } catch (err) {
-        console.error("Error parse player_update:", err);
-      }
-    });
-
-    eventSource.addEventListener("start_countdown", (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        setStatus("counting");
-        setCountdown(data.seconds || 3);
-      } catch (err) {
-        console.error("Error parse start_countdown:", err);
-      }
-    });
-
-    eventSource.addEventListener("game_start", (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        setStatus("starting");
-        eventSource.close();
-        toast.success(data.message || "Pertandingan Dimulai!");
-
-        if (data.mode === "survival") {
-          navigate("/play/survival", {
-            state: {
-              isRealtime: true,
-              lobbyId: challengeId,
-              challengeID: challengeId,
-              isChallenge: true,
-              seed: data.seed,
-              timeLimit: timeLimit || 0,
-            },
-          });
-        } else {
-          navigate(`/play/${data.quiz_id}`, {
-            state: {
-              isRealtime: true,
-              lobbyId: challengeId,
-              title: data.quiz_title || quizTitle,
-              timeLimit: timeLimit || 0,
-              challengeID: challengeId,
-              isChallenge: true,
-            },
-          });
-        }
-      } catch (err) {
-        console.error("Error parse game_start:", err);
-      }
-    });
-
-    eventSource.onerror = (err) => {
-      console.error("SSE Error:", err);
-    };
-
-    return () => {
-      if (eventSourceRef.current) eventSourceRef.current.close();
-      setLobbyPlayers([]);
-      setStatus("waiting");
-      setStartingGame(false);
-    };
-  }, [isOpen, challengeId, navigate, quizTitle]);
-
-  useEffect(() => {
-    if (status === "counting" && countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown, status]);
-
-  const handleLeaveLobby = async () => {
-    try {
-      await socialAPI.leaveLobby(challengeId);
-
-      if (eventSourceRef.current) eventSourceRef.current.close();
-
-      toast.success("Keluar dari lobby.");
-      onClose(); // Tutup modal
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal keluar lobby");
-    }
-  };
-
-  const handleHostStart = async () => {
-    setStartingGame(true);
-    try {
-      await socialAPI.startGame(challengeId);
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal memulai game");
-      setStartingGame(false);
-    }
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      noCloseButton={status !== "waiting"}
-      // onClose={status === "waiting" ? onClose : () => {}}
-      onClose={() => {}}
-      maxWidth="max-w-md"
-    >
-      <div className="text-center">
-        {status === "starting" ? (
-          <div className="py-10 animate-pulse">
-            <Zap size={64} className="mx-auto text-yellow-500 mb-4" />
-            <h2 className="text-3xl font-black text-slate-800">GO!</h2>
-          </div>
-        ) : status === "counting" ? (
-          <div className="py-10">
-            <div className="text-8xl font-black text-indigo-600 animate-ping mb-4">
-              {countdown}
-            </div>
-            <p className="text-slate-500 font-bold">
-              {t("challenge.gameStartDelay") || "Game dimulai dalam..."}
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-center mb-4 relative">
-              <div className="bg-blue-100 p-4 rounded-full relative z-10">
-                <Users size={32} className="text-blue-600" />
-              </div>
-              {isHost && (
-                <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-yellow-200 shadow-sm z-20">
-                  HOST
-                </div>
-              )}
-            </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-1">
-              {quizTitle}
-            </h2>
-            <p className="text-sm text-slate-500 mb-6 flex items-center justify-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              {isHost
-                ? t("challenge.waitingPlayers")
-                : t("challenge.waitingHost")}
-            </p>
-
-            <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left max-h-60 overflow-y-auto border border-slate-200">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-bold text-slate-400 uppercase">
-                  {t("challenge.players")} ({lobbyPlayers.length})
-                </h3>
-              </div>
-
-              {lobbyPlayers.length === 0 ? (
-                <p className="text-center text-slate-400 italic text-sm py-4">
-                  {t("challenge.connecting")}
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {lobbyPlayers.map((p, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between bg-white p-2.5 rounded-lg shadow-sm border border-slate-100"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                          {p.name.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="font-bold text-slate-700 text-sm">
-                          {p.name}
-                        </span>
-                      </div>
-                      <div>
-                        {p.status === "rejected" ? (
-                          <span className="text-[10px] font-bold px-2 py-1 rounded bg-red-100 text-red-600">
-                            {t("challenge.rejected").toUpperCase()}
-                          </span>
-                        ) : p.status === "accepted" ? (
-                          <span className="text-[10px] font-bold px-2 py-1 rounded bg-green-100 text-green-600">
-                            {t("challenge.ready").toUpperCase()}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold px-2 py-1 rounded bg-orange-100 text-orange-600">
-                            BERGABUNG...
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {isHost ? (
-              <button
-                onClick={handleHostStart}
-                disabled={
-                  startingGame ||
-                  lobbyPlayers.filter((p) => p.status === "accepted").length < 2
-                }
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-blue-200 flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {startingGame ? (
-                  <Loader2 className="animate-spin" size={20} />
-                ) : (
-                  <Gamepad2 size={20} />
-                )}
-                {startingGame ? t("challenge.pending") : t("challenge.start")}
-              </button>
-            ) : (
-              <button
-                disabled
-                className="w-full py-3 bg-slate-200 text-slate-500 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <Loader2 className="animate-spin" size={18} />{" "}
-                {t("challenge.waitingHost")}
-              </button>
-            )}
-            <button
-              onClick={handleLeaveLobby}
-              className="w-full py-3 mt-2 bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 rounded-xl font-bold transition flex items-center justify-center gap-2"
-            >
-              <LogOut size={18} /> {t("challenge.leaveLobby")}
-            </button>
-            {isHost &&
-              lobbyPlayers.filter((p) => p.status === "accepted").length <
-                2 && (
-                <p className="text-xs text-red-400 mt-2 text-center">
-                  {t("challenge.minimalPlayers")}
-                </p>
-              )}
-          </>
-        )}
-      </div>
-    </Modal>
-  );
-};
+// LobbyModal Logic Moved to /pages/social/LobbyPage.jsx
 
 // --- UTAMA: LIST CHALLENGE (INFINITE SCROLL) ---
 const ChallengeList = () => {
@@ -398,7 +132,7 @@ const ChallengeList = () => {
 
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore]
+    [loading, hasMore],
   );
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -410,13 +144,23 @@ const ChallengeList = () => {
     title: "",
     isHost: false,
     timeLimit: 0,
-  });
+  }); // Unused but kept to avoid too many deleted lines if referenced elsewhere, but logically deprecated. Or just remove usage.
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     challengeId: null,
     challengerName: "",
   });
+
+  // NEW: Handle Navigation after Create
+  const handleCreateSuccess = (newChallenge) => {
+    // Refresh list to keep it updated too
+    handleRefresh();
+    // Navigate to Lobby
+    if (newChallenge && newChallenge.ID) {
+      navigate(`/lobby/${newChallenge.ID}`);
+    }
+  };
 
   useEffect(() => {
     document.title = "Arena Duel | QuizApp";
@@ -466,56 +210,55 @@ const ChallengeList = () => {
 
   // NEW: State Create Modal
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false); // NEW
 
   const handleAccept = async (id, isRealtime, title, creatorId, timeLimit) => {
     try {
       await socialAPI.acceptChallenge(id);
       toast.success("Tantangan diterima!");
-      handleRefresh();
+      // handleRefresh(); // No need to refresh list if we navigate away immediately
 
-      if (isRealtime) {
-        setLobbyModal({
-          isOpen: true,
-          challengeId: id,
-          title: title,
-          isHost: user.ID === creatorId,
-          timeLimit: timeLimit,
-        });
-      }
+      // Navigate to Lobby Page
+      navigate(`/lobby/${id}`);
     } catch (err) {
       console.log(err);
-      toast.error("Gagal menerima tantangan");
+      const msg = err.response?.data?.message || "Gagal menerima tantangan";
+      toast.error(msg);
     }
   };
 
   const handleEnterLobby = async (id, title, creatorId, timeLimit) => {
-    setLobbyModal({
-      isOpen: true,
-      challengeId: id,
-      title: title,
-      isHost: user.ID === creatorId,
-      timeLimit: timeLimit,
-    });
-
-    try {
-      await socialAPI.acceptChallenge(id);
-    } catch (error) {
-      console.log(error);
-    }
+    navigate(`/lobby/${id}`);
   };
 
   const handleRejoinGame = (duel) => {
-    navigate(`/play/${duel.quiz_id}`, {
-      state: {
-        isRealtime: true,
-        lobbyId: duel.ID,
-        title: duel.quiz?.title,
-        timeLimit: duel.time_limit || 0,
-        rejoining: true,
-        challengeID: duel.ID,
-        isChallenge: true,
-      },
-    });
+    if (duel.mode === "survival") {
+      navigate("/play/survival", {
+        state: {
+          isRealtime: duel.is_realtime,
+          lobbyId: duel.ID,
+          challengeID: duel.ID,
+          isChallenge: true,
+          seed: duel.seed,
+          timeLimit: duel.time_limit || 0,
+          rejoining: true,
+          mode: "survival",
+        },
+      });
+    } else {
+      navigate(`/play/${duel.quiz_id}`, {
+        state: {
+          isRealtime: duel.is_realtime,
+          lobbyId: duel.ID,
+          title: duel.quiz?.title,
+          timeLimit: duel.time_limit || 0,
+          rejoining: true,
+          challengeID: duel.ID,
+          isChallenge: true,
+          mode: duel.mode,
+        },
+      });
+    }
   };
 
   const handleRefuse = async () => {
@@ -629,16 +372,37 @@ const ChallengeList = () => {
   return (
     <div className="max-w-5xl mx-auto pb-20 space-y-8">
       {/* --- HEADER & STATS (Dari Server) --- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-            <Swords className="text-orange-600" /> {t("challenge.arenaTitle")}
-          </h1>
-          <p className="text-slate-500 mt-1">{t("challenge.arenaDesc")}</p>
+      {/* --- HEADER & STATS (Dari Server) --- */}
+      <div className="space-y-6">
+        {/* Row 1: Title & Actions */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+              <Swords className="text-orange-600" /> {t("challenge.arenaTitle")}
+            </h1>
+            <p className="text-slate-500 mt-1">{t("challenge.arenaDesc")}</p>
+          </div>
+
+          <div className="flex gap-2 w-full md:w-auto">
+            <button
+              onClick={() => setShowJoinModal(true)} // Updated
+              className="px-6 py-3 flex-1 md:flex-none bg-white text-indigo-600 font-bold rounded-xl border border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+            >
+              <KeyRound className="w-5 h-5" />
+              {t("challenge.enterCode")?.split(" ")[0] || "Masuk Code"}
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 flex-1 md:flex-none bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5"
+            >
+              <Swords className="w-5 h-5" />
+              {t("challenge.createChallenge")}
+            </button>
+          </div>
         </div>
 
-        {/* Quick Stats (Menggunakan Data dari Backend) */}
-        <div className="flex gap-3">
+        {/* Row 2: Quick Stats */}
+        <div className="flex flex-wrap gap-3">
           <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
             <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
               <Target size={18} />
@@ -666,14 +430,6 @@ const ChallengeList = () => {
             </div>
           </div>
         </div>
-
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-orange-500/30 transition-all flex items-center gap-2 transform hover:-translate-y-0.5"
-        >
-          <Swords className="w-5 h-5" />
-          {t("challenge.createChallenge")}
-        </button>
       </div>
 
       {/* --- LIST CARD --- */}
@@ -703,7 +459,7 @@ const ChallengeList = () => {
 
             const participants = duel.participants || [];
             const myParticipant = participants.find(
-              (p) => p.user_id === user.ID
+              (p) => p.user_id === user.ID,
             );
             const myStatus = myParticipant?.status || "pending";
             const myScore = myParticipant?.score ?? -1;
@@ -713,7 +469,7 @@ const ChallengeList = () => {
             const isRejected = duel.status === "rejected";
 
             const allAccepted = participants.every(
-              (p) => p.status === "accepted" || p.status === "finished"
+              (p) => p.status === "accepted" || p.status === "finished",
             );
             const isRealtime = duel.is_realtime;
             const isBattleRoyale = duel.mode === "battleroyale";
@@ -738,11 +494,11 @@ const ChallengeList = () => {
             const teamB = participants.filter((p) => p.team === "B");
             const scoreA = teamA.reduce(
               (acc, curr) => acc + (curr.score > -1 ? curr.score : 0),
-              0
+              0,
             );
             const scoreB = teamB.reduce(
               (acc, curr) => acc + (curr.score > -1 ? curr.score : 0),
-              0
+              0,
             );
 
             // LOGIC TEXT PEMENANG
@@ -770,10 +526,10 @@ const ChallengeList = () => {
                     "bg-yellow-100 text-yellow-700 border-yellow-300";
                 } else if (duel.winner_id) {
                   const winnerP = participants.find(
-                    (p) => p.user_id === duel.winner_id
+                    (p) => p.user_id === duel.winner_id,
                   );
                   winnerText = `${winnerP?.user?.name || "Lawan"} ${t(
-                    "challenge.won"
+                    "challenge.won",
                   ).toUpperCase()}!`;
                 } else {
                   winnerText = t("challenge.winnerDraw");
@@ -795,8 +551,8 @@ const ChallengeList = () => {
                         ? "bg-gradient-to-br from-yellow-50/80 to-white border-yellow-300"
                         : "bg-white border-slate-200"
                       : isRejected
-                      ? "bg-red-50/20 border-red-100"
-                      : "bg-white border-slate-100"
+                        ? "bg-red-50/20 border-red-100"
+                        : "bg-white border-slate-100"
                   }
                 `}
               >
@@ -805,21 +561,32 @@ const ChallengeList = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex flex-wrap items-center gap-2 mb-2">
+                        {/* ROOM CODE */}
+                        <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 tracking-wider">
+                          {t("classroom.code")}: {duel.room_code}
+                        </span>
+
                         {duel.mode === "2v2" ? (
                           <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded flex items-center gap-1">
-                            <Users size={10} /> TIM 2 VS 2
+                            <Users size={10} />{" "}
+                            {t("createChallenge.modes.2v2").toUpperCase()}
                           </span>
                         ) : duel.mode === "battleroyale" ? (
                           <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded flex items-center gap-1">
-                            <Users size={10} /> BATTLE ROYALE
+                            <Users size={10} />{" "}
+                            {t(
+                              "createChallenge.modes.battleroyale",
+                            ).toUpperCase()}
                           </span>
                         ) : duel.mode === "survival" ? (
                           <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded flex items-center gap-1">
-                            <Users size={10} /> SURVIVAL
+                            <Users size={10} />{" "}
+                            {t("createChallenge.modes.survival").toUpperCase()}
                           </span>
                         ) : (
                           <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded flex items-center gap-1">
-                            <Swords size={10} /> 1 VS 1
+                            <Swords size={10} />{" "}
+                            {t("createChallenge.modes.1v1").toUpperCase()}
                           </span>
                         )}
 
@@ -998,7 +765,7 @@ const ChallengeList = () => {
                                 isRealtime,
                                 duel.quiz?.title,
                                 duel.creator_id,
-                                duel.time_limit || 0
+                                duel.time_limit || 0,
                               )
                             }
                             className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg transition flex items-center justify-center gap-2"
@@ -1028,7 +795,7 @@ const ChallengeList = () => {
                             duel.ID,
                             duel.quiz?.title,
                             duel.creator_id,
-                            duel.time_limit || 0
+                            duel.time_limit || 0,
                           )
                         }
                         className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg flex items-center justify-center gap-2 transition-all"
@@ -1061,7 +828,7 @@ const ChallengeList = () => {
                                   duel.ID,
                                   duel.quiz?.title,
                                   duel.creator_id,
-                                  duel.time_limit || 0
+                                  duel.time_limit || 0,
                                 )
                               }
                               className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg flex items-center justify-center gap-2 transition-all"
@@ -1072,37 +839,65 @@ const ChallengeList = () => {
                                 : t("challenge.enterLobby")}
                             </button>
                           )
-                        ) : isActive ? (
-                          duel.mode === "survival" ? (
-                            <Link
-                              to="/play/survival"
-                              state={{
-                                isChallenge: true,
-                                isRealtime: isRealtime,
-                                timeLimit: duel.time_limit || 0,
-                                challengeID: duel.ID,
-                                seed: duel.seed,
-                                mode: "survival",
-                              }}
-                              className="w-full py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-red-200 flex items-center justify-center gap-2 transition-all animate-pulse"
+                        ) : // NON-REALTIME LOGIC
+                        isActive || allAccepted || true ? ( // CHANGE: Allow entering lobby for all accepted (Host decides start)
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                handleEnterLobby(
+                                  duel.ID,
+                                  duel.quiz?.title,
+                                  duel.creator_id,
+                                  duel.time_limit || 0,
+                                )
+                              }
+                              className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg flex items-center justify-center gap-2 transition-all"
                             >
-                              <Skull size={20} /> SURVIVAL START
-                            </Link>
-                          ) : (
-                            <Link
-                              to={`/play/${duel.quiz_id}`}
-                              state={{
-                                title: duel.quiz?.title,
-                                isChallenge: true,
-                                isRealtime: isRealtime,
-                                timeLimit: duel.time_limit || 0,
-                                challengeID: duel.ID,
-                              }}
-                              className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse"
-                            >
-                              <PlayCircle size={20} /> {t("quizList.play")}
-                            </Link>
-                          )
+                              <LogIn size={20} />
+                            </button>
+
+                            {/* Play Button only if Active or All Accepted */}
+                            {isActive ||
+                            allAccepted ||
+                            duel.status === "active" ? (
+                              duel.mode === "survival" ? (
+                                <Link
+                                  to="/play/survival"
+                                  state={{
+                                    isChallenge: true,
+                                    isRealtime: isRealtime,
+                                    timeLimit: duel.time_limit || 0,
+                                    challengeID: duel.ID,
+                                    seed: duel.seed,
+                                    mode: "survival",
+                                  }}
+                                  className="flex-1 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-red-200 flex items-center justify-center gap-2 transition-all animate-pulse"
+                                >
+                                  <Skull size={20} /> SURVIVAL START
+                                </Link>
+                              ) : (
+                                <Link
+                                  to={`/play/${duel.quiz_id}`}
+                                  state={{
+                                    title: duel.quiz?.title,
+                                    isChallenge: true,
+                                    isRealtime: isRealtime,
+                                    timeLimit: duel.time_limit || 0,
+                                    challengeID: duel.ID,
+                                    mode: duel.mode,
+                                  }}
+                                  className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-orange-200 flex items-center justify-center gap-2 transition-all animate-pulse"
+                                >
+                                  <PlayCircle size={20} /> {t("quizList.play")}
+                                </Link>
+                              )
+                            ) : (
+                              <div className="flex-1 py-3 bg-slate-100 text-slate-400 rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed">
+                                <Clock size={16} />{" "}
+                                {t("challenge.waitingForHost")}
+                              </div>
+                            )}
+                          </div>
                         ) : isBattleRoyale && !allAccepted ? (
                           <div className="w-full py-3 bg-orange-50 text-orange-600 border border-orange-200 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
                             <Hourglass size={16} /> Menunggu semua pemain
@@ -1110,16 +905,33 @@ const ChallengeList = () => {
                           </div>
                         ) : (
                           <div className="text-center text-slate-400 text-xs">
-                            Menunggu konfirmasi server...
+                            Menunggu konfirmasi server ({duel.status})...
                           </div>
                         )}
                       </>
                     )}
 
-                    {/* KONDISI 3: Sudah Main, Nunggu Teman */}
-                    {myScore !== -1 && isActive && (
-                      <div className="w-full py-3 bg-slate-50 text-slate-500 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-slate-200 border-dashed">
-                        <Clock size={14} /> Menunggu Lawan Lain Selesai...
+                    {/* KONDISI 3: Sudah Main (Finished) */}
+                    {myScore !== -1 && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            handleEnterLobby(
+                              duel.ID,
+                              duel.quiz?.title,
+                              duel.creator_id,
+                              duel.time_limit || 0,
+                            )
+                          }
+                          className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 hover:shadow-md flex items-center justify-center gap-2 transition-all border border-slate-200"
+                        >
+                          <LogIn size={18} /> Lihat Lobby
+                        </button>
+                        {isActive && (
+                          <div className="flex-1 py-3 bg-slate-50 text-slate-400 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-slate-200 border-dashed">
+                            <Clock size={14} /> Menunggu Lawan...
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1192,28 +1004,17 @@ const ChallengeList = () => {
         </div>
       </Modal>
 
-      {/* Modal Lobby Realtime */}
-      <LobbyModal
-        isOpen={lobbyModal.isOpen}
-        challengeId={lobbyModal.challengeId}
-        quizTitle={lobbyModal.title}
-        isHost={lobbyModal.isHost}
-        timeLimit={lobbyModal.timeLimit}
-        onClose={() =>
-          setLobbyModal({
-            isOpen: false,
-            challengeId: null,
-            title: "",
-            isHost: false,
-            timeLimit: 0,
-          })
-        }
-      />
+      {/* LobbyModal Logic Moved to /pages/social/LobbyPage.jsx */}
 
       <CreateChallengeModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onCreated={handleRefresh}
+        onCreated={handleCreateSuccess}
+      />
+
+      <JoinLobbyModal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
       />
     </div>
   );

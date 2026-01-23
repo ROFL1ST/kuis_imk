@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Config
-const API_URL = process.env.VITE_API_URL || "http://127.0.0.1:8001/api";
+const API_URL = process.env.VITE_API_URL || "http://localhost:8080/api";
 const CREDENTIALS = {
   username: process.env.SYNC_USERNAME,
   password: process.env.SYNC_PASSWORD,
@@ -36,9 +36,9 @@ async function sync() {
       translations,
       {
         headers: {
-          Cookie: cookies, // Pass cookies directly
+          Cookie: Array.isArray(cookies) ? cookies.join("; ") : cookies,
         },
-      }
+      },
     );
 
     console.log("✅ Sync complete!");

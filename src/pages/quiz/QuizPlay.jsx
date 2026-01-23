@@ -420,7 +420,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         })
         .catch((err) => {
           console.error(err);
-          toast.error("Gagal memulai survival.");
+          toast.error(t("quiz.errorLoading") || "Gagal memulai survival.");
           navigate("/dashboard");
         })
         .finally(() => setLoading(false));
@@ -477,7 +477,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         })
         .catch((err) => {
           console.error(err);
-          toast.error("Gagal memulai mode adaptif.");
+          toast.error(t("quiz.errorLoading") || "Gagal memulai mode adaptif.");
           navigate("/dashboard");
         })
         .finally(() => setLoading(false));
@@ -521,7 +521,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         })
         .catch((err) => {
           console.error(err);
-          toast.error("Gagal memuat soal.");
+          toast.error(t("quiz.errorLoading") || "Gagal memuat soal.");
           navigate("/dashboard");
         })
         .finally(() => setLoading(false));
@@ -679,7 +679,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Gagal mengirim jawaban");
+      toast.error(t("quiz.failedSub") || "Gagal mengirim jawaban");
     } finally {
       setSubmitting(false);
     }
@@ -776,7 +776,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         }
       } catch (e) {
         console.error(e);
-        toast.error("Gagal memuat soal berikutnya.");
+        toast.error(t("quiz.errorLoading"));
       } finally {
         setSubmitting(false);
       }
@@ -886,7 +886,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       total_soal: questions.length,
       snapshot: processedSnapshot,
       time_taken: timeTaken,
-      challenge_id: challengeID,
+      challenge_id: challengeID ? parseInt(challengeID) : 0,
       question_ids: questions.map((q) => q.ID),
       assignment_id: assignmentId ? parseInt(assignmentId) : null, // New
       classroom_id: classroomId ? parseInt(classroomId) : null, // New
@@ -929,7 +929,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         // Trigger Modal Animasi
         setShowStreakModal(true);
       } else {
-        toast.success("Jawaban terkirim!");
+        toast.success(t("quiz.saved") || "Jawaban terkirim!");
       }
 
       // Check Level Up
@@ -949,14 +949,14 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       setIsFinished(true);
     } catch (err) {
       console.log(err);
-      toast.error("Gagal menyimpan skor.");
+      toast.error(t("quiz.failedSub") || "Gagal menyimpan skor.");
     } finally {
       setSubmitting(false);
     }
   };
 
   useEffect(() => {
-    document.title = `Bermain: ${quizTitle} | QuizApp`;
+    document.title = `Bermain: ${quizTitle} | QuizApp`; // Could localize 'Bermain' too but minor
   }, [quizTitle]);
 
   const isTeammate = (oppId) => {
@@ -994,12 +994,9 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
               type="text"
               value={currentAnswer || ""}
               onChange={handleTextChange}
-              value={currentAnswer || ""}
-              onChange={handleTextChange}
               placeholder={
                 t("quiz.placeholderShort") || "Ketik jawabanmu di sini..."
               }
-              className="w-full p-5 pl-12 rounded-xl border-2 border-slate-200 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none text-lg font-medium transition-all"
               className="w-full p-5 pl-12 rounded-xl border-2 border-slate-200 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none text-lg font-medium transition-all"
               autoFocus
               onKeyDown={(e) => {

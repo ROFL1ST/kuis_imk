@@ -100,6 +100,13 @@ export const socialAPI = {
   postProgress: (challengeId, progressData) =>
     api.post(`/challenges/${challengeId}/progress`, progressData),
   leaveLobby: (id) => api.post(`/challenges/${id}/leave`),
+  joinChallengeByCode: (roomCode) =>
+    api.post("/challenges/join", { room_code: roomCode }),
+  updateLobbySettings: (id, data) =>
+    api.put(`/challenges/${id}/settings`, data),
+  generateRoomCode: (id) => api.post(`/challenges/${id}/code`), // NEW
+  inviteToLobby: (challengeId, username) =>
+    api.post(`/challenges/${challengeId}/invite`, { username }), // NEW
 };
 
 // User Profile Endpoints

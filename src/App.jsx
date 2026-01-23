@@ -21,6 +21,8 @@ import ClassroomList from "./pages/classroom/ClassroomList";
 import ClassroomDetail from "./pages/classroom/ClassroomDetail";
 import Register from "./pages/auth/Register";
 import ChallengeList from "./pages/social/ChallengeList";
+import LobbyPage from "./pages/social/LobbyPage"; // NEW
+// import JoinLobbyPage from "./pages/social/JoinLobbyPage"; // REMOVED
 import Profile from "./pages/profile/Profile";
 import About from "./pages/about/About";
 import Settings from "./pages/profile/Settings";
@@ -144,9 +146,25 @@ function App() {
                 </MainLayout>
               }
             />
+            {/* <Route
+              path="/challenges/join"
+              element={
+                <MainLayout>
+                  <JoinLobbyPage />
+                </MainLayout>
+              }
+            /> */}
+            <Route
+              path="/lobby/:id"
+              element={
+                <MainLayout>
+                  <LobbyPage />
+                </MainLayout>
+              }
+            />
             {/* Gameplay Fullscreen */}
             <Route path="/play/:quizId" element={<QuizPlay />} />
-            
+
             {/* <Route
               path="/about"
               element={
