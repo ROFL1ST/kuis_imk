@@ -312,7 +312,7 @@ const ChallengeList = () => {
 
   if (initialLoading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-3xl mx-auto px-2 py-8 space-y-6">
         {/* 1. Header: Title & Button Create */}
         <div className="flex justify-between items-center mb-6">
           <div className="space-y-2">
@@ -370,7 +370,7 @@ const ChallengeList = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto pb-20 space-y-8">
+    <div className="max-w-[1080px] mx-auto pb-20 space-y-8">
       {/* --- HEADER & STATS (Dari Server) --- */}
       {/* --- HEADER & STATS (Dari Server) --- */}
       <div className="space-y-6">

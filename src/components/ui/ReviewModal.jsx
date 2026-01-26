@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { reviewAPI } from "../../services/newFeatures";
 import { useLanguage } from "../../context/LanguageContext";
 
-const ReviewModal = ({ isOpen, onClose, quizId }) => {
+const ReviewModal = ({ isOpen, onClose, quizId, onSuccess }) => {
   const { t } = useLanguage();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -26,6 +26,7 @@ const ReviewModal = ({ isOpen, onClose, quizId }) => {
       if (res.data.status == "success") {
         toast.success(t("modals.successReview"), { icon: "⭐" });
         onClose();
+        if (onSuccess) onSuccess(); // Call parent callback
         setRating(0);
         setComment("");
       }

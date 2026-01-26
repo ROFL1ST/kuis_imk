@@ -137,6 +137,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   // Bulk Translation State
   const [bulkTranslations, setBulkTranslations] = useState({}); // { [id]: { question, options } }
   const [isBulkTranslating, setIsBulkTranslating] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState(null); // 'correct', 'wrong'
+  const [isRated, setIsRated] = useState(false);
 
   const { language } = useLanguage();
 
@@ -710,6 +712,17 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       await handleSurvivalAnswer(ans);
       await handleSurvivalAnswer(ans);
     } else if (isAdaptive) {
+      // Opt: If we already have the next question (backtracking), don't re-fetch
+      // UNLESS we want to support "Changing Answer" which changes the path.
+      // User requested: "If answer is different, re-hit next".
+      // Simplest robust way: If answering a non-last question, we TRUNCATE the future and re-branch.
+      if (currentIndex < questions.length - 1) {
+        // Truncate functionality:
+        // 1. Remove questions after current
+        setQuestions((prev) => prev.slice(0, currentIndex + 1));
+        // 2. Continue to normal flow (submit & fetch new next)
+      }
+
       // Adaptive Logic: Submit current, fetch next
       const currentQ = questions[currentIndex];
 
@@ -735,13 +748,14 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       }
 
       setSubmitting(true);
+      let res = null;
       try {
         const payload = {
           quiz_id: parseInt(quizId),
           answers: currentAnswersPayload,
         };
 
-        const res = await quizAPI.getNextAdaptiveQuestion(payload);
+        res = await quizAPI.getNextAdaptiveQuestion(payload);
 
         if (!res.data.data || res.data.message === "Quiz Completed") {
           // No more questions -> Finish
@@ -756,12 +770,9 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           setTargetDifficulty(target_difficulty);
           setPredictionMsg(prediction_msg);
 
-          // Feedback UI
-          if (last_is_correct === true) {
-            toast.success(t("quiz.correct") || "Benar!", { icon: "🎉" });
-          } else if (last_is_correct === false) {
-            toast.error(t("quiz.wrong") || "Salah!", { icon: "❌" });
-          }
+          // Feedback UI & Animation
+          const isCorrect = last_is_correct === true;
+          setFeedbackStatus(isCorrect ? "correct" : "wrong");
 
           // Process Options logic
           let options = question.options;
@@ -770,15 +781,27 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           }
           const processedQ = { ...question, options };
 
-          setQuestions((prev) => [...prev, processedQ]);
-          setCurrentIndex((prev) => prev + 1);
-          setShowHint(false);
+          // Delay transition to show feedback
+          setTimeout(() => {
+            console.log("EXECUTING TIMEOUT UPDATE");
+            setQuestions((prev) => {
+              console.log("Updating Questions. Prev length:", prev.length);
+              return [...prev, processedQ];
+            });
+            setCurrentIndex((prev) => {
+              console.log("Updating Index. Prev:", prev, "Next:", prev + 1);
+              return prev + 1;
+            });
+            setShowHint(false);
+            setFeedbackStatus(null);
+          }, 1500);
         }
       } catch (e) {
         console.error(e);
         toast.error(t("quiz.errorLoading"));
       } finally {
-        setSubmitting(false);
+        if (!res?.data?.data) setSubmitting(false); // Only unset here if error/finish, otherwise wait for timeout
+        setTimeout(() => setSubmitting(false), 1500); // Sync with transition
       }
     } else {
       // Classic Logic
@@ -1300,13 +1323,21 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                 {t("quiz.reviewAnswers")}
               </button>
               <button
-                onClick={() => setShowReviewModal(true)}
-                className="text-yellow-500 text-sm font-bold hover:text-yellow-600 py-1 flex items-center justify-center gap-1"
+                onClick={() => !isRated && setShowReviewModal(true)}
+                disabled={isRated}
+                className={`text-sm font-bold py-1 flex items-center justify-center gap-1 ${
+                  isRated
+                    ? "text-slate-400 cursor-not-allowed"
+                    : "text-yellow-500 hover:text-yellow-600"
+                }`}
               >
                 <div className="w-4 h-4">
-                  <Flame size={16} />
+                  <Flame
+                    size={16}
+                    className={isRated ? "text-slate-400" : ""}
+                  />
                 </div>{" "}
-                {t("quiz.rateQuiz")}
+                {isRated ? t("quiz.rated") : t("quiz.rateQuiz")}
               </button>
             </div>
           </motion.div>
@@ -1328,6 +1359,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           isOpen={showReviewModal}
           onClose={() => setShowReviewModal(false)}
           quizId={quizId}
+          onSuccess={() => setIsRated(true)}
         />
       </div>
     );
@@ -1466,11 +1498,60 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQ.ID}
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -20, opacity: 0 }}
-            className="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-slate-100 mb-6"
+            initial={{ x: 20, opacity: 0, scale: 0.95 }}
+            animate={
+              feedbackStatus === "correct"
+                ? {
+                    x: 0,
+                    opacity: 1,
+                    scale: 1.02,
+                    borderColor: "#22c55e", // Green-500
+                    boxShadow: "0 0 20px rgba(34, 197, 94, 0.2)",
+                  }
+                : feedbackStatus === "wrong"
+                  ? {
+                      x: [0, -10, 10, -10, 10, 0], // Shake
+                      opacity: 1,
+                      scale: 1,
+                      borderColor: "#ef4444", // Red-500
+                      boxShadow: "0 0 20px rgba(239, 68, 68, 0.2)",
+                    }
+                  : { x: 0, opacity: 1, scale: 1, borderColor: "#f1f5f9" }
+            }
+            exit={{ x: -20, opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className={`bg-white p-6 md:p-8 rounded-3xl shadow-lg border mb-6 relative overflow-hidden transition-colors duration-300 ${
+              feedbackStatus === "correct"
+                ? "bg-green-50"
+                : feedbackStatus === "wrong"
+                  ? "bg-red-50"
+                  : "bg-white border-slate-100"
+            }`}
           >
+            {/* Feedback Overlay Badge */}
+            <AnimatePresence>
+              {feedbackStatus && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0, rotate: -20 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className={`absolute top-0 right-0 m-4 px-6 py-2 rounded-full font-black uppercase tracking-wider text-white shadow-xl rotate-12 z-20 flex items-center gap-2 ${
+                    feedbackStatus === "correct" ? "bg-green-500" : "bg-red-500"
+                  }`}
+                >
+                  {feedbackStatus === "correct" ? (
+                    <>
+                      <CheckCircle2 size={20} /> {t("quiz.correct") || "BENAR!"}
+                    </>
+                  ) : (
+                    <>
+                      <XCircle size={20} /> {t("quiz.wrong") || "SALAH!"}
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="flex justify-between items-start mb-2">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
                 {showTranslated &&
