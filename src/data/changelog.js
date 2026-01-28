@@ -1,6 +1,70 @@
-export const APP_VERSION = "1.7.0";
+export const APP_VERSION = "1.8.0";
 
 export const changelogData = [
+  {
+    version: "1.8.0",
+    date: {
+      id: "25 Jan 2026",
+      en: "Jan 25, 2026",
+      jp: "2026年1月25日",
+    },
+    title: {
+      id: "Lobby Upgrades, Wagers & Machine Learning",
+      en: "Lobby Upgrades, Wagers & Machine Learning",
+      jp: "ロビーのアップグレード、賭け、機械学習",
+    },
+    highlight: true,
+    changes: [
+      {
+        type: "new",
+        text: {
+          id: "Lobby Santai (0 Detik): Host kini bisa mengatur waktu ke 0 menit untuk mode tanpa batas waktu. Ideal untuk belajar santai.",
+          en: "Relaxed Lobby (0 Seconds): Hosts can now set timer to 0 minutes for unlimited time mode. Ideal for relaxed studying.",
+          jp: "リラックスロビー（0秒）：ホストはタイマーを0分に設定して、無制限の時間モードにすることができます。リラックスした勉強に最適です。",
+        },
+      },
+      {
+        type: "new",
+        text: {
+          id: "Taruhan Koin: Duel semakin panas! Host bisa mengatur jumlah taruhan koin untuk setiap tantangan.",
+          en: "Coin Wagers: Duels get hotter! Hosts can set a coin wager amount for each challenge.",
+          jp: "コインの賭け：決闘が熱くなる！ホストは、各チャレンジのコイン賭け金を設定できます。",
+        },
+      },
+      {
+        type: "new",
+        text: {
+          id: "Kode Room: Bagikan 6-digit kode room kepada teman untuk bergabung ke lobi dengan mudah.",
+          en: "Room Codes: Share a 6-digit room code with friends to join the lobby easily.",
+          jp: "ルームコード：6桁のルームコードを友達と共有して、ロビーに簡単に参加できます。",
+        },
+      },
+      {
+        type: "new",
+        text: {
+          id: "Lobby Challenge: Kini kamu bisa menantang teman untuk duel langsung di lobi.",
+          en: "Lobby Challenge: Now you can challenge friends to a duel directly in the lobby.",
+          jp: "ロビーチャレンジ：今すぐ友達にロビーで直接決闘を挑むことができます。",
+        },  
+      },
+      {
+        type: "new",
+        text: {
+          id: "Machine Learning: Sistem rekomendasi soal berdasarkan tingkat kesulitan dan performa pengguna.",
+          en: "Machine Learning: Question recommendation system based on difficulty level and user performance.",
+          jp: "機械学習：難易度とユーザーのパフォーマンスに基づいた問題推薦システム。",
+        }
+      },
+      {
+        type: "improvement",
+        text: {
+          id: "Database Sync: Terjemahan kini disinkronkan langsung dari server, memastikan pembaruan bahasa instan tanpa update aplikasi.",
+          en: "Database Sync: Translations are now synced directly from the server, ensuring instant language updates without app updates.",
+          jp: "データベース同期：翻訳がサーバーから直接同期されるようになり、アプリの更新なしで即座に言語が更新されます。",
+        },
+      },
+    ],
+  },
   {
     version: "1.7.0",
     date: {
@@ -13,7 +77,7 @@ export const changelogData = [
       en: "Multi-Language & AI Genius Mode",
       jp: "多言語 & AI天才モード",
     },
-    highlight: true,
+    highlight: false,
     changes: [
       {
         type: "new",

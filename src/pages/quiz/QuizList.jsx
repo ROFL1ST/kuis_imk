@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   PlayCircle,
   Trophy,
@@ -24,14 +24,18 @@ const QuizList = () => {
   const { t } = useLanguage();
   const { slug } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modal State & Settings
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAdaptiveModalOpen, setIsAdaptiveModalOpen] = useState(false);
   const [selectedQuizId, setSelectedQuizId] = useState(null);
   const [selectedQuizTitle, setSelectedQuizTitle] = useState("");
+
+  const [selectedAdaptiveQuiz, setSelectedAdaptiveQuiz] = useState(null);
 
   useEffect(() => {
     Promise.all([topicAPI.getQuizzesBySlug(slug), socialAPI.getFriends()])
@@ -120,26 +124,30 @@ const QuizList = () => {
                 <p className="text-slate-500">{quiz.description}</p>
               </div>
 
-              <div className="flex gap-2 w-full sm:w-auto">
+              <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => openChallengeModal(quiz.ID, quiz.title)}
-                  className="flex-1 sm:flex-none px-4 py-2 bg-orange-100 text-orange-700 rounded-lg font-bold hover:bg-orange-200 flex items-center justify-center gap-2 transition"
+                  className="px-3 sm:px-4 py-2 bg-orange-100 text-orange-700 rounded-lg font-bold hover:bg-orange-200 flex items-center justify-center gap-1.5 transition text-sm sm:text-base order-1"
                 >
-                  <Swords size={18} /> {t("quizList.challenge")}
+                  <Swords size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <span className="truncate">{t("quizList.challenge")}</span>
                 </button>
                 <Link
                   to={`/play/${quiz.ID}`}
                   state={{ title: quiz.title }}
-                  className="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 transition"
+                  className="px-3 sm:px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-1.5 transition text-sm sm:text-base order-2"
                 >
-                  <PlayCircle size={18} /> {t("quizList.play")}
+                  <PlayCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  {t("quizList.play")}
                 </Link>
+                
               </div>
             </div>
           ))}
         </div>
       )}
 
+      
       {/* === MODAL BUAT TANTANGAN === */}
       <CreateChallengeModal
         isOpen={isModalOpen}

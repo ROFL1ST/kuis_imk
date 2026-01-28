@@ -1,7 +1,7 @@
 {
   "name": "kuis-imk",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,6 +21,7 @@
     "framer-motion": "^12.23.25",
     "lucide-react": "^0.556.0",
     "react": "^19.2.0",
+    "react-confetti": "^6.4.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.10.1",

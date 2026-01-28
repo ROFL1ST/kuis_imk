@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://127.0.0.1:8001/api/public/translations";
+const API_URL = "http://localhost:8080/api/public/translations";
 
 async function verify() {
   try {

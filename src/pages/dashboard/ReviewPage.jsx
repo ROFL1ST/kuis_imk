@@ -152,6 +152,7 @@ const ReviewPage = () => {
     time_taken,
     questions = [],
     snapshot = {},
+    essay_submissions = [], // New field from backend
   } = data;
   const isPass = score >= 70;
 
@@ -162,9 +163,18 @@ const ReviewPage = () => {
 
   let correctCount = 0;
 
+  // Create map for easy lookup
+  const essayMap = {};
+  if (essay_submissions) {
+    essay_submissions.forEach((sub) => {
+      essayMap[sub.question_id] = sub;
+    });
+  }
+
   const detailedAnswers = (questions || []).map((q) => {
     const userAnswer = snapshot[String(q.ID)];
     let isCorrect = false;
+    let aiData = null;
 
     if (!userAnswer) {
       isCorrect = false;
@@ -189,13 +199,27 @@ const ReviewPage = () => {
         console.error("Error comparing multi select", e);
         isCorrect = false;
       }
+    } else if (q.type === "essay") {
+      // Logic for Essay
+      const sub = essayMap[q.ID];
+      if (sub) {
+        aiData = {
+          score: sub.ai_score,
+          feedback: sub.ai_feedback,
+        };
+        // Define correct if score >= 70 (or based on your logic)
+        isCorrect = sub.ai_score >= 70;
+      } else {
+        // Fallback if no submission record found but snapshot exists
+        isCorrect = false;
+      }
     } else {
       isCorrect = userAnswer === q.correct;
     }
 
     if (isCorrect) correctCount++;
 
-    return { ...q, userAnswer, isCorrect };
+    return { ...q, userAnswer, isCorrect, aiData };
   });
 
   const wrongCount = questions.length - correctCount;
@@ -225,8 +249,8 @@ const ReviewPage = () => {
             isDuel
               ? "bg-gradient-to-br from-orange-50 to-white border-orange-200"
               : isSurvival
-              ? "bg-gradient-to-br from-purple-50 to-white border-purple-200"
-              : "bg-white border-slate-200"
+                ? "bg-gradient-to-br from-purple-50 to-white border-purple-200"
+                : "bg-white border-slate-200"
           }`}
       >
         {isDuel && (
@@ -246,8 +270,8 @@ const ReviewPage = () => {
               isDuel
                 ? "border-orange-100 bg-orange-50/50"
                 : isSurvival
-                ? "border-purple-100 bg-purple-50/50"
-                : "border-slate-100 bg-slate-50/50"
+                  ? "border-purple-100 bg-purple-50/50"
+                  : "border-slate-100 bg-slate-50/50"
             }`}
         >
           <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 mb-2">
@@ -273,8 +297,8 @@ const ReviewPage = () => {
                     isDuel
                       ? "bg-white border-orange-200 text-orange-600 shadow-sm"
                       : isSurvival
-                      ? "bg-white border-purple-200 text-purple-600 shadow-sm"
-                      : "bg-white border-indigo-200 text-indigo-600 shadow-sm"
+                        ? "bg-white border-purple-200 text-purple-600 shadow-sm"
+                        : "bg-white border-indigo-200 text-indigo-600 shadow-sm"
                   }`}
             >
               <Timer size={18} />
@@ -304,8 +328,8 @@ const ReviewPage = () => {
                  isDuel
                    ? "bg-white border-orange-100 shadow-sm"
                    : isSurvival
-                   ? "bg-white border-purple-100 shadow-sm"
-                   : "bg-indigo-50 border-indigo-100"
+                     ? "bg-white border-purple-100 shadow-sm"
+                     : "bg-indigo-50 border-indigo-100"
                }`}
           >
             <span
@@ -313,8 +337,8 @@ const ReviewPage = () => {
                 isDuel
                   ? "text-orange-400"
                   : isSurvival
-                  ? "text-purple-400"
-                  : "text-indigo-400"
+                    ? "text-purple-400"
+                    : "text-indigo-400"
               }`}
             >
               {isSurvival ? t("review.rounds") : t("review.yourScore")}
@@ -324,8 +348,8 @@ const ReviewPage = () => {
                 isDuel
                   ? "text-orange-500"
                   : isSurvival
-                  ? "text-purple-600"
-                  : "text-indigo-600"
+                    ? "text-purple-600"
+                    : "text-indigo-600"
               }`}
             >
               {score}
@@ -338,8 +362,8 @@ const ReviewPage = () => {
               isSurvival
                 ? "bg-purple-50 border-purple-100"
                 : isPass
-                ? "bg-emerald-50 border-emerald-100"
-                : "bg-red-50 border-red-100"
+                  ? "bg-emerald-50 border-emerald-100"
+                  : "bg-red-50 border-red-100"
             }`}
           >
             <span
@@ -347,8 +371,8 @@ const ReviewPage = () => {
                 isSurvival
                   ? "text-purple-400"
                   : isPass
-                  ? "text-emerald-400"
-                  : "text-red-400"
+                    ? "text-emerald-400"
+                    : "text-red-400"
               }`}
             >
               {isSurvival ? t("review.result") : t("review.status")}
@@ -358,8 +382,8 @@ const ReviewPage = () => {
                 isSurvival
                   ? "text-purple-600"
                   : isPass
-                  ? "text-emerald-600"
-                  : "text-red-500"
+                    ? "text-emerald-600"
+                    : "text-red-500"
               }`}
             >
               {isSurvival ? (
@@ -372,8 +396,8 @@ const ReviewPage = () => {
               {isSurvival
                 ? t("review.finished")
                 : isPass
-                ? t("review.passed")
-                : t("review.failed")}
+                  ? t("review.passed")
+                  : t("review.failed")}
             </span>
           </div>
 
@@ -422,14 +446,29 @@ const ReviewPage = () => {
                     {t("review.number")} {index + 1}
                   </span>
                   {/* Badge Tipe Soal */}
+                  {q.type === "mcq" && (
+                    <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded border border-indigo-100 flex items-center gap-1">
+                      <ListChecks size={12} /> {t("review.typeMCQ")}
+                    </span>
+                  )}
+                  {q.type === "essay" && (
+                    <span className="text-[10px] font-bold bg-pink-50 text-pink-600 px-2 py-0.5 rounded border border-pink-100 flex items-center gap-1">
+                      <Type size={12} /> {t("review.typeRealEssay")}
+                    </span>
+                  )}
                   {q.type === "multi_select" && (
                     <span className="text-[10px] font-bold bg-orange-50 text-orange-600 px-2 py-0.5 rounded border border-orange-100 flex items-center gap-1">
-                      <CheckSquare size={10} /> {t("review.typeMulti")}
+                      <CheckSquare size={12} /> {t("review.typeMulti")}
                     </span>
                   )}
                   {q.type === "short_answer" && (
-                    <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1">
-                      <Type size={10} /> {t("review.typeEssay")}
+                    <span className="text-[10px] font-bold bg-cyan-50 text-cyan-600 px-2 py-0.5 rounded border border-cyan-100 flex items-center gap-1">
+                      <Type size={12} /> {t("review.typeShort")}
+                    </span>
+                  )}
+                  {q.type === "boolean" && (
+                    <span className="text-[10px] font-bold bg-teal-50 text-teal-600 px-2 py-0.5 rounded border border-teal-100 flex items-center gap-1">
+                      <CheckCircle size={12} /> {t("review.typeBoolean")}
                     </span>
                   )}
                 </div>
@@ -478,7 +517,7 @@ const ReviewPage = () => {
                 </div>
 
                 {/* Kunci Jawaban (Jika Salah) */}
-                {!q.isCorrect && (
+                {!q.isCorrect && q.type !== "essay" && (
                   <div className="p-4 rounded-xl border bg-slate-50 border-slate-200 text-slate-700 flex justify-between items-start gap-4">
                     <div className="w-full">
                       <span className="text-xs font-bold uppercase opacity-60 block mb-2 text-slate-500">
@@ -492,6 +531,36 @@ const ReviewPage = () => {
                       size={24}
                       className="text-emerald-500 shrink-0 mt-1"
                     />
+                  </div>
+                )}
+
+                {/* AI Grading Feedback (Only for Essay) */}
+                {q.type === "essay" && q.aiData && (
+                  <div className="mt-4 p-5 bg-indigo-50 border border-indigo-100 rounded-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Swords size={60} className="text-indigo-600" />
+                    </div>
+
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs font-black uppercase tracking-wider text-indigo-500 flex items-center gap-1">
+                          <Swords size={12} /> AI Assessment
+                        </span>
+                        <div
+                          className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                            q.aiData.score >= 70
+                              ? "bg-green-100 text-green-700 border-green-200"
+                              : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                          }`}
+                        >
+                          Score: {q.aiData.score.toFixed(1)}
+                        </div>
+                      </div>
+
+                      <p className="text-indigo-900 font-medium italic leading-relaxed">
+                        "{q.aiData.feedback}"
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

@@ -60,8 +60,8 @@ const CreateChallengeModal = ({
   useEffect(() => {
     setFilteredFriends(
       friends.filter((f) =>
-        f.name.toLowerCase().includes(searchFriend.toLowerCase())
-      )
+        f.name.toLowerCase().includes(searchFriend.toLowerCase()),
+      ),
     );
   }, [searchFriend, friends]);
 
@@ -105,7 +105,7 @@ const CreateChallengeModal = ({
         // Truncate to limit instead of clearing
         setSelectedOpponents((prev) => prev.slice(0, limit));
         toast.success(
-          t("createChallenge.adjustMode", { limit: limit.toString() })
+          t("createChallenge.adjustMode", { limit: limit.toString() }),
         );
       }
     }
@@ -137,10 +137,11 @@ const CreateChallengeModal = ({
       if (selectedOpponents.length < limit) {
         setSelectedOpponents((prev) => [...prev, username]);
       } else {
-        if (limit === 1) setSelectedOpponents([username]); // Replace if 1v1
+        if (limit === 1)
+          setSelectedOpponents([username]); // Replace if 1v1
         else
           toast.error(
-            t("createChallenge.maxPlayers", { limit: limit.toString() })
+            t("createChallenge.maxPlayers", { limit: limit.toString() }),
           );
       }
     }
@@ -162,7 +163,7 @@ const CreateChallengeModal = ({
       console.log(res);
       if (res.data.status === "success") {
         toast.success(t("createChallenge.success"));
-        onCreated && onCreated();
+        onCreated && onCreated(res.data.data); // Pass data back
         onClose();
       }
     } catch (error) {

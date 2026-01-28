@@ -125,7 +125,7 @@ const Navbar = () => {
     if (announcementData) {
       localStorage.setItem(
         "last_seen_announcement",
-        String(announcementData.id)
+        String(announcementData.id),
       );
     }
   };
@@ -445,7 +445,7 @@ const Navbar = () => {
               {/* Lainnya */}
               <div>
                 <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">
-                  Lainnya
+                  {t("navbar.others")}
                 </h3>
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                   <Link
@@ -455,7 +455,7 @@ const Navbar = () => {
                   >
                     <ShoppingBag size={18} className="text-purple-500" />{" "}
                     <span className="text-sm font-bold text-slate-700">
-                      Item Shop
+                      {t("navbar.itemShop")}
                     </span>
                   </Link>
                   <Link
@@ -465,7 +465,7 @@ const Navbar = () => {
                   >
                     <Package size={18} className="text-amber-500" />{" "}
                     <span className="text-sm font-bold text-slate-700">
-                      Inventory
+                      {t("navbar.inventory")}
                     </span>
                   </Link>
                   <Link
@@ -476,7 +476,7 @@ const Navbar = () => {
                     <div className="flex items-center gap-3">
                       <Bell size={18} className="text-red-500" />{" "}
                       <span className="text-sm font-bold text-slate-700">
-                        Notifikasi
+                        {t("navbar.notifications")}
                       </span>
                     </div>
                     {unreadCount > 0 && (
@@ -492,7 +492,7 @@ const Navbar = () => {
                   >
                     <Info size={18} className="text-amber-500" />{" "}
                     <span className="text-sm font-bold text-slate-700">
-                      Tentang Aplikasi
+                      {t("navbar.about")}
                     </span>
                   </Link>
                 </div>
@@ -525,7 +525,7 @@ const Navbar = () => {
                   onClick={() => setOpen(false)}
                   className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm text-center hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
                 >
-                  Lihat Profil
+                  {t("navbar.viewProfile")}
                 </Link>
                 <button
                   onClick={() => {
@@ -534,7 +534,7 @@ const Navbar = () => {
                   }}
                   className="py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-100 font-bold text-sm text-center hover:bg-red-100 transition"
                 >
-                  Keluar
+                  {t("navbar.logout")}
                 </button>
               </div>
             </div>
