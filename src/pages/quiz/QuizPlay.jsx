@@ -96,6 +96,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   // State UI
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [aiFeedbackModal, setAiFeedbackModal] = useState(null); // { score, feedback, nextData: {} }
+
   const [showHint, setShowHint] = useState(false);
 
   // Timer
@@ -138,6 +140,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
   const [bulkTranslations, setBulkTranslations] = useState({}); // { [id]: { question, options } }
   const [isBulkTranslating, setIsBulkTranslating] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState(null); // 'correct', 'wrong'
+  const [feedbackData, setFeedbackData] = useState(null); // { score: number, text: string } for AI Feedback
   const [isRated, setIsRated] = useState(false);
 
   const { language } = useLanguage();
@@ -428,7 +431,6 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         .finally(() => setLoading(false));
 
       return () => clearInterval(timerIntervalRef.current);
-      return () => clearInterval(timerIntervalRef.current);
     } else if (isAdaptive) {
       // Adaptive Mode Initial Fetch
       setLoading(true);
@@ -710,7 +712,6 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         return;
       }
       await handleSurvivalAnswer(ans);
-      await handleSurvivalAnswer(ans);
     } else if (isAdaptive) {
       // Opt: If we already have the next question (backtracking), don't re-fetch
       // UNLESS we want to support "Changing Answer" which changes the path.
@@ -753,6 +754,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         const payload = {
           quiz_id: parseInt(quizId),
           answers: currentAnswersPayload,
+          type: currentQ.type,
         };
 
         res = await quizAPI.getNextAdaptiveQuestion(payload);
@@ -766,13 +768,9 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             target_difficulty,
             prediction_msg,
             last_is_correct,
+            last_essay_score,
+            last_essay_feedback,
           } = res.data.data;
-          setTargetDifficulty(target_difficulty);
-          setPredictionMsg(prediction_msg);
-
-          // Feedback UI & Animation
-          const isCorrect = last_is_correct === true;
-          setFeedbackStatus(isCorrect ? "correct" : "wrong");
 
           // Process Options logic
           let options = question.options;
@@ -781,27 +779,41 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           }
           const processedQ = { ...question, options };
 
-          // Delay transition to show feedback
+          // Feedback UI & Animation
+          const isCorrect = last_is_correct === true;
+          setFeedbackStatus(isCorrect ? "correct" : "wrong");
+
+          // Capture AI Feedback if available (ONLY for Essays)
+          if (
+            currentQ.type === "essay" &&
+            last_essay_score !== undefined &&
+            last_essay_score !== null
+          ) {
+            setFeedbackData({
+              score: last_essay_score,
+              text: last_essay_feedback,
+            });
+          } else {
+            setFeedbackData(null); // Reset if not essay
+          }
+
+          // Normal Auto-Advance
+          setTargetDifficulty(target_difficulty);
+          setPredictionMsg(prediction_msg);
+
           setTimeout(() => {
-            console.log("EXECUTING TIMEOUT UPDATE");
-            setQuestions((prev) => {
-              console.log("Updating Questions. Prev length:", prev.length);
-              return [...prev, processedQ];
-            });
-            setCurrentIndex((prev) => {
-              console.log("Updating Index. Prev:", prev, "Next:", prev + 1);
-              return prev + 1;
-            });
+            setQuestions((prev) => [...prev, processedQ]);
+            setCurrentIndex((prev) => prev + 1);
             setShowHint(false);
             setFeedbackStatus(null);
-          }, 1500);
+            setFeedbackData(null); // Clear feedback
+          }, 2500); // Increased slightly to 2.5s so user can read AI feedback
         }
       } catch (e) {
         console.error(e);
         toast.error(t("quiz.errorLoading"));
       } finally {
-        if (!res?.data?.data) setSubmitting(false); // Only unset here if error/finish, otherwise wait for timeout
-        setTimeout(() => setSubmitting(false), 1500); // Sync with transition
+        setSubmitting(false);
       }
     } else {
       // Classic Logic
@@ -1039,6 +1051,29 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
               {t("quiz.insensitive") ||
                 "Jawaban tidak sensitif huruf besar/kecil"}
             </p>
+          </p>
+        </div>
+      );
+    }
+
+    if (currentQ.type === "essay") {
+      return (
+        <div className="mt-4">
+          <div className="relative">
+            <textarea
+              value={currentAnswer || ""}
+              onChange={handleTextChange}
+              placeholder={
+                t("quiz.placeholderEssay") ||
+                "Tulis jawaban esai anda di sini..."
+              }
+              className="w-full p-5 rounded-xl border-2 border-slate-200 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none text-lg font-medium transition-all min-h-[150px] resize-y"
+              autoFocus
+            />
+          </div>
+          <p className="text-xs text-slate-400 mt-3 ml-2 flex items-center gap-1">
+            <TypeIcon size={12} />{" "}
+            {t("quiz.aiGraded") || "Jawaban akan dinilai otomatis oleh AI"}
           </p>
         </div>
       );
@@ -1531,24 +1566,64 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             {/* Feedback Overlay Badge */}
             <AnimatePresence>
               {feedbackStatus && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0, rotate: -20 }}
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  className={`absolute top-0 right-0 m-4 px-6 py-2 rounded-full font-black uppercase tracking-wider text-white shadow-xl rotate-12 z-20 flex items-center gap-2 ${
-                    feedbackStatus === "correct" ? "bg-green-500" : "bg-red-500"
-                  }`}
-                >
-                  {feedbackStatus === "correct" ? (
-                    <>
-                      <CheckCircle2 size={20} /> {t("quiz.correct") || "BENAR!"}
-                    </>
-                  ) : (
-                    <>
-                      <XCircle size={20} /> {t("quiz.wrong") || "SALAH!"}
-                    </>
+                <div className="absolute top-0 right-0 z-20 flex flex-col items-end pointer-events-none">
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0, rotate: -20, y: 0 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0, y: 16 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className={`mr-4 px-6 py-2 rounded-full font-black uppercase tracking-wider text-white shadow-xl rotate-12 flex items-center gap-2 ${
+                      feedbackStatus === "correct"
+                        ? "bg-green-500"
+                        : "bg-red-500"
+                    }`}
+                  >
+                    {feedbackStatus === "correct" ? (
+                      <>
+                        <CheckCircle2 size={20} />{" "}
+                        {t("quiz.correct") || "BENAR!"}
+                      </>
+                    ) : (
+                      <>
+                        <XCircle size={20} /> {t("quiz.wrong") || "SALAH!"}
+                      </>
+                    )}
+                  </motion.div>
+
+                  {/* AI Feedback Additional Info - IMPROVED VISIBILITY */}
+                  {feedbackData && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      transition={{ type: "spring", bounce: 0.5 }}
+                      className={`mt-4 mr-4 p-5 rounded-2xl shadow-2xl border-2 max-w-sm text-right relative overflow-hidden ${
+                        feedbackData.score >= 70
+                          ? "bg-green-50 border-green-500 text-green-900"
+                          : "bg-red-50 border-red-500 text-red-900"
+                      }`}
+                    >
+                      {/* Decorative background icon */}
+                      <div className="absolute top-0 left-0 p-4 opacity-10">
+                        {feedbackData.score >= 70 ? (
+                          <Trophy size={80} />
+                        ) : (
+                          <AlertTriangle size={80} />
+                        )}
+                      </div>
+
+                      <div className="relative z-10">
+                        <div className="text-xs font-black uppercase tracking-widest opacity-60 mb-1">
+                          AI Grading Score
+                        </div>
+                        <div className="text-5xl font-black mb-2 tracking-tighter">
+                          {feedbackData.score.toFixed(0)}
+                        </div>
+                        <div className="text-sm font-semibold italic opacity-90 leading-relaxed border-t border-black/10 pt-2">
+                          "{feedbackData.text}"
+                        </div>
+                      </div>
+                    </motion.div>
                   )}
-                </motion.div>
+                </div>
               )}
             </AnimatePresence>
 
@@ -1755,6 +1830,82 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
           </button>
         </div>
       </div>
+
+      {/* AI Result Overlay Modal */}
+      <AnimatePresence>
+        {aiFeedbackModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+            >
+              {/* Header Score */}
+              <div
+                className={`p-8 text-center relative overflow-hidden ${
+                  aiFeedbackModal.score >= 70 ? "bg-emerald-600" : "bg-red-500"
+                }`}
+              >
+                <div className="absolute top-0 left-0 w-full h-full opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                <div className="relative z-10">
+                  <h3 className="text-white/80 uppercase tracking-widest text-xs font-bold mb-2">
+                    AI Grading Score
+                  </h3>
+                  <div className="text-6xl font-black text-white mb-2 tracking-tighter">
+                    {aiFeedbackModal.score.toFixed(0)}
+                  </div>
+                  <div className="inline-block px-3 py-1 rounded-full bg-black/20 text-white text-xs font-bold backdrop-blur-md">
+                    {aiFeedbackModal.score >= 70
+                      ? "EXCELLENT WORK"
+                      : "NEEDS IMPROVEMENT"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Content Feedback */}
+              <div className="p-6">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                    <Swords size={20} className="text-slate-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 mb-1">
+                      AI Feedback
+                    </h4>
+                    <p className="text-slate-600 text-sm leading-relaxed italic">
+                      "{aiFeedbackModal.feedback}"
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const nextData = aiFeedbackModal.nextData;
+                    // Apply the next question logic here (from the saved closure/data)
+                    setQuestions((prev) => [...prev, nextData.processedQ]);
+                    setCurrentIndex((prev) => prev + 1);
+                    setTargetDifficulty(nextData.target_difficulty);
+                    setPredictionMsg(nextData.prediction_msg);
+
+                    setAiFeedbackModal(null); // Close modal
+                    setShowHint(false);
+                    setFeedbackStatus(null);
+                  }}
+                  className="w-full py-3.5 rounded-xl font-bold text-white bg-slate-900 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                >
+                  Continue <ArrowRight size={18} />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modals */}
       <ReportModal
