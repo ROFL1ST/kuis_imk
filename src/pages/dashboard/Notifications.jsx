@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
 import Skeleton from "../../components/ui/Skeleton";
 import { useLanguage } from "../../context/LanguageContext"; // Fixed import
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 const Notifications = () => {
   const { t } = useLanguage();
@@ -73,9 +74,16 @@ const Notifications = () => {
 
     document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
 
-    const eventSource = new EventSource(
+    const eventSource = new EventSourcePolyfill(
       `${import.meta.env.VITE_API_URL}/notifications/stream`,
-      { withCredentials: true }
+      {
+        headers: {
+          "X-API-KEY": import.meta.env.VITE_API_KEY,
+          "Authorization": `Bearer ${token}`
+        },
+        withCredentials: true,
+        heartbeatTimeout: 120000,
+      }
     );
 
     eventSource.onmessage = (event) => {
@@ -369,7 +377,7 @@ const Notifications = () => {
                         </p>
                         <div className="mt-2.5 flex items-center justify-between">
                           <span className="text-[10px] md:text-xs text-slate-400 flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-full w-fit">
-                            <Clock size={10} /> {timeAgo(n.CreatedAt)}
+                            <Clock size={10} /> {timeAgo(n.created_at)}
                           </span>
                           {n.link && (
                             <span className="text-[10px] md:text-xs font-bold text-indigo-500 hover:underline">

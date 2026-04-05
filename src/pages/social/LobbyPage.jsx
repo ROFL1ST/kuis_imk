@@ -94,6 +94,9 @@ const LobbyPage = () => {
     // Auth backend menggunakan Cookie HttpOnly, jadi kita harus set withCredentials
     // Header Authorization Bearer tidak lagi dibutuhkan/valid jika token ada di cookie
     const eventSource = new EventSourcePolyfill(sseUrl, {
+      headers: {
+        "X-API-KEY": import.meta.env.VITE_API_KEY
+      },
       withCredentials: true,
       heartbeatTimeout: 120000,
     });

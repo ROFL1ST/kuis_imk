@@ -306,6 +306,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream`,
       {
         headers: {
+          "X-API-KEY": import.meta.env.VITE_API_KEY,
           Authorization: `Bearer ${token}`,
         },
         heartbeatTimeout: 120000,
