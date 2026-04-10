@@ -307,8 +307,9 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       {
         headers: {
           "X-API-KEY": import.meta.env.VITE_API_KEY,
-          Authorization: `Bearer ${token}`,
+          // Authorization: `Bearer ${token}`,
         },
+        withCredentials: true,
         heartbeatTimeout: 120000,
       },
     );

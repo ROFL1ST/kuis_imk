@@ -69,17 +69,11 @@ const Notifications = () => {
 
   // 2. Logic Realtime Stream (SSE)
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-
-    document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Lax`;
-
     const eventSource = new EventSourcePolyfill(
       `${import.meta.env.VITE_API_URL}/notifications/stream`,
       {
         headers: {
-          "X-API-KEY": import.meta.env.VITE_API_KEY,
-          "Authorization": `Bearer ${token}`
+          "X-API-KEY": import.meta.env.VITE_API_KEY
         },
         withCredentials: true,
         heartbeatTimeout: 120000,
