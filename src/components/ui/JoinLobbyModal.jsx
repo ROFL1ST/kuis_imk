@@ -43,7 +43,7 @@ const JoinLobbyModal = ({ isOpen, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm h-full"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
