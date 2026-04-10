@@ -23,7 +23,6 @@ import { useLanguage } from "../../context/LanguageContext";
 const QuizList = () => {
   const { t } = useLanguage();
   const { slug } = useParams();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [friends, setFriends] = useState([]);
@@ -31,11 +30,10 @@ const QuizList = () => {
 
   // Modal State & Settings
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isAdaptiveModalOpen, setIsAdaptiveModalOpen] = useState(false);
+
   const [selectedQuizId, setSelectedQuizId] = useState(null);
   const [selectedQuizTitle, setSelectedQuizTitle] = useState("");
 
-  const [selectedAdaptiveQuiz, setSelectedAdaptiveQuiz] = useState(null);
 
   useEffect(() => {
     Promise.all([topicAPI.getQuizzesBySlug(slug), socialAPI.getFriends()])
@@ -85,7 +83,7 @@ const QuizList = () => {
   return (
     <div className="max-w-4xl mx-auto pb-20">
       <Link
-        to="/"
+        to="/dashboard"
         className="inline-flex items-center gap-2 text-slate-500 hover:text-indigo-600 mb-6"
       >
         <ArrowLeft size={18} /> {t("quizList.backToTopic")}
@@ -112,59 +110,60 @@ const QuizList = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {quizzes.map((quiz) => (
-            <div
-              key={quiz.ID}
-              className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 hover:shadow-md transition"
-            >
-              <div>
-                <h3 className="text-xl font-bold text-slate-800">
-                  {quiz.title}
-                </h3>
-                <p className="text-slate-500">{quiz.description}</p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
-                <button
-                  onClick={() => openChallengeModal(quiz.ID, quiz.title)}
-                  className="px-3 sm:px-4 py-2 bg-orange-100 text-orange-700 rounded-lg font-bold hover:bg-orange-200 flex items-center justify-center gap-1.5 transition text-sm sm:text-base order-1"
-                >
-                  <Swords size={16} className="sm:w-[18px] sm:h-[18px]" />
-                  <span className="truncate">{t("quizList.challenge")}</span>
-                </button>
-                <Link
-                  to={`/play/${quiz.ID}`}
-                  state={{ title: quiz.title }}
-                  className="px-3 sm:px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-1.5 transition text-sm sm:text-base order-2"
-                >
-                  <PlayCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
-                  {t("quizList.play")}
-                </Link>
-                
-              </div>
-            </div>
+          {quizzes.map((quiz, key) => (
+            <ItemQuiz
+              key={key}
+              quiz={quiz}
+              t={t}
+              openChallengeModal={openChallengeModal}
+            />
           ))}
         </div>
       )}
 
-      
-      {/* === MODAL BUAT TANTANGAN === */}
       <CreateChallengeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        preselectedTopicId={selectedQuizId} // Using QuizID as TopicID placeholder as per previous logic, or if mapped correctly.
-        // Note: CreateChallengeModal expects Topic ID. QuizList has Quiz ID.
-        // My previous thought in CreateChallengeModal was "Topic -> First Quiz".
-        // Here we have specific Quiz.
-        // CreateChallengeModal needs to handle "Quiz ID" directly if we want specific quiz.
-        // I updated CreateChallengeModal to use `preselectedTopicId` to set `selectedTopic`.
-        // If I pass QuizID here, CreateChallengeModal treats it as TopicID in my previous code?
-        // Let's check CreateChallengeModal logic again.
-        // "setSelectedTopic({ id: preselectedTopicId, title: ... })"
-        // And submit payload uses "quiz_id: selectedTopic?.id".
-        // So yes, passing QuizID as preselectedTopicId works for the payload.
+        preselectedTopicId={selectedQuizId}
         preselectedQuizTitle={selectedQuizTitle}
       />
+    </div>
+  );
+};
+
+const ItemQuiz = ({ quiz, openChallengeModal, t }) => {
+  return (
+    <div
+      key={quiz.ID}
+      className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 hover:shadow-md transition"
+    >
+      <div>
+        <div className="flex items-center gap-x-3">
+          <h3 className="text-xl font-bold text-slate-800">{quiz.title}</h3>
+          <span className="text-xs bg-gray-100 px-2 py-1 rounded-md font-medium text-gray-600">
+            {quiz.questions?.length || "?"} {t("classroom.questions")}
+          </span>
+        </div>
+        <p className="text-slate-500">{quiz.description}</p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+        <button
+          onClick={() => openChallengeModal(quiz.ID, quiz.title)}
+          className="px-3 sm:px-4 py-2 bg-orange-100 text-orange-700 rounded-lg font-bold hover:bg-orange-200 flex items-center justify-center gap-1.5 transition text-sm sm:text-base order-1"
+        >
+          <Swords size={16} className="sm:w-[18px] sm:h-[18px]" />
+          <span className="truncate">{t("quizList.challenge")}</span>
+        </button>
+        <Link
+          to={`/play/${quiz.ID}`}
+          state={{ title: quiz.title }}
+          className="px-3 sm:px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center justify-center gap-1.5 transition text-sm sm:text-base order-2"
+        >
+          <PlayCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
+          {t("quizList.play")}
+        </Link>
+      </div>
     </div>
   );
 };
