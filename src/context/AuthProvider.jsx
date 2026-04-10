@@ -61,6 +61,9 @@ export const AuthProvider = ({ children }) => {
         // [UPDATE] Gunakan EventSourcePolyfill
         // Cookie otomatis terkirim jika withCredentials: true
         eventSource = new EventSourcePolyfill(url, {
+          headers: {
+            "X-API-KEY": import.meta.env.VITE_API_KEY
+          },
           withCredentials: true,
           heartbeatTimeout: 120000,
         });

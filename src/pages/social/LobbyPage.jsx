@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { socialAPI } from "../../services/api";
+import { getToken } from "../../services/auth";
 import { useLanguage } from "../../context/LanguageContext";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import toast from "react-hot-toast";
@@ -89,11 +90,15 @@ const LobbyPage = () => {
   useEffect(() => {
     if (!id) return;
 
+    const token = getToken();
     const sseUrl = `${import.meta.env.VITE_API_URL}/challenges/${id}/lobby-stream`;
 
     // Auth backend menggunakan Cookie HttpOnly, jadi kita harus set withCredentials
     // Header Authorization Bearer tidak lagi dibutuhkan/valid jika token ada di cookie
     const eventSource = new EventSourcePolyfill(sseUrl, {
+      headers: {
+        "X-API-KEY": import.meta.env.VITE_API_KEY
+      },
       withCredentials: true,
       heartbeatTimeout: 120000,
     });

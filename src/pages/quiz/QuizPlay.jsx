@@ -306,8 +306,10 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
       `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          "X-API-KEY": import.meta.env.VITE_API_KEY,
+          // Authorization: `Bearer ${token}`,
         },
+        withCredentials: true,
         heartbeatTimeout: 120000,
       },
     );
