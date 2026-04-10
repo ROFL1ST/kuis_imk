@@ -33,9 +33,7 @@ import { KeyRound } from "lucide-react"; // Added KeyRound
 import Skeleton from "../../components/ui/Skeleton";
 import CreateChallengeModal from "../../components/ui/CreateChallengeModal";
 import JoinLobbyModal from "../../components/ui/JoinLobbyModal"; // NEW
-// Moved to QuizList
 
-// --- HELPER COMPONENT: PLAYER ROW ---
 const PlayerRow = ({
   p,
   idx,
@@ -104,20 +102,16 @@ const PlayerRow = ({
   );
 };
 
-// LobbyModal Logic Moved to /pages/social/LobbyPage.jsx
-
-// --- UTAMA: LIST CHALLENGE (INFINITE SCROLL) ---
 const ChallengeList = () => {
   const { t } = useLanguage();
   const [challenges, setChallenges] = useState([]);
-  // [BARU] State untuk Statistik & Pagination
+
   const [stats, setStats] = useState({ total: 0, wins: 0, win_rate: 0 });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // [BARU] Observer untuk Infinite Scroll
   const observer = useRef();
   const lastElementRef = useCallback(
     (node) => {
@@ -371,10 +365,7 @@ const ChallengeList = () => {
 
   return (
     <div className="max-w-[1080px] mx-auto pb-20 space-y-8">
-      {/* --- HEADER & STATS (Dari Server) --- */}
-      {/* --- HEADER & STATS (Dari Server) --- */}
       <div className="space-y-6">
-        {/* Row 1: Title & Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
@@ -385,7 +376,7 @@ const ChallengeList = () => {
 
           <div className="flex gap-2 w-full md:w-auto">
             <button
-              onClick={() => setShowJoinModal(true)} // Updated
+              onClick={() => setShowJoinModal(true)}
               className="px-6 py-3 flex-1 md:flex-none bg-white text-indigo-600 font-bold rounded-xl border border-indigo-200 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
             >
               <KeyRound className="w-5 h-5" />
@@ -540,7 +531,6 @@ const ChallengeList = () => {
             return (
               <div
                 key={duel.ID}
-                // [BARU] Pasang Ref di elemen terakhir
                 ref={isLastElement ? lastElementRef : null}
                 className={`relative overflow-hidden rounded-3xl shadow-sm border-2 transition-all duration-300 hover:shadow-md
                   ${
@@ -1003,8 +993,6 @@ const ChallengeList = () => {
           </button>
         </div>
       </Modal>
-
-      {/* LobbyModal Logic Moved to /pages/social/LobbyPage.jsx */}
 
       <CreateChallengeModal
         isOpen={showCreateModal}
