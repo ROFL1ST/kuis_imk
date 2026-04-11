@@ -58,14 +58,10 @@ const ClassroomDetail = () => {
               {t("classroom.code")}: {classroom.code}
             </div>
             <div className="text-xs font-medium bg-black/20 px-3 py-1 rounded-full w-fit">
-              {classroom.admin_id ? (
-                <span>{t("classroom.createdByAdmin")}</span>
-              ) : (
-                <span>
-                  {t("classroom.teacher")}:{" "}
-                  {classroom.teacher?.name || "Tidak Diketahui"}
-                </span>
-              )}
+              <span>
+                {t("classroom.teacher")}:{" "}
+                {classroom.teacher?.name || "Tidak Diketahui"}
+              </span>
             </div>
           </div>
 
@@ -108,6 +104,7 @@ const ClassroomDetail = () => {
             <div className="space-y-4">
               {assignments.map((assignment, idx) => (
                 <AssigmentCard
+                  key={assignment.ID}
                   assignment={assignment}
                   idx={idx}
                   mySubmissions={mySubmissions}
@@ -151,29 +148,57 @@ const ClassroomDetail = () => {
 };
 
 const AssigmentCard = ({ assignment, idx, mySubmissions, t, classroom }) => {
-  console.log(assignment)
+  const now = new Date();
+  const deadline = new Date(assignment.deadline);
+  const isExpired = now > deadline;
+  const diffMs = deadline - now;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const isUrgent = !isExpired && diffDays <= 7;
+
   return (
     <motion.div
       key={assignment.ID}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: idx * 0.1 }}
-      whileHover={{
-        scale: 1.01,
-        boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-      }}
-      className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm transition-all flex justify-between items-center group"
+      className={`bg-white p-5 rounded-2xl border shadow-sm transition-all flex justify-between items-center group ${
+        isExpired
+          ? "border-red-100 bg-red-50/30"
+          : "border-gray-100 hover:shadow-md"
+      }`}
     >
       <div className="flex-1">
-        <h3 className="font-bold text-gray-800 text-lg mb-2 group-hover:text-indigo-600 transition-colors">
-          {assignment.quiz?.title || "Kuis Tanpa Judul"}
-        </h3>
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <h3
+            className={`font-bold text-lg transition-colors ${isExpired ? "text-gray-400" : "text-gray-800 group-hover:text-indigo-600"}`}
+          >
+            {assignment.quiz?.title || "Kuis Tanpa Judul"}
+          </h3>
+          {isExpired && (
+            <span className="text-[10px] font-black uppercase bg-red-100 text-red-500 px-2 py-0.5 rounded-full">
+              Expired
+            </span>
+          )}
+          {isUrgent && (
+            <span className="text-[10px] font-black uppercase bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full animate-pulse">
+              H-{diffDays}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-4 text-sm text-gray-500">
-          <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-2 py-1 rounded-md text-xs font-bold">
+          <div
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold ${
+              isExpired
+                ? "bg-red-100 text-red-400"
+                : isUrgent
+                  ? "bg-amber-50 text-amber-600"
+                  : "bg-orange-50 text-orange-600"
+            }`}
+          >
             <Clock className="w-3.5 h-3.5" />
             <span>
               {t("classroom.deadline")}:{" "}
-              {new Date(assignment.deadline).toLocaleDateString("id-ID", {
+              {deadline.toLocaleDateString("id-ID", {
                 weekday: "short",
                 year: "numeric",
                 month: "short",
@@ -189,8 +214,12 @@ const AssigmentCard = ({ assignment, idx, mySubmissions, t, classroom }) => {
       </div>
 
       {mySubmissions[assignment.ID] ? (
-        <div className="px-5 py-2.5 bg-green-100 ring-1 ring-green-200 text-green-700 font-bold rounded-xl flex items-center gap-2 text-sm cursor-default shadow-sm">
+        <div className="px-5 py-2.5 bg-green-100 ring-1 ring-green-200 text-green-700 font-bold rounded-xl flex items-center gap-2 text-sm cursor-default shadow-sm ml-4">
           {t("classroom.completed")} ({mySubmissions[assignment.ID].score})
+        </div>
+      ) : isExpired ? (
+        <div className="px-5 py-2.5 bg-gray-100 text-gray-400 font-bold rounded-xl text-sm cursor-not-allowed ml-4 flex-shrink-0">
+          {t("classroom.deadline")} {t("classroom.passed") || "Lewat"}
         </div>
       ) : (
         <Link
@@ -201,7 +230,7 @@ const AssigmentCard = ({ assignment, idx, mySubmissions, t, classroom }) => {
             classroomId: classroom.ID,
             classroomName: classroom.name,
           }}
-          className="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm"
+          className="ml-4 flex-shrink-0 px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:-translate-y-0.5 transition-all flex items-center gap-2 text-sm"
         >
           {t("classroom.start")}
           <ChevronRight className="w-4 h-4" />
