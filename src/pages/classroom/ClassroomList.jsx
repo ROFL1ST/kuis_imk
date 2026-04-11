@@ -90,39 +90,25 @@ const ClassroomList = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classrooms.joining.map((classroom, index) => (
-            <motion.div
-              key={classroom.ID}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Link to={`/classrooms/${classroom.ID}`} className="block h-full">
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all h-full flex flex-col group">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 bg-indigo-50 rounded-xl group-hover:bg-indigo-100 transition-colors">
-                      <BookOpen className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold font-mono">
-                      {classroom.code}
-                    </span>
-                  </div>
+          {classrooms.joining.map((classroom, index) => {
+            const upcoming = classroom.upcoming_assignments || [];
+            const hasUrgent = upcoming.length > 0;
+            const mostUrgent = hasUrgent
+              ? upcoming.reduce((a, b) => (a.days_left < b.days_left ? a : b))
+              : null;
 
-                  <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">
-                    {classroom.name}
-                  </h3>
-
-                  <div className="mt-auto pt-4 flex items-center justify-between text-gray-500 text-sm border-t border-gray-50">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="w-4 h-4" />
-                      <span>{t("classroom.members")}</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-indigo-500" />
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+            return (
+              <ClassroomCard
+                key={classroom.ID}
+                classroom={classroom}
+                index={index}
+                hasUrgent={hasUrgent}
+                upcoming={upcoming}
+                mostUrgent={mostUrgent}
+                t={t}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -167,5 +153,81 @@ const ClassroomList = () => {
     </div>
   );
 };
+
+function ClassroomCard({
+  classroom,
+  index,
+  hasUrgent,
+  upcoming,
+  mostUrgent,
+  t,
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      <Link to={`/classrooms/${classroom.ID}`} className="block h-full">
+        <div
+          className={`bg-white p-6 rounded-2xl border shadow-sm hover:shadow-md transition-all h-full flex flex-col group ${hasUrgent ? "border-amber-300" : "border-gray-100"}`}
+        >
+          <div className="flex justify-between items-start mb-4">
+            <div
+              className={`p-3 rounded-xl transition-colors ${hasUrgent ? "bg-amber-50 group-hover:bg-amber-100" : "bg-indigo-50 group-hover:bg-indigo-100"}`}
+            >
+              <BookOpen
+                className={`w-6 h-6 ${hasUrgent ? "text-amber-500" : "text-indigo-600"}`}
+              />
+            </div>
+            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold font-mono">
+              {classroom.code}
+            </span>
+          </div>
+
+          <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-indigo-600 transition-colors">
+            {classroom.name}
+          </h3>
+
+          {/* Upcoming Assignment Warnings */}
+          {hasUrgent && (
+            <div className="mb-3 space-y-1.5">
+              {upcoming.slice(0, 2).map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5"
+                >
+                  <span
+                    className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${a.days_left <= 1 ? "bg-red-500 text-white" : "bg-amber-400 text-white"}`}
+                  >
+                    H-{a.days_left - 1}
+                  </span>
+                  <span className="text-xs text-amber-700 font-medium truncate">
+                    Deadline!
+                  </span>
+                </div>
+              ))}
+              {upcoming.length > 2 && (
+                <p className="text-xs text-amber-500 font-bold pl-1">
+                  +{upcoming.length - 2} tugas lainnya
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="mt-auto pt-4 flex items-center justify-between text-gray-500 text-sm border-t border-gray-50">
+            <div className="flex items-center gap-1.5">
+              <Users className="w-4 h-4" />
+              <span>
+                {classroom.members?.length || 0} {t("classroom.members")}
+              </span>
+            </div>
+            <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-indigo-500" />
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
 
 export default ClassroomList;
