@@ -1,3 +1,4 @@
+import axios from "axios";
 import api from "./api";
 
 export const aiService = {
@@ -25,4 +26,13 @@ export const aiService = {
       throw error;
     }
   },
+  health: async () => {
+    try {
+      const response = await axios.get(import.meta.env.VITE_ML_URL);
+      return response.data;
+    } catch (error) {
+      console.error("AI Service Error:", error);
+      throw error;
+    }
+  },  
 };
