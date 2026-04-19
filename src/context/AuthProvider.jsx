@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { EventSourcePolyfill } from "event-source-polyfill"; // Pastikan import ini ada
 import LogoLoader from "../components/ui/LogoLoader";
+import { aiService } from "../services/aiService";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getUser());
@@ -13,8 +14,18 @@ export const AuthProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [MlService, setMlService] = useState(false);
 
-  // Fungsi fetch notifikasi (Initial Load)
+
+  const fetchMlService = async () => {
+    try {
+      const res = await aiService.health();
+      console.log(res)
+      setMlService(res.status === "running");
+    } catch (error) {
+      console.error("Gagal load ml service:", error);
+    }
+  };
   const fetchUnreadCount = async () => {
     if (!user) return; // Check user instead of token
     try {
@@ -49,10 +60,8 @@ export const AuthProvider = ({ children }) => {
       savedSettings !== null ? JSON.parse(savedSettings) : true;
 
     if (user) {
-      // Load data notifikasi awal
       fetchUnreadCount();
-      // refreshProfile(); // <--- REMOVED: Redundant and causes infinite loop with initAuth
-
+      fetchMlService();
       if (isNotifEnabled) {
         const baseURL =
           import.meta.env.VITE_API_URL || "http://localhost:8000/api";
@@ -62,7 +71,7 @@ export const AuthProvider = ({ children }) => {
         // Cookie otomatis terkirim jika withCredentials: true
         eventSource = new EventSourcePolyfill(url, {
           headers: {
-            "X-API-KEY": import.meta.env.VITE_API_KEY
+            "X-API-KEY": import.meta.env.VITE_API_KEY,
           },
           withCredentials: true,
           heartbeatTimeout: 120000,
@@ -93,8 +102,8 @@ export const AuthProvider = ({ children }) => {
                     {data.type === "success"
                       ? "🎉"
                       : data.type === "warning"
-                      ? "⚠️"
-                      : "🔔"}
+                        ? "⚠️"
+                        : "🔔"}
                   </span>
                   <div className="flex-1">
                     <p className="font-bold text-sm text-slate-800">
@@ -117,7 +126,7 @@ export const AuthProvider = ({ children }) => {
                   borderRadius: "16px",
                   boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
                 },
-              }
+              },
             );
           } catch (e) {
             console.error("Gagal parse notifikasi:", e);

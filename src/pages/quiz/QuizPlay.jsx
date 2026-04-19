@@ -774,18 +774,16 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             last_essay_feedback,
           } = res.data.data;
 
-          // Process Options logic
           let options = question.options;
           if (question.type === "mcq" || question.type === "multi_select") {
             options = shuffleArray(options);
           }
           const processedQ = { ...question, options };
 
-          // Feedback UI & Animation
+         
           const isCorrect = last_is_correct === true;
-          setFeedbackStatus(isCorrect ? "correct" : "wrong");
 
-          // Capture AI Feedback if available (ONLY for Essays)
+         
           if (
             currentQ.type === "essay" &&
             last_essay_score !== undefined &&
@@ -795,11 +793,17 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
               score: last_essay_score,
               text: last_essay_feedback,
             });
+            if (last_essay_score >= 90) {
+              setFeedbackStatus("special");
+              confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            } else {
+              setFeedbackStatus(null);
+            }
           } else {
-            setFeedbackData(null); // Reset if not essay
+            setFeedbackStatus(isCorrect ? "correct" : "wrong");
+            setFeedbackData(null);
           }
 
-          // Normal Auto-Advance
           setTargetDifficulty(target_difficulty);
           setPredictionMsg(prediction_msg);
 
@@ -808,8 +812,8 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             setCurrentIndex((prev) => prev + 1);
             setShowHint(false);
             setFeedbackStatus(null);
-            setFeedbackData(null); // Clear feedback
-          }, 2500); // Increased slightly to 2.5s so user can read AI feedback
+            setFeedbackData(null); 
+          }, 2500); 
         }
       } catch (e) {
         console.error(e);
@@ -1553,6 +1557,14 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                       borderColor: "#ef4444", // Red-500
                       boxShadow: "0 0 20px rgba(239, 68, 68, 0.2)",
                     }
+                  : feedbackStatus === "special"
+                    ? {
+                        x: 0,
+                        opacity: 1,
+                        scale: 1.05,
+                        borderColor: "#eab308", // Yellow-500
+                        boxShadow: "0 0 30px rgba(234, 179, 8, 0.4)",
+                      }
                   : { x: 0, opacity: 1, scale: 1, borderColor: "#f1f5f9" }
             }
             exit={{ x: -20, opacity: 0, scale: 0.95 }}
@@ -1562,34 +1574,44 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                 ? "bg-green-50"
                 : feedbackStatus === "wrong"
                   ? "bg-red-50"
-                  : "bg-white border-slate-100"
+                  : feedbackStatus === "special"
+                    ? "bg-yellow-50"
+                    : "bg-white border-slate-100"
             }`}
           >
             {/* Feedback Overlay Badge */}
             <AnimatePresence>
-              {feedbackStatus && (
+              {(feedbackStatus || feedbackData) && (
                 <div className="absolute top-0 right-0 z-20 flex flex-col items-end pointer-events-none">
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0, rotate: -20, y: 0 }}
-                    animate={{ scale: 1, opacity: 1, rotate: 0, y: 16 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className={`mr-4 px-6 py-2 rounded-full font-black uppercase tracking-wider text-white shadow-xl rotate-12 flex items-center gap-2 ${
-                      feedbackStatus === "correct"
-                        ? "bg-green-500"
-                        : "bg-red-500"
-                    }`}
-                  >
-                    {feedbackStatus === "correct" ? (
-                      <>
-                        <CheckCircle2 size={20} />{" "}
-                        {t("quiz.correct") || "BENAR!"}
-                      </>
-                    ) : (
-                      <>
-                        <XCircle size={20} /> {t("quiz.wrong") || "SALAH!"}
-                      </>
-                    )}
-                  </motion.div>
+                  {feedbackStatus && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0, rotate: -20, y: 0 }}
+                      animate={{ scale: 1, opacity: 1, rotate: 0, y: 16 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      className={`mr-4 px-6 py-2 rounded-full font-black uppercase tracking-wider text-white shadow-xl rotate-12 flex items-center gap-2 ${
+                        feedbackStatus === "correct"
+                          ? "bg-green-500"
+                          : feedbackStatus === "special"
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                      }`}
+                    >
+                      {feedbackStatus === "correct" ? (
+                        <>
+                          <CheckCircle2 size={20} />{" "}
+                          {t("quiz.correct") || "BENAR!"}
+                        </>
+                      ) : feedbackStatus === "special" ? (
+                        <>
+                          <Sparkles size={20} /> {t("quiz.excellent") || "MEMUKAU!"}
+                        </>
+                      ) : (
+                        <>
+                          <XCircle size={20} /> {t("quiz.wrong") || "SALAH!"}
+                        </>
+                      )}
+                    </motion.div>
+                  )}
 
                   {/* AI Feedback Additional Info - IMPROVED VISIBILITY */}
                   {feedbackData && (
