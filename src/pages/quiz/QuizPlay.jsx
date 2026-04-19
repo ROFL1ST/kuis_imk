@@ -764,6 +764,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
         if (!res.data.data || res.data.message === "Quiz Completed") {
           // No more questions -> Finish
           await handleSubmit();
+          setSubmitting(false);
         } else {
           const {
             question,
@@ -813,12 +814,12 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
             setShowHint(false);
             setFeedbackStatus(null);
             setFeedbackData(null); 
+            setSubmitting(false);
           }, 2500); 
         }
       } catch (e) {
         console.error(e);
         toast.error(t("quiz.errorLoading"));
-      } finally {
         setSubmitting(false);
       }
     } else {
