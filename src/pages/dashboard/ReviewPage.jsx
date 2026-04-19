@@ -224,6 +224,9 @@ const ReviewPage = () => {
 
   const wrongCount = questions.length - correctCount;
 
+  // Cek apakah semua soal bertipe essay
+  const isAllEssay = questions && questions.length > 0 && questions.every((q) => q.type === "essay");
+
   // Locale for date
   const localeMap = {
     id: "id-ID",
@@ -403,8 +406,8 @@ const ReviewPage = () => {
 
           {/* Benar */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-              {t("review.correct")}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 text-center">
+              {isAllEssay ? "Memuaskan" : t("review.correct")}
             </span>
             <span className="text-2xl font-bold text-emerald-500">
               {correctCount}
@@ -413,8 +416,8 @@ const ReviewPage = () => {
 
           {/* Salah */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-              {t("review.wrong")}
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 text-center">
+              {isAllEssay ? "Kurang" : t("review.wrong")}
             </span>
             <span className="text-2xl font-bold text-red-500">
               {wrongCount}
