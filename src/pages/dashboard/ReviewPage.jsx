@@ -484,11 +484,11 @@ const ReviewPage = () => {
                 {q.type === "essay" ? (
                   isSpecialEssay ? (
                     <span className="flex items-center gap-1 text-xs font-bold bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full border border-yellow-300 shadow-sm">
-                      ✨ MEMUKAU!
+                      ✨ MEMUKAU! {q.aiData ? `(${q.aiData.score.toFixed(1)})` : ""}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100">
-                      📝 Dinilai
+                      📝 Dinilai {q.aiData ? `(${q.aiData.score.toFixed(1)})` : ""}
                     </span>
                   )
                 ) : q.isCorrect ? (
