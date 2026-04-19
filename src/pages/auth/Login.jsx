@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import {
@@ -21,8 +21,12 @@ const Login = () => {
   const { login, loading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ username: "", password: "" });
   const [rewardData, setRewardData] = useState(null);
+  
+
+  const from = location.state?.from || "/dashboard";
   const [showRewardModal, setShowRewardModal] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -41,7 +45,7 @@ const Login = () => {
         setShowRewardModal(true);
       } else {
         toast.success(t("auth.success"));
-        navigate("/dashboard");
+        navigate(from, { replace: true });
       }
     } else {
       toast.error(result.message);
@@ -50,7 +54,7 @@ const Login = () => {
 
   const handleCloseReward = () => {
     setShowRewardModal(false);
-    navigate("/dashboard");
+    navigate(from, { replace: true });
   };
 
   useEffect(() => {
