@@ -430,14 +430,22 @@ const ReviewPage = () => {
         </h2>
 
         {detailedAnswers.map((q, index) => {
+          const isSpecialEssay = q.type === "essay" && q.aiData && q.aiData.score >= 90;
+          const isEssay = q.type === "essay";
+
+          let cardClass = "bg-white border-slate-100 ";
+          if (isSpecialEssay) {
+              cardClass += "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)] bg-gradient-to-br from-yellow-50 to-white";
+          } else if (isEssay) {
+              cardClass += "hover:border-indigo-100";
+          } else {
+              cardClass += q.isCorrect ? "hover:border-emerald-100" : "hover:border-red-100";
+          }
+
           return (
             <div
               key={q.ID}
-              className={`p-6 rounded-2xl border-2 transition-all ${
-                q.isCorrect
-                  ? "bg-white border-slate-100 hover:border-emerald-100"
-                  : "bg-white border-slate-100 hover:border-red-100"
-              }`}
+              className={`p-6 rounded-2xl border-2 transition-all ${cardClass}`}
             >
               {/* Header Soal */}
               <div className="flex justify-between gap-4 mb-4">
@@ -473,7 +481,17 @@ const ReviewPage = () => {
                   )}
                 </div>
 
-                {q.isCorrect ? (
+                {q.type === "essay" ? (
+                  isSpecialEssay ? (
+                    <span className="flex items-center gap-1 text-xs font-bold bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full border border-yellow-300 shadow-sm">
+                      ✨ MEMUKAU!
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs font-bold bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100">
+                      📝 Dinilai
+                    </span>
+                  )
+                ) : q.isCorrect ? (
                   <span className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">
                     <CheckCircle size={14} /> {t("review.correct")}
                   </span>
@@ -494,9 +512,13 @@ const ReviewPage = () => {
                 {/* Jawaban User */}
                 <div
                   className={`p-4 rounded-xl border flex justify-between items-start gap-4 ${
-                    q.isCorrect
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                      : "bg-red-50 border-red-200 text-red-800"
+                    q.type === "essay" 
+                      ? isSpecialEssay 
+                        ? "bg-yellow-50 border-yellow-300 text-yellow-900"
+                        : "bg-indigo-50 border-indigo-200 text-indigo-900" 
+                      : q.isCorrect
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                        : "bg-red-50 border-red-200 text-red-800"
                   }`}
                 >
                   <div className="w-full">
@@ -508,7 +530,9 @@ const ReviewPage = () => {
                     </div>
                   </div>
                   <div className="shrink-0 mt-1">
-                    {q.isCorrect ? (
+                    {q.type === "essay" ? (
+                       isSpecialEssay ? <span className="text-2xl">🌟</span> : <Type size={24} />
+                    ) : q.isCorrect ? (
                       <CheckCircle size={24} />
                     ) : (
                       <XCircle size={24} />
@@ -536,28 +560,30 @@ const ReviewPage = () => {
 
                 {/* AI Grading Feedback (Only for Essay) */}
                 {q.type === "essay" && q.aiData && (
-                  <div className="mt-4 p-5 bg-indigo-50 border border-indigo-100 rounded-2xl relative overflow-hidden">
+                  <div className={`mt-4 p-5 rounded-2xl relative overflow-hidden border ${isSpecialEssay ? "bg-yellow-50 border-yellow-200" : "bg-indigo-50 border-indigo-100"}`}>
                     <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <Swords size={60} className="text-indigo-600" />
+                      <Swords size={60} className={isSpecialEssay ? "text-yellow-600" : "text-indigo-600"} />
                     </div>
 
                     <div className="relative z-10">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-black uppercase tracking-wider text-indigo-500 flex items-center gap-1">
+                        <span className={`text-xs font-black uppercase tracking-wider flex items-center gap-1 ${isSpecialEssay ? "text-yellow-700" : "text-indigo-500"}`}>
                           <Swords size={12} /> AI Assessment
                         </span>
                         <div
                           className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                            q.aiData.score >= 70
-                              ? "bg-green-100 text-green-700 border-green-200"
-                              : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                            isSpecialEssay
+                              ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                              : q.aiData.score >= 70
+                                ? "bg-green-100 text-green-700 border-green-200"
+                                : "bg-orange-100 text-orange-700 border-orange-200"
                           }`}
                         >
                           Score: {q.aiData.score.toFixed(1)}
                         </div>
                       </div>
 
-                      <p className="text-indigo-900 font-medium italic leading-relaxed">
+                      <p className={`font-medium italic leading-relaxed ${isSpecialEssay ? "text-yellow-900" : "text-indigo-900"}`}>
                         "{q.aiData.feedback}"
                       </p>
                     </div>
