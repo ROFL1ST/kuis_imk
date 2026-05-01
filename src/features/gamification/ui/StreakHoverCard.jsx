@@ -1,131 +1,189 @@
+// src/features/gamification/ui/StreakHoverCard.jsx
+// Premium streak display: pill trigger + rich hover card.
+// Shows current streak, weekly calendar heatmap, and freeze status.
 import { useState, useRef } from 'react';
-import { Flame, CalendarDays, Trophy } from 'lucide-react';
+import { Flame, Snowflake, Zap, Calendar } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
-import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 
-/**
- * Streak trigger pill + popover with weekly activity grid.
- *
- * Props:
- *   streak: number
- *   weekActivity: boolean[] — 7 items, index 0 = Monday
- *   longestStreak: number
- */
-export function StreakHoverCard({ streak, weekActivity = [], longestStreak }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useOnClickOutside(ref, () => setOpen(false));
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+const DAY_LABELS = ['S', 'M', 'T', 'R', 'J', 'S', 'M'];
 
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const isHot = streak >= 7;
-
+function StreakDay({ active, isToday, dayLabel }) {
   return (
-    <div ref={ref} className="relative inline-block">
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="true"
-        className={cn(
-          'flex items-center gap-1.5 px-3 py-1.5 rounded-full',
-          'text-sm font-semibold tabular transition-all duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fire',
-          isHot
-            ? 'bg-fire/10 text-fire border border-fire/25 hover:bg-fire/15 shadow-glow-fire'
-            : 'bg-orange-50 text-orange-500 border border-orange-200 hover:bg-orange-100'
-        )}
-      >
-        <Flame
-          size={15}
-          strokeWidth={2}
-          className={cn(isHot && 'animate-pulse-glow')}
-          fill={isHot ? 'currentColor' : 'none'}
-        />
-        {streak}
-      </button>
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-2xs text-ghost font-medium">{dayLabel}</span>
+      <div className={cn(
+        'w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
+        isToday && 'ring-2 ring-brand-400 ring-offset-1',
+        active
+          ? 'bg-fire-gradient'
+          : 'bg-canvas border border-ring',
+      )}>
+        {active
+          ? <Flame size={13} className="text-white" />
+          : <span className="w-1.5 h-1.5 rounded-full bg-ring" />}
+      </div>
+    </div>
+  );
+}
 
-      {/* Popover */}
-      {open && (
-        <div
-          className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-30
-                     w-64 bg-streak-card rounded-2xl border border-orange-200/60
-                     shadow-panel animate-fade-up"
-        >
-          {/* Arrow */}
-          <div
-            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2
-                       w-3 h-3 bg-amber-50 border-r border-b border-orange-200/60
-                       rotate-45"
-          />
+// ---------------------------------------------------------------------------
+// Streak pill (trigger)
+// ---------------------------------------------------------------------------
+function StreakPill({ streak, isFrozen, onClick }) {
+  const isHot = streak >= 7;
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full',
+        'border text-sm font-semibold transition-all',
+        'hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400',
+        isFrozen
+          ? 'bg-frozen border-cyan-300 text-cyan-700'
+          : isHot
+            ? 'bg-orange-50 border-orange-300 text-orange-600'
+            : 'bg-canvas border-ring text-sub',
+      )}
+      aria-haspopup="true"
+      aria-label={`Streak ${streak} hari. Klik untuk detail.`}
+    >
+      {isFrozen
+        ? <Snowflake size={14} className="text-cyan-500" />
+        : <Flame    size={14} className={isHot ? 'text-orange-500' : 'text-ghost'} />}
+      <span className="font-mono tabular-nums">{streak}</span>
+    </button>
+  );
+}
 
-          <div className="p-4 space-y-4">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-xl bg-fire-gradient
-                            flex items-center justify-center shadow-glow-fire"
-              >
-                <Flame size={20} fill="white" className="text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-orange-500 font-semibold uppercase tracking-widest">
-                  Current streak
-                </p>
-                <p className="text-xl font-display font-bold text-ink tabular">
-                  {streak}{' '}
-                  <span className="text-base font-sans font-medium text-sub">days</span>
-                </p>
-              </div>
-            </div>
+// ---------------------------------------------------------------------------
+// Hover card
+// ---------------------------------------------------------------------------
+function StreakCard({ streak, weekData, isFrozen, freezesLeft, longestStreak, onClose }) {
+  return (
+    <div
+      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50
+                 w-72 bg-surface rounded-2xl border border-ring shadow-panel
+                 animate-[slideDown_0.2s_cubic-bezier(0.16,1,0.3,1)]"
+      role="tooltip"
+    >
+      <style>{`
+        @keyframes slideDown {
+          from { opacity:0; transform:translate(-50%,-8px); }
+          to   { opacity:1; transform:translate(-50%,0); }
+        }
+      `}</style>
 
-            {/* Weekly activity grid */}
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 border-b border-ring">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {isFrozen
+              ? <Snowflake size={18} className="text-cyan-500" />
+              : <Flame     size={18} className="text-orange-500" />}
             <div>
-              <p className="text-2xs text-ghost font-medium mb-2 flex items-center gap-1">
-                <CalendarDays size={11} /> This week
+              <p className="text-xs font-semibold text-ghost uppercase tracking-wider">
+                {isFrozen ? 'Streak Dibekukan' : 'Streak Aktif'}
               </p>
-              <div className="grid grid-cols-7 gap-1">
-                {days.map((d, i) => {
-                  const active = weekActivity[i] ?? false;
-                  const isToday = i === (new Date().getDay() + 6) % 7; // Mon=0
-                  return (
-                    <div key={i} className="flex flex-col items-center gap-1">
-                      <div
-                        className={cn(
-                          'w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-all',
-                          active
-                            ? 'bg-fire-gradient text-white shadow-[0_2px_6px_rgba(249,115,22,0.4)]'
-                            : 'bg-white/60 border border-orange-100 text-ghost',
-                          isToday && !active && 'border-fire/40 ring-1 ring-fire/30'
-                        )}
-                      >
-                        {active && <Flame size={12} fill="white" strokeWidth={0} />}
-                      </div>
-                      <span
-                        className={cn(
-                          'text-2xs',
-                          isToday ? 'text-fire font-semibold' : 'text-ghost'
-                        )}
-                      >
-                        {d}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Personal best */}
-            <div className="flex items-center justify-between pt-1 border-t border-orange-200/60">
-              <div className="flex items-center gap-1.5 text-xs text-sub">
-                <Trophy size={12} className="text-gold" />
-                Personal best
-              </div>
-              <span className="text-sm font-semibold text-ink tabular">
-                {longestStreak} days
-              </span>
+              <p className="text-2xl font-display font-bold text-ink tabular-nums">
+                {streak}
+                <span className="text-sm font-normal text-ghost ml-1">hari</span>
+              </p>
             </div>
           </div>
+          <div className="text-right">
+            <p className="text-2xs text-ghost">Terpanjang</p>
+            <p className="text-sm font-bold text-ink tabular-nums">{longestStreak ?? streak} hr</p>
+          </div>
         </div>
+      </div>
+
+      {/* Weekly calendar */}
+      <div className="px-4 py-3">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Calendar size={11} className="text-ghost" />
+          <p className="text-2xs font-semibold text-ghost uppercase tracking-wider">7 Hari Terakhir</p>
+        </div>
+        <div className="flex justify-between">
+          {DAY_LABELS.map((d, i) => (
+            <StreakDay
+              key={i}
+              dayLabel={d}
+              active={weekData?.[i] ?? false}
+              isToday={i === (new Date().getDay() === 0 ? 6 : new Date().getDay() - 1)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Freeze info */}
+      {(isFrozen || (freezesLeft ?? 0) > 0) && (
+        <div className="mx-4 mb-4 px-3 py-2 rounded-xl bg-cyan-50 border border-cyan-200">
+          <div className="flex items-center gap-2">
+            <Snowflake size={13} className="text-cyan-500 shrink-0" />
+            <p className="text-xs text-cyan-800">
+              {isFrozen
+                ? `Streak dibekukan hari ini. Sisa bekuan: ${freezesLeft ?? 0}×`
+                : `${freezesLeft} freeze tersisa — gunakan saat kamu tidak bisa latihan`
+              }
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* XP tip */}
+      <div className="mx-4 mb-4 px-3 py-2 rounded-xl bg-brand-50 border border-brand-100">
+        <div className="flex items-center gap-2">
+          <Zap size={13} className="text-brand-500 shrink-0" />
+          <p className="text-xs text-brand-800">
+            Pertahankan streak untuk bonus XP harian!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main export
+// ---------------------------------------------------------------------------
+export function StreakHoverCard({
+  streak       = 0,
+  weekData     = [true, true, false, true, true, true, false],
+  isFrozen     = false,
+  freezesLeft  = 2,
+  longestStreak,
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  // Close on outside click
+  function handleBlur(e) {
+    if (!wrapRef.current?.contains(e.relatedTarget)) setOpen(false);
+  }
+
+  return (
+    <div
+      ref={wrapRef}
+      className="relative inline-block"
+      onBlur={handleBlur}
+    >
+      <StreakPill
+        streak={streak}
+        isFrozen={isFrozen}
+        onClick={() => setOpen((o) => !o)}
+      />
+      {open && (
+        <StreakCard
+          streak={streak}
+          weekData={weekData}
+          isFrozen={isFrozen}
+          freezesLeft={freezesLeft}
+          longestStreak={longestStreak}
+          onClose={() => setOpen(false)}
+        />
       )}
     </div>
   );
