@@ -5,8 +5,9 @@ const MAX_WORDS = 200;
 const MAX_CHARS = 1200;
 
 /**
- * Encapsulates all ASAG textarea logic: word count, char count, validation.
- * The UI component (ASAGTextArea) is purely presentational — reads props only.
+ * Encapsulates all ASAG answer input logic:
+ * word count, char count, validation state.
+ * The UI component (ASAGTextArea) only reads from this hook — zero logic in JSX.
  */
 export function useASAGAnswer() {
   const [answer, setAnswer] = useState('');
@@ -26,7 +27,9 @@ export function useASAGAnswer() {
     if (wordCount < MIN_WORDS)
       return {
         status: 'warn',
-        message: `${MIN_WORDS - wordCount} more word${MIN_WORDS - wordCount > 1 ? 's' : ''} needed`,
+        message: `${MIN_WORDS - wordCount} more word${
+          MIN_WORDS - wordCount > 1 ? 's' : ''
+        } needed`,
       };
     if (wordCount > MAX_WORDS)
       return { status: 'error', message: `Exceeds maximum ${MAX_WORDS} words` };

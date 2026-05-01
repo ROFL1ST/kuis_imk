@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, Users, ShoppingBag,
-  MessageSquare, Trophy, ChevronLeft, Settings, Bell
+  MessageSquare, Trophy, ChevronLeft, Settings, Bell,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
+import { StreakPill } from '@/features/gamification/ui/StreakPill';
 
 const NAV_ITEMS = [
   { to: '/dashboard',   icon: LayoutDashboard, label: 'Overview'  },
@@ -15,26 +16,39 @@ const NAV_ITEMS = [
   { to: '/shop',        icon: ShoppingBag,      label: 'Shop'      },
 ];
 
+/**
+ * Main application layout shell.
+ * Renders a collapsible sidebar + fixed topbar + scrollable page content.
+ *
+ * Props:
+ *   children: React.ReactNode
+ *   user: { name, level, streak, avatarUrl }
+ */
 export function AppShell({ children, user }) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen bg-canvas overflow-hidden">
 
-      {/* Sidebar */}
-      <aside className={cn(
-        'relative flex flex-col bg-surface border-r border-ring',
-        'transition-all duration-300 ease-in-out z-20',
-        collapsed ? 'w-16' : 'w-56'
-      )}>
-
+      {/* ── Sidebar ── */}
+      <aside
+        className={cn(
+          'relative flex flex-col bg-surface border-r border-ring',
+          'transition-all duration-300 ease-in-out z-20 flex-shrink-0',
+          collapsed ? 'w-16' : 'w-56'
+        )}
+      >
         {/* Logo */}
-        <div className={cn(
-          'flex items-center h-14 px-4 border-b border-ring',
-          collapsed ? 'justify-center' : 'gap-2.5'
-        )}>
-          <div className="w-7 h-7 rounded-lg bg-brand-gradient flex-shrink-0
-                          flex items-center justify-center">
+        <div
+          className={cn(
+            'flex items-center h-14 px-4 border-b border-ring flex-shrink-0',
+            collapsed ? 'justify-center' : 'gap-2.5'
+          )}
+        >
+          <div
+            className="w-7 h-7 rounded-lg bg-brand-gradient flex-shrink-0
+                       flex items-center justify-center"
+          >
             <span className="text-white font-display font-bold text-sm">Q</span>
           </div>
           {!collapsed && (
@@ -44,70 +58,94 @@ export function AppShell({ children, user }) {
           )}
         </div>
 
-        {/* Nav links */}
+        {/* Nav */}
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) => cn(
-                'flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm',
-                'transition-colors duration-150 group',
-                isActive
-                  ? 'bg-brand-50 text-brand-700 font-medium'
-                  : 'text-sub hover:bg-canvas hover:text-ink',
-                collapsed && 'justify-center'
-              )}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm',
+                  'transition-colors duration-150 group',
+                  isActive
+                    ? 'bg-brand-50 text-brand-700 font-medium'
+                    : 'text-sub hover:bg-canvas hover:text-ink',
+                  collapsed && 'justify-center'
+                )
+              }
+              title={collapsed ? label : undefined}
             >
-              <Icon size={17} strokeWidth={1.75} className="shrink-0" />
-              {!collapsed && label}
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    size={17}
+                    strokeWidth={1.75}
+                    className={cn(
+                      'shrink-0 transition-colors',
+                      isActive ? 'text-brand-600' : ''
+                    )}
+                  />
+                  {!collapsed && label}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
-        {/* Bottom: user info */}
-        <div className="px-2 py-3 border-t border-ring space-y-2">
-          <div className={cn(
-            'flex items-center gap-2.5 px-2 py-1.5 rounded-lg',
-            'hover:bg-canvas cursor-pointer transition-colors',
-            collapsed && 'justify-center'
-          )}>
-            <div className="w-7 h-7 rounded-full bg-brand-200 flex-shrink-0
-                            flex items-center justify-center text-brand-700 text-xs font-semibold">
-              {user?.name?.[0] ?? 'U'}
-            </div>
-            {!collapsed && (
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-ink truncate">{user?.name}</p>
-                <p className="text-2xs text-ghost truncate">Level {user?.level ?? 1}</p>
+        {/* Bottom: streak + user */}
+        <div className="px-2 py-3 border-t border-ring space-y-2 flex-shrink-0">
+          {!collapsed && user && <StreakPill streak={user.streak ?? 0} />}
+          {user && (
+            <div
+              className={cn(
+                'flex items-center gap-2.5 px-2 py-1.5 rounded-lg',
+                'hover:bg-canvas cursor-pointer transition-colors',
+                collapsed && 'justify-center'
+              )}
+            >
+              <div
+                className="w-7 h-7 rounded-full bg-brand-200 flex-shrink-0
+                           flex items-center justify-center text-brand-700 text-xs font-semibold"
+              >
+                {user.name?.[0]?.toUpperCase() ?? 'U'}
               </div>
-            )}
-          </div>
+              {!collapsed && (
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-ink truncate">{user.name}</p>
+                  <p className="text-2xs text-ghost truncate">Level {user.level ?? 1}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Collapse toggle */}
         <button
-          onClick={() => setCollapsed(c => !c)}
-          className={cn(
-            'absolute -right-3 top-16 w-6 h-6 rounded-full bg-surface border border-ring',
-            'flex items-center justify-center shadow-card',
-            'hover:bg-brand-50 hover:border-brand-300 transition-colors duration-150',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400'
-          )}
+          onClick={() => setCollapsed((c) => !c)}
+          className="absolute -right-3 top-16 w-6 h-6 rounded-full bg-surface border border-ring
+                     flex items-center justify-center shadow-card
+                     hover:bg-brand-50 hover:border-brand-300 transition-colors duration-150
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <ChevronLeft
             size={12}
-            className={cn('text-sub transition-transform duration-300', collapsed && 'rotate-180')}
+            className={cn(
+              'text-sub transition-transform duration-300',
+              collapsed && 'rotate-180'
+            )}
           />
         </button>
       </aside>
 
-      {/* Main */}
+      {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Topbar */}
         <header className="flex items-center justify-end gap-3 h-14 px-6 border-b border-ring bg-surface flex-shrink-0">
           <button
-            className="relative p-2 rounded-lg text-sub hover:bg-canvas hover:text-ink transition-colors"
+            className="relative p-2 rounded-lg text-sub hover:bg-canvas hover:text-ink
+                       transition-colors duration-150"
             aria-label="Notifications"
           >
             <Bell size={18} strokeWidth={1.75} />
@@ -117,6 +155,8 @@ export function AppShell({ children, user }) {
             <Settings size={18} strokeWidth={1.75} />
           </button>
         </header>
+
+        {/* Scrollable page area */}
         <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>

@@ -1,14 +1,17 @@
 import { BookOpen, Target, Flame, TrendingUp, ArrowRight, Clock } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
 
-// Replace MOCK with real data from useDashboard() hook
+/**
+ * Redesigned Dashboard feature component.
+ * Replace MOCK with data from useDashboard() hook.
+ */
 const MOCK = {
   user: { name: 'Danendra', level: 7, xp: 3240, xpToNext: 4000, streak: 12 },
   stats: [
-    { label: 'Quizzes Done',    value: 48,    delta: '+3 this week',   icon: BookOpen,   color: 'brand'   },
-    { label: 'Avg SBERT Score', value: '0.74',delta: '+0.06 vs last',  icon: Target,     color: 'teal'    },
-    { label: 'Day Streak',      value: 12,    delta: 'Personal best!', icon: Flame,      color: 'fire'    },
-    { label: 'Accuracy',        value: '81%', delta: '+2% this week',  icon: TrendingUp, color: 'emerald' },
+    { label: 'Quizzes Done',    value: 48,    delta: '+3 this week',   icon: BookOpen,    color: 'brand'   },
+    { label: 'Avg SBERT Score', value: '0.74', delta: '+0.06 vs last', icon: Target,      color: 'teal'    },
+    { label: 'Day Streak',      value: 12,    delta: 'Personal best!', icon: Flame,       color: 'fire'    },
+    { label: 'Accuracy',        value: '81%', delta: '+2% this week',  icon: TrendingUp,  color: 'emerald' },
   ],
   recentQuizzes: [
     { id: 1, title: 'Ecosystems & Food Webs', score: 0.82, time: '14m', date: 'Today'     },
@@ -27,7 +30,11 @@ export function Dashboard() {
       <div className="flex items-end justify-between">
         <div>
           <p className="text-xs text-ghost font-medium uppercase tracking-widest mb-1">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            {new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
           </p>
           <h1 className="text-2xl font-display text-ink">
             Good morning, {user.name.split(' ')[0]} 👋
@@ -36,9 +43,11 @@ export function Dashboard() {
         <XPProgressWidget user={user} />
       </div>
 
-      {/* Bento stat grid */}
+      {/* Stat cards — bento grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {stats.map(s => <StatCard key={s.label} {...s} />)}
+        {stats.map((s) => (
+          <StatCard key={s.label} {...s} />
+        ))}
       </div>
 
       {/* Lower grid */}
@@ -48,31 +57,39 @@ export function Dashboard() {
         <div className="card p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-ink">Recent Activity</h2>
-            <button className="text-xs text-brand-600 hover:text-brand-700 font-medium
-                               flex items-center gap-1 transition-colors">
+            <button
+              className="text-xs text-brand-600 hover:text-brand-700 font-medium
+                         flex items-center gap-1 transition-colors"
+            >
               View all <ArrowRight size={12} />
             </button>
           </div>
           <div className="space-y-2">
-            {recentQuizzes.map(q => <RecentQuizRow key={q.id} quiz={q} />)}
+            {recentQuizzes.map((q) => (
+              <RecentQuizRow key={q.id} quiz={q} />
+            ))}
           </div>
         </div>
 
         {/* Quick start */}
         <div className="card p-5 space-y-4">
           <h2 className="text-sm font-semibold text-ink">Quick Start</h2>
-          <button className="w-full flex items-center justify-between
-                             p-3.5 rounded-xl bg-brand-gradient
-                             text-white text-sm font-medium
-                             hover:opacity-90 active:opacity-100 transition-opacity
-                             shadow-glow-brand">
+          <button
+            className="w-full flex items-center justify-between
+                       p-3.5 rounded-xl bg-brand-gradient
+                       text-white text-sm font-medium
+                       hover:opacity-90 active:opacity-100 transition-opacity
+                       shadow-glow-brand"
+          >
             <span>Start Random Quiz</span>
             <BookOpen size={16} />
           </button>
-          <button className="w-full flex items-center justify-between
-                             p-3.5 rounded-xl border border-ring
-                             text-ink text-sm font-medium
-                             hover:bg-canvas transition-colors">
+          <button
+            className="w-full flex items-center justify-between
+                       p-3.5 rounded-xl border border-ring
+                       text-ink text-sm font-medium
+                       hover:bg-canvas transition-colors"
+          >
             <span>Review Last Session</span>
             <Clock size={16} className="text-sub" />
           </button>
@@ -121,7 +138,7 @@ function XPProgressWidget({ user }) {
           />
         </div>
         <p className="text-2xs text-ghost text-right tabular">
-          {user.xpToNext - user.xp} to next
+          {(user.xpToNext - user.xp).toLocaleString()} to next
         </p>
       </div>
     </div>
@@ -141,10 +158,12 @@ function RecentQuizRow({ quiz }) {
         <p className="text-sm text-ink font-medium truncate">{quiz.title}</p>
         <p className="text-xs text-ghost">{quiz.date} · {quiz.time}</p>
       </div>
-      <span className={cn(
-        'text-xs font-semibold tabular px-2 py-1 rounded-md font-mono',
-        scoreColor
-      )}>
+      <span
+        className={cn(
+          'text-xs font-semibold tabular px-2 py-1 rounded-md font-mono',
+          scoreColor
+        )}
+      >
         {score.toFixed(2)}
       </span>
     </div>
