@@ -34,32 +34,13 @@ import Inventory from "./pages/shop/Inventory";
 import Community from "./pages/community/Community";
 import LandingPage from "./pages/landing/LandingPage";
 
-// ── MainLayout: sidebar + scrollable content area ──────────────────────────
+// ── MainLayout: sidebar (fixed 240px) + scrollable main content ──────────────
 const MainLayout = ({ children }) => (
-  <div
-    style={{
-      display: "flex",
-      minHeight: "100dvh",
-      background: "var(--color-canvas)",
-    }}
-  >
+  <div className="flex min-h-dvh bg-canvas">
     <Sidebar />
-    {/* 240px = sidebar width; content scrolls independently */}
-    <main
-      style={{
-        flex: 1,
-        marginLeft: 240,
-        minHeight: "100dvh",
-        overflowY: "auto",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 960,
-          margin: "0 auto",
-          padding: "2rem 2rem 4rem",
-        }}
-      >
+    {/* ml-sidebar = marginLeft:240px — defined as utility in tailwind.config.js */}
+    <main className="ml-sidebar flex-1 min-h-dvh overflow-y-auto">
+      <div className="mx-auto max-w-[960px] px-8 py-8 pb-16">
         {children}
       </div>
     </main>
@@ -74,54 +55,46 @@ function App() {
         <Toaster
           position="top-center"
           toastOptions={{
-            style: {
-              fontFamily: "var(--font-sans)",
-              fontSize: "0.875rem",
-              color: "var(--color-ink)",
-              background: "var(--color-surface)",
-              border: "1px solid oklch(0.2 0.005 60 / 0.10)",
-              boxShadow: "var(--shadow-panel)",
-              borderRadius: "0.75rem",
-              padding: "0.75rem 1rem",
-            },
+            className: "!font-sans !text-sm !text-ink !bg-surface !shadow-panel !rounded-xl",
           }}
         />
         <EmailAlert />
         <Routes>
-          {/* Public routes — no sidebar */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
+          {/* ── Public — no sidebar ──────────────────────────────── */}
+          <Route path="/"               element={<LandingPage />} />
+          <Route path="/about"          element={<About />} />
+          <Route path="/login"          element={<Login />} />
+          <Route path="/register"       element={<Register />} />
+          <Route path="/verify-email"   element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/whats-new" element={<WhatsNew />} />
+          <Route path="/whats-new"      element={<WhatsNew />} />
 
-          {/* Protected routes — wrapped in MainLayout (sidebar) */}
+          {/* ── Protected — all wrapped in MainLayout (sidebar) ── */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard"          element={<MainLayout><Dashboard /></MainLayout>} />
-            <Route path="/topic/:slug"         element={<MainLayout><QuizList /></MainLayout>} />
-            <Route path="/history"             element={<MainLayout><History /></MainLayout>} />
+            <Route path="/dashboard"             element={<MainLayout><Dashboard /></MainLayout>} />
+            <Route path="/topic/:slug"            element={<MainLayout><QuizList /></MainLayout>} />
+            <Route path="/history"               element={<MainLayout><History /></MainLayout>} />
             <Route path="/history/review/:historyId" element={<MainLayout><ReviewPage /></MainLayout>} />
-            <Route path="/friends"             element={<MainLayout><Friends /></MainLayout>} />
-            <Route path="/notifications"       element={<MainLayout><Notifications /></MainLayout>} />
-            <Route path="/:username"           element={<MainLayout><Profile /></MainLayout>} />
-            <Route path="/leaderboard/global"  element={<MainLayout><GlobalLeaderboard /></MainLayout>} />
-            <Route path="/leaderboard/:slug"   element={<MainLayout><Leaderboard /></MainLayout>} />
-            <Route path="/challenges"          element={<MainLayout><ChallengeList /></MainLayout>} />
-            <Route path="/lobby/:id"           element={<MainLayout><LobbyPage /></MainLayout>} />
-            <Route path="/settings"            element={<MainLayout><Settings /></MainLayout>} />
-            <Route path="/shop"                element={<MainLayout><Shop /></MainLayout>} />
-            <Route path="/inventory"           element={<MainLayout><Inventory /></MainLayout>} />
-            <Route path="/community"           element={<MainLayout><Community /></MainLayout>} />
-            <Route path="/classrooms"          element={<MainLayout><ClassroomList /></MainLayout>} />
-            <Route path="/classrooms/:id"      element={<MainLayout><ClassroomDetail /></MainLayout>} />
+            <Route path="/friends"               element={<MainLayout><Friends /></MainLayout>} />
+            <Route path="/notifications"         element={<MainLayout><Notifications /></MainLayout>} />
+            <Route path="/leaderboard/global"    element={<MainLayout><GlobalLeaderboard /></MainLayout>} />
+            <Route path="/leaderboard/:slug"     element={<MainLayout><Leaderboard /></MainLayout>} />
+            <Route path="/challenges"            element={<MainLayout><ChallengeList /></MainLayout>} />
+            <Route path="/lobby/:id"             element={<MainLayout><LobbyPage /></MainLayout>} />
+            <Route path="/settings"              element={<MainLayout><Settings /></MainLayout>} />
+            <Route path="/shop"                  element={<MainLayout><Shop /></MainLayout>} />
+            <Route path="/inventory"             element={<MainLayout><Inventory /></MainLayout>} />
+            <Route path="/community"             element={<MainLayout><Community /></MainLayout>} />
+            <Route path="/classrooms"            element={<MainLayout><ClassroomList /></MainLayout>} />
+            <Route path="/classrooms/:id"        element={<MainLayout><ClassroomDetail /></MainLayout>} />
+            {/* Profile pakai /:username — taruh paling bawah biar gak nabrak */}
+            <Route path="/:username"             element={<MainLayout><Profile /></MainLayout>} />
 
-            {/* Gameplay — fullscreen, no sidebar */}
-            <Route path="/play/:quizId"        element={<QuizPlay />} />
-            <Route path="/play/survival"       element={<QuizPlay />} />
-            <Route path="/play/survival/game"  element={<Navigate to="/play/survival" replace />} />
+            {/* Gameplay — fullscreen, NO sidebar */}
+            <Route path="/play/:quizId"          element={<QuizPlay />} />
+            <Route path="/play/survival"         element={<QuizPlay />} />
+            <Route path="/play/survival/game"    element={<Navigate to="/play/survival" replace />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

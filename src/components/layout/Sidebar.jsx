@@ -1,11 +1,11 @@
 // src/components/layout/Sidebar.jsx
+// Pure Tailwind — no inline style objects
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import {
   LayoutDashboard, History, Users, Flame, Star, Swords,
   LogOut, Settings, Bell, Coins, ShoppingBag, Package,
-  Trophy, GraduationCap, AlertTriangle, ChevronRight,
-  Zap, BookOpen,
+  Trophy, GraduationCap, AlertTriangle, ChevronRight, Zap,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLanguage } from "../../context/LanguageContext";
@@ -18,136 +18,110 @@ import { dailyAPI, userAPI, notificationAPI } from "../../services/api";
 import { AnimatePresence, motion } from "framer-motion";
 
 const NAV_MAIN = [
-  { to: "/dashboard",        icon: LayoutDashboard, label: "navbar.topics"   },
-  { to: "/classrooms",       icon: GraduationCap,   label: "navbar.classes"  },
-  { to: "/challenges",       icon: Swords,          label: "navbar.duel"     },
-  { to: "/leaderboard/global", icon: Trophy,         label: "navbar.rank"    },
+  { to: "/dashboard",           icon: LayoutDashboard, labelKey: "navbar.topics"   },
+  { to: "/classrooms",          icon: GraduationCap,   labelKey: "navbar.classes"  },
+  { to: "/challenges",          icon: Swords,          labelKey: "navbar.duel"     },
+  { to: "/leaderboard/global",  icon: Trophy,          labelKey: "navbar.rank"     },
 ];
 
 const NAV_SECONDARY = [
-  { to: "/friends",      icon: Users,        label: "navbar.friends"    },
-  { to: "/history",      icon: History,      label: "navbar.history"    },
-  { to: "/shop",         icon: ShoppingBag,  label: "navbar.shop"       },
-  { to: "/inventory",    icon: Package,      label: "navbar.inventory"  },
-  { to: "/notifications", icon: Bell,        label: "navbar.notifications" },
+  { to: "/friends",       icon: Users,       labelKey: "navbar.friends"       },
+  { to: "/history",       icon: History,     labelKey: "navbar.history"       },
+  { to: "/shop",          icon: ShoppingBag, labelKey: "navbar.shop"          },
+  { to: "/inventory",     icon: Package,     labelKey: "navbar.inventory"     },
+  { to: "/notifications", icon: Bell,        labelKey: "navbar.notifications" },
 ];
 
-const Sidebar = () => {
+export default function Sidebar() {
   const { user, logout, unreadCount } = useAuth();
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
-  const [showStreak, setShowStreak]           = useState(false);
-  const [calendarDates, setCalendarDates]     = useState([]);
-  const [missions, setMissions]               = useState([]);
-  const [dailyStreak, setDailyStreak]         = useState(0);
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [announcementData, setAnnouncementData]   = useState(null);
-  const [showAnnouncement, setShowAnnouncement]   = useState(false);
-  const [showFullCalendar, setShowFullCalendar]   = useState(false);
+  const [showStreak,          setShowStreak]          = useState(false);
+  const [calendarDates,       setCalendarDates]       = useState([]);
+  const [missions,            setMissions]            = useState([]);
+  const [dailyStreak,         setDailyStreak]         = useState(0);
+  const [isLogoutOpen,        setIsLogoutOpen]        = useState(false);
+  const [announcementData,    setAnnouncementData]    = useState(null);
+  const [showAnnouncement,    setShowAnnouncement]    = useState(false);
+  const [showFullCalendar,    setShowFullCalendar]    = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    const fetchData = async () => {
+    (async () => {
       try {
-        const [resCalendar, resDaily] = await Promise.all([
+        const [rc, rd] = await Promise.all([
           userAPI.getActivityCalendar(),
           dailyAPI.getInfo(),
         ]);
-        setCalendarDates(resCalendar.data.data || []);
-        setMissions(resDaily.data.data.missions || []);
-        setDailyStreak(resDaily.data.data.streak.day || 0);
-      } catch (e) { console.error("Sidebar data fetch failed:", e); }
-    };
-    fetchData();
+        setCalendarDates(rc.data.data || []);
+        setMissions(rd.data.data.missions || []);
+        setDailyStreak(rd.data.data.streak.day || 0);
+      } catch { /* silent */ }
+    })();
 
-    const fetchAnnouncement = async () => {
+    (async () => {
       try {
         const res = await notificationAPI.getAnnouncements();
         const latest = res.data.data?.[0];
-        if (latest) {
-          const lastSeenId = localStorage.getItem("last_seen_announcement");
-          if (lastSeenId !== String(latest.id)) {
-            setAnnouncementData(latest);
-            setShowAnnouncement(true);
-          }
+        if (latest && localStorage.getItem("last_seen_announcement") !== String(latest.id)) {
+          setAnnouncementData(latest);
+          setShowAnnouncement(true);
         }
-      } catch (e) { console.error("Announcement fetch failed:", e); }
-    };
-    fetchAnnouncement();
+      } catch { /* silent */ }
+    })();
   }, [user]);
 
-  const handleLogout = () => { logout(); setIsLogoutModalOpen(false); navigate("/login"); };
-  const handleCloseAnnouncement = () => {
+  const handleLogout = () => { logout(); setIsLogoutOpen(false); navigate("/login"); };
+  const closeAnnouncement = () => {
     setShowAnnouncement(false);
     if (announcementData) localStorage.setItem("last_seen_announcement", String(announcementData.id));
   };
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
+  const isActive = (path) =>
+    location.pathname === path ||
+    (path !== "/" && location.pathname.startsWith(path + "/"));
+
+  const navItemClass = (active) =>
+    `nav-item ${ active ? "bg-brand-50 text-brand-600 font-semibold" : "" }`;
 
   return (
     <>
-      {/* ── SIDEBAR ───────────────────────────────────────────────── */}
-      <aside
-        className="fixed inset-y-0 left-0 z-40 flex flex-col"
-        style={{
-          width: "240px",
-          background: "var(--color-surface)",
-          borderRight: "1px solid oklch(0.2 0.005 60 / 0.08)",
-          boxShadow: "var(--shadow-panel)",
-        }}
-      >
+      {/* ── SIDEBAR ────────────────────────────────────────────────── */}
+      <aside className="fixed inset-y-0 left-0 z-40 w-sidebar flex flex-col
+                        bg-surface border-r border-black/[0.07] shadow-panel">
+
         {/* Brand */}
-        <div
-          className="flex items-center gap-3 px-5 py-5"
-          style={{ borderBottom: "1px solid oklch(0.2 0.005 60 / 0.07)" }}
-        >
-          <div
-            className="flex items-center justify-center rounded-xl"
-            style={{
-              width: 34, height: 34,
-              background: "var(--color-brand-500)",
-              boxShadow: "var(--shadow-glow-brand)",
-            }}
-          >
-            <Zap size={18} color="white" fill="white" />
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-black/[0.06]">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl
+                          bg-brand-500 shadow-glow-brand shrink-0">
+            <Zap size={17} className="text-white fill-white" />
           </div>
-          <span
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "1.05rem",
-              fontWeight: 800,
-              color: "var(--color-ink)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            QuizApp <span style={{ color: "var(--color-brand-500)" }}>Indo</span>
+          <span className="font-display font-extrabold text-base tracking-tight text-ink">
+            QuizApp&nbsp;<span className="text-brand-500">Indo</span>
           </span>
         </div>
 
         {/* Gamification strip */}
-        <div
-          className="flex items-center gap-2 px-4 py-3 mx-3 mt-3 rounded-xl"
-          style={{ background: "var(--color-surface-off)" }}
-        >
+        <div className="mx-3 mt-3 flex items-center gap-2 rounded-xl bg-surfaceOff px-3 py-2">
+
           {/* Streak */}
-          <div
-            className="relative cursor-pointer"
-            onMouseEnter={() => setShowStreak(true)}
-            onMouseLeave={() => setShowStreak(false)}
-          >
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
-              style={{
-                background: "oklch(0.97 0.03 45)",
-                color: "var(--color-fire)",
-                border: "1px solid oklch(0.85 0.06 45)",
-              }}
+          <div className="relative">
+            <button
+              onMouseEnter={() => setShowStreak(true)}
+              onMouseLeave={() => setShowStreak(false)}
+              onClick={() => setShowFullCalendar(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-orange-200
+                         bg-orange-50 px-2.5 py-1.5 text-xs font-bold text-fire
+                         transition-colors hover:bg-orange-100 active:scale-95"
             >
-              <Flame size={13} fill="currentColor" />
+              <Flame
+                size={13}
+                className={`fill-current ${ (user?.streak_count || 0) > 0 ? "animate-pulse-glow" : "" }`}
+              />
               {user?.streak_count || 0}
-            </div>
+            </button>
             <AnimatePresence>
               {showStreak && (
                 <motion.div
@@ -170,87 +144,43 @@ const Sidebar = () => {
           </div>
 
           {/* Level */}
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
-            style={{
-              background: "var(--color-brand-50)",
-              color: "var(--color-brand-600)",
-              border: "1px solid var(--color-brand-100)",
-            }}
-          >
-            <Star size={11} fill="currentColor" />
+          <div className="flex items-center gap-1.5 rounded-lg border border-brand-100
+                          bg-brand-50 px-2.5 py-1.5 text-xs font-bold text-brand-600">
+            <Star size={11} className="fill-current" />
             Lv.{user?.level || 1}
           </div>
 
           {/* Coins */}
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold ml-auto"
-            style={{
-              background: "oklch(0.98 0.04 85)",
-              color: "var(--color-gold)",
-              border: "1px solid oklch(0.88 0.08 85)",
-            }}
-          >
-            <Coins size={11} fill="currentColor" />
+          <div className="ml-auto flex items-center gap-1.5 rounded-lg border border-yellow-200
+                          bg-yellow-50 px-2.5 py-1.5 text-xs font-bold text-gold">
+            <Coins size={11} className="fill-current" />
             {user?.coins || 0}
           </div>
         </div>
 
         {/* Nav scroll area */}
-        <nav className="flex-1 overflow-y-auto scrollbar-none px-3 py-3 space-y-1">
-          <p
-            className="px-3 pb-1 pt-1"
-            style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--color-ghost)", textTransform: "uppercase" }}
-          >
+        <nav className="scrollbar-none flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+          <p className="px-3 pb-1.5 pt-1 text-2xs font-bold uppercase tracking-widest text-ghost">
             Utama
           </p>
-          {NAV_MAIN.map(({ to, icon: Icon, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className="nav-item"
-              style={isActive(to) ? {
-                background: "var(--color-brand-50)",
-                color: "var(--color-brand-600)",
-                fontWeight: 600,
-              } : {}}
-            >
-              <Icon size={17} />
-              <span>{t(label)}</span>
-              {isActive(to) && <ChevronRight size={14} className="ml-auto opacity-40" />}
+          {NAV_MAIN.map(({ to, icon: Icon, labelKey }) => (
+            <Link key={to} to={to} className={navItemClass(isActive(to))}>
+              <Icon size={16} className="shrink-0" />
+              <span className="truncate">{t(labelKey)}</span>
+              {isActive(to) && <ChevronRight size={13} className="ml-auto shrink-0 opacity-40" />}
             </Link>
           ))}
 
-          <p
-            className="px-3 pb-1 pt-3"
-            style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--color-ghost)", textTransform: "uppercase" }}
-          >
+          <p className="px-3 pb-1.5 pt-4 text-2xs font-bold uppercase tracking-widest text-ghost">
             Lainnya
           </p>
-          {NAV_SECONDARY.map(({ to, icon: Icon, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className="nav-item relative"
-              style={isActive(to) ? {
-                background: "var(--color-brand-50)",
-                color: "var(--color-brand-600)",
-                fontWeight: 600,
-              } : {}}
-            >
-              <Icon size={17} />
-              <span>{t(label)}</span>
+          {NAV_SECONDARY.map(({ to, icon: Icon, labelKey }) => (
+            <Link key={to} to={to} className={navItemClass(isActive(to))}>
+              <Icon size={16} className="shrink-0" />
+              <span className="truncate">{t(labelKey)}</span>
               {to === "/notifications" && unreadCount > 0 && (
-                <span
-                  className="ml-auto flex items-center justify-center text-white font-bold"
-                  style={{
-                    minWidth: 18, height: 18,
-                    background: "var(--color-error)",
-                    borderRadius: 9999,
-                    fontSize: "0.6rem",
-                    padding: "0 4px",
-                  }}
-                >
+                <span className="ml-auto flex h-4.5 min-w-[1.125rem] items-center justify-center
+                                 rounded-full bg-error px-1 text-2xs font-bold text-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
@@ -259,36 +189,25 @@ const Sidebar = () => {
         </nav>
 
         {/* Profile footer */}
-        <div
-          className="px-3 py-3"
-          style={{ borderTop: "1px solid oklch(0.2 0.005 60 / 0.07)" }}
-        >
+        <div className="border-t border-black/[0.06] px-3 pb-3 pt-2 space-y-0.5">
           <Link
             to={`/@${user?.username}`}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
-            style={{ color: "var(--color-ink)" }}
-            onMouseEnter={e => e.currentTarget.style.background = "var(--color-surface-off)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5
+                       text-ink transition-colors hover:bg-surfaceOff"
           >
             <UserAvatar user={user} size="sm" />
-            <div className="flex-1 min-w-0">
-              <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {user?.name}
-              </p>
-              <p style={{ fontSize: "0.7rem", color: "var(--color-ghost)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                @{user?.username}
-              </p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-ink">{user?.name}</p>
+              <p className="truncate text-xs text-ghost">@{user?.username}</p>
             </div>
-            <Settings size={15} style={{ color: "var(--color-ghost)", flexShrink: 0 }} />
+            <Settings size={14} className="shrink-0 text-ghost" />
           </Link>
+
           <button
-            onClick={() => setIsLogoutModalOpen(true)}
-            className="nav-item w-full mt-1"
-            style={{ color: "var(--color-error)" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "oklch(0.97 0.02 27)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+            onClick={() => setIsLogoutOpen(true)}
+            className="nav-item w-full text-error hover:bg-red-50"
           >
-            <LogOut size={16} />
+            <LogOut size={15} className="shrink-0" />
             <span>{t("navbar.logout")}</span>
           </button>
         </div>
@@ -302,33 +221,28 @@ const Sidebar = () => {
         currentStreak={user?.streak_count || 0}
       />
 
-      <Modal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} maxWidth="max-w-sm">
+      <Modal isOpen={isLogoutOpen} onClose={() => setIsLogoutOpen(false)} maxWidth="max-w-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div
-            className="flex items-center justify-center rounded-full"
-            style={{ width: 40, height: 40, background: "oklch(0.97 0.02 27)", color: "var(--color-error)" }}
-          >
-            <AlertTriangle size={22} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-error">
+            <AlertTriangle size={20} />
           </div>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem", fontWeight: 700, color: "var(--color-ink)" }}>
+          <h2 className="font-display text-lg font-bold text-ink">
             {t("navbar.confirmLogout")}
           </h2>
         </div>
-        <p style={{ fontSize: "0.875rem", color: "var(--color-sub)", marginBottom: "1.5rem" }}>
-          {t("navbar.logoutDesc")}
-        </p>
+        <p className="mb-6 text-sm text-sub">{t("navbar.logoutDesc")}</p>
         <div className="flex gap-3">
           <button
-            onClick={() => setIsLogoutModalOpen(false)}
-            className="flex-1 py-2.5 rounded-xl font-bold transition-colors"
-            style={{ background: "var(--color-surface-off)", color: "var(--color-sub)", fontSize: "0.875rem" }}
+            onClick={() => setIsLogoutOpen(false)}
+            className="flex-1 rounded-xl bg-surfaceOff py-2.5 text-sm font-bold
+                       text-sub transition-colors hover:bg-ring"
           >
             {t("navbar.cancel")}
           </button>
           <button
             onClick={handleLogout}
-            className="flex-1 py-2.5 rounded-xl font-bold transition-colors"
-            style={{ background: "var(--color-error)", color: "#fff", fontSize: "0.875rem" }}
+            className="flex-1 rounded-xl bg-error py-2.5 text-sm font-bold
+                       text-white transition-colors hover:bg-red-700"
           >
             {t("navbar.yesLogout")}
           </button>
@@ -337,11 +251,9 @@ const Sidebar = () => {
 
       <AnnouncementModal
         isOpen={showAnnouncement}
-        onClose={handleCloseAnnouncement}
+        onClose={closeAnnouncement}
         announcement={announcementData}
       />
     </>
   );
-};
-
-export default Sidebar;
+}
