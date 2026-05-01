@@ -1,166 +1,121 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+// src/shared/ui/layout/AppShell.jsx
+// Wraps all authenticated pages: sidebar (desktop) + main content area.
+// Mobile (<1024px): sidebar collapses to a bottom tab bar.
+import { useState, useEffect } from 'react';
+import { useLocation, NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, BookOpen, Users, ShoppingBag,
-  MessageSquare, Trophy, ChevronLeft, Settings, Bell,
+  LayoutDashboard, BookOpen, Users, Trophy, ShoppingBag, MessageCircle,
 } from 'lucide-react';
+import { Sidebar } from './Sidebar';
 import { cn } from '@/shared/lib/cn';
-import { StreakPill } from '@/features/gamification/ui/StreakPill';
 
-const NAV_ITEMS = [
-  { to: '/dashboard',   icon: LayoutDashboard, label: 'Overview'  },
-  { to: '/quiz',        icon: BookOpen,         label: 'Quizzes'   },
-  { to: '/classroom',   icon: Users,            label: 'Classroom' },
-  { to: '/community',   icon: MessageSquare,    label: 'Community' },
-  { to: '/leaderboard', icon: Trophy,           label: 'Rankings'  },
-  { to: '/shop',        icon: ShoppingBag,      label: 'Shop'      },
+// Bottom tab bar items (mobile only — max 5 for thumb reach)
+const TABS = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Home'  },
+  { to: '/quiz',      icon: BookOpen,        label: 'Quiz'  },
+  { to: '/classroom', icon: Users,           label: 'Class' },
+  { to: '/social',    icon: Trophy,          label: 'Rank'  },
+  { to: '/community', icon: MessageCircle,   label: 'Feed'  },
 ];
 
-/**
- * Main application layout shell.
- * Renders a collapsible sidebar + fixed topbar + scrollable page content.
- *
- * Props:
- *   children: React.ReactNode
- *   user: { name, level, streak, avatarUrl }
- */
-export function AppShell({ children, user }) {
-  const [collapsed, setCollapsed] = useState(false);
+export function AppShell({ user, onLogout, children }) {
+  const [isMobile, setIsMobile] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    setIsMobile(mq.matches);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Scroll to top on route change
+  useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
 
   return (
-    <div className="flex h-screen bg-canvas overflow-hidden">
+    <div className="min-h-screen bg-canvas">
+      {/* Desktop sidebar */}
+      {!isMobile && (
+        <Sidebar user={user} onLogout={onLogout} />
+      )}
 
-      {/* ── Sidebar ── */}
-      <aside
+      {/* Main content — offset by sidebar on desktop */}
+      <main
         className={cn(
-          'relative flex flex-col bg-surface border-r border-ring',
-          'transition-all duration-300 ease-in-out z-20 flex-shrink-0',
-          collapsed ? 'w-16' : 'w-56'
+          'flex flex-col min-h-screen',
+          !isMobile && 'ml-sidebar',
+          isMobile  && 'pb-16',   // space for bottom tab bar
         )}
       >
-        {/* Logo */}
-        <div
-          className={cn(
-            'flex items-center h-14 px-4 border-b border-ring flex-shrink-0',
-            collapsed ? 'justify-center' : 'gap-2.5'
-          )}
-        >
-          <div
-            className="w-7 h-7 rounded-lg bg-brand-gradient flex-shrink-0
-                       flex items-center justify-center"
-          >
-            <span className="text-white font-display font-bold text-sm">Q</span>
-          </div>
-          {!collapsed && (
-            <span className="font-display font-bold text-lg text-ink tracking-tight">
-              QuizzApp
-            </span>
-          )}
-        </div>
+        {children}
+      </main>
 
-        {/* Nav */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
+      {/* Mobile bottom tab bar */}
+      {isMobile && (
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-30
+                     bg-surface/90 backdrop-blur-md
+                     border-t border-ring/70
+                     flex items-center justify-around
+                     px-2 py-1"
+          aria-label="Main navigation"
+        >
+          {TABS.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm',
-                  'transition-colors duration-150 group',
+                  'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl',
+                  'text-2xs font-medium transition-colors',
+                  'min-w-[44px] min-h-[44px] justify-center',
                   isActive
-                    ? 'bg-brand-50 text-brand-700 font-medium'
-                    : 'text-sub hover:bg-canvas hover:text-ink',
-                  collapsed && 'justify-center'
+                    ? 'text-brand-500 bg-brand-50'
+                    : 'text-ghost hover:text-sub',
                 )
               }
-              title={collapsed ? label : undefined}
             >
-              {({ isActive }) => (
-                <>
-                  <Icon
-                    size={17}
-                    strokeWidth={1.75}
-                    className={cn(
-                      'shrink-0 transition-colors',
-                      isActive ? 'text-brand-600' : ''
-                    )}
-                  />
-                  {!collapsed && label}
-                </>
-              )}
+              <Icon size={20} strokeWidth={1.8} />
+              <span>{label}</span>
             </NavLink>
           ))}
         </nav>
+      )}
+    </div>
+  );
+}
 
-        {/* Bottom: streak + user */}
-        <div className="px-2 py-3 border-t border-ring space-y-2 flex-shrink-0">
-          {!collapsed && user && <StreakPill streak={user.streak ?? 0} />}
-          {user && (
-            <div
-              className={cn(
-                'flex items-center gap-2.5 px-2 py-1.5 rounded-lg',
-                'hover:bg-canvas cursor-pointer transition-colors',
-                collapsed && 'justify-center'
-              )}
-            >
-              <div
-                className="w-7 h-7 rounded-full bg-brand-200 flex-shrink-0
-                           flex items-center justify-center text-brand-700 text-xs font-semibold"
-              >
-                {user.name?.[0]?.toUpperCase() ?? 'U'}
-              </div>
-              {!collapsed && (
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-ink truncate">{user.name}</p>
-                  <p className="text-2xs text-ghost truncate">Level {user.level ?? 1}</p>
-                </div>
-              )}
-            </div>
+// ---------------------------------------------------------------------------
+// PageWrapper — consistent inner page padding + optional header row
+// Usage: <PageWrapper title="Dashboard" subtitle="Overview"> ... </PageWrapper>
+// ---------------------------------------------------------------------------
+export function PageWrapper({ title, subtitle, actions, children, className }) {
+  return (
+    <div
+      className={cn(
+        'flex-1 px-4 py-6 md:px-8 md:py-8 max-w-[1200px] mx-auto w-full',
+        className,
+      )}
+    >
+      {(title || actions) && (
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            {title && (
+              <h1 className="text-xl font-display font-bold text-ink">
+                {title}
+              </h1>
+            )}
+            {subtitle && (
+              <p className="text-sm text-sub mt-0.5">{subtitle}</p>
+            )}
+          </div>
+          {actions && (
+            <div className="flex items-center gap-2 shrink-0">{actions}</div>
           )}
         </div>
-
-        {/* Collapse toggle */}
-        <button
-          onClick={() => setCollapsed((c) => !c)}
-          className="absolute -right-3 top-16 w-6 h-6 rounded-full bg-surface border border-ring
-                     flex items-center justify-center shadow-card
-                     hover:bg-brand-50 hover:border-brand-300 transition-colors duration-150
-                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <ChevronLeft
-            size={12}
-            className={cn(
-              'text-sub transition-transform duration-300',
-              collapsed && 'rotate-180'
-            )}
-          />
-        </button>
-      </aside>
-
-      {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Topbar */}
-        <header className="flex items-center justify-end gap-3 h-14 px-6 border-b border-ring bg-surface flex-shrink-0">
-          <button
-            className="relative p-2 rounded-lg text-sub hover:bg-canvas hover:text-ink
-                       transition-colors duration-150"
-            aria-label="Notifications"
-          >
-            <Bell size={18} strokeWidth={1.75} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500 ring-2 ring-surface" />
-          </button>
-          <button className="p-2 rounded-lg text-sub hover:bg-canvas hover:text-ink transition-colors">
-            <Settings size={18} strokeWidth={1.75} />
-          </button>
-        </header>
-
-        {/* Scrollable page area */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
-      </div>
+      )}
+      {children}
     </div>
   );
 }
