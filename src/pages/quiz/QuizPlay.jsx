@@ -1284,4 +1284,37 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                 style={{ background: aiFeedbackModal.score >= 70 ? "rgb(34 197 94 / 0.15)" : "rgb(239 68 68 / 0.15)" }}
               >
                 <h3 className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: "var(--color-surface-500)" }}>AI Grading Score</h3>
-                <div className="text-5xl font-black tracking-tighter mb-2" styl
+                <div
+                  className="text-5xl font-black tracking-tighter mb-2"
+                  style={{ color: aiFeedbackModal.score >= 70 ? "#4ade80" : "#f87171" }}
+                >
+                  {aiFeedbackModal.score.toFixed(0)}
+                </div>
+                <p className="text-sm italic leading-relaxed" style={{ color: "var(--color-surface-300)" }}>
+                  "{aiFeedbackModal.feedback}"
+                </p>
+              </div>
+              <div className="p-5">
+                <button
+                  onClick={() => setAiFeedbackModal(null)}
+                  className="w-full py-3 rounded-xl font-bold cursor-pointer border"
+                  style={{
+                    background: "var(--color-surface-800)",
+                    borderColor: "var(--color-surface-700)",
+                    color: "var(--color-surface-300)",
+                  }}
+                >
+                  Tutup
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <ReportModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} questionId={currentQ?.ID} />
+    </div>
+  );
+};
+
+export default QuizPlay;
