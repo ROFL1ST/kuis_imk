@@ -1,9 +1,21 @@
 import React from "react";
 
-const Skeleton = ({ className, ...props }) => {
+/**
+ * Dark-theme aware Skeleton.
+ * Shimmer pulse uses surface-800 base with a lighter surface-700 sheen.
+ * Consumers can still pass inline style to override background if needed.
+ */
+const Skeleton = ({ className = "", style, ...props }) => {
   return (
     <div
-      className={`animate-pulse bg-slate-200 rounded-xl ${className}`}
+      className={`rounded-xl ${className}`}
+      style={{
+        background:
+          "linear-gradient(90deg, var(--color-surface-800) 25%, var(--color-surface-700) 50%, var(--color-surface-800) 75%)",
+        backgroundSize: "200% 100%",
+        animation: "skeletonShimmer 1.6s ease-in-out infinite",
+        ...style,
+      }}
       {...props}
     />
   );
