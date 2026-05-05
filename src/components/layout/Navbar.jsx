@@ -21,7 +21,7 @@ import {
   Package,
   Trophy,
   GraduationCap,
-  MoreHorizontal,
+  Zap,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "../../context/LanguageContext";
@@ -29,16 +29,16 @@ import Modal from "../ui/Modal";
 import UserAvatar from "../ui/UserAvatar";
 import StreakHoverCard from "../ui/StreakHoverCard";
 import CalendarModal from "../ui/CalendarModal";
-import AnnouncementModal from "../ui/AnnouncementModal"; // Import Modal
-import { dailyAPI, userAPI, notificationAPI } from "../../services/api"; // Import notificationAPI
+import AnnouncementModal from "../ui/AnnouncementModal";
+import { dailyAPI, userAPI, notificationAPI } from "../../services/api";
 import { AnimatePresence, motion } from "framer-motion";
+import { clsx } from "clsx";
 
 const Navbar = () => {
   const { user, logout, unreadCount } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  // State
   const [showStreak, setShowStreak] = useState(false);
   const [calendarDates, setCalendarDates] = useState([]);
   const [missions, setMissions] = useState([]);
@@ -46,9 +46,8 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [announcementData, setAnnouncementData] = useState(null); // State Data Announcement
-  const [showAnnouncement, setShowAnnouncement] = useState(false); // State Visibility Modal
-
+  const [announcementData, setAnnouncementData] = useState(null);
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [showFullCalendar, setShowFullCalendar] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -68,9 +67,7 @@ const Navbar = () => {
     } else {
       document.body.style.overflow = "unset";
     }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    return () => { document.body.style.overflow = "unset"; };
   }, [open]);
 
   useEffect(() => {
@@ -79,7 +76,6 @@ const Navbar = () => {
         try {
           const resCalendar = await userAPI.getActivityCalendar();
           setCalendarDates(resCalendar.data.data || []);
-
           const resDaily = await dailyAPI.getInfo();
           setMissions(resDaily.data.data.missions || []);
           setDailyStreak(resDaily.data.data.streak.day || 0);
@@ -88,17 +84,12 @@ const Navbar = () => {
         }
       };
       fetchData();
-      fetchData();
 
-      // Fetch Announcement
       const fetchAnnouncement = async () => {
         try {
           const res = await notificationAPI.getAnnouncements();
-          // Backend returns array, sorted by created_at desc. Take the first one.
           const latest = res.data.data?.[0];
-
           if (latest) {
-            // Check if already seen locally
             const lastSeenId = localStorage.getItem("last_seen_announcement");
             if (lastSeenId !== String(latest.id)) {
               setAnnouncementData(latest);
@@ -109,7 +100,6 @@ const Navbar = () => {
           console.error("Failed to fetch announcement:", error);
         }
       };
-
       fetchAnnouncement();
     }
   }, [user]);
@@ -123,94 +113,133 @@ const Navbar = () => {
   const handleCloseAnnouncement = () => {
     setShowAnnouncement(false);
     if (announcementData) {
-      localStorage.setItem(
-        "last_seen_announcement",
-        String(announcementData.id),
-      );
+      localStorage.setItem("last_seen_announcement", String(announcementData.id));
     }
   };
 
+  const navLinks = [
+    { to: "/dashboard",        icon: LayoutDashboard, label: t("navbar.topics")   },
+    { to: "/classrooms",       icon: GraduationCap,   label: t("navbar.classes")  },
+    { to: "/challenges",       icon: Swords,          label: t("navbar.duel")     },
+    { to: "/leaderboard/global", icon: Trophy,         label: t("navbar.rank")    },
+  ];
+
   return (
     <>
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex justify-between items-center">
+      {/* ───────────────────────────────────────────────────────
+           DESKTOP NAVBAR
+      ─────────────────────────────────────────────────────── */}
+      <nav
+        className="sticky top-0 z-50 border-b"
+        style={{
+          background: "var(--color-surface-950)",
+          borderColor: "var(--color-surface-800)",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+
           {/* Brand */}
           <Link
             to="/dashboard"
-            className="text-2xl font-black text-indigo-600 tracking-tight flex items-center gap-2"
+            className="flex items-center gap-2 flex-shrink-0"
             onClick={() => setOpen(false)}
           >
-            QuizApp
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center gradient-levelup flex-shrink-0"
+            >
+              <Zap size={14} className="text-white" fill="white" />
+            </div>
+            <span
+              className="font-bold text-sm tracking-tight"
+              style={{ color: "var(--color-surface-50)" }}
+            >
+              QuizzApp<span style={{ color: "var(--color-brand-400)" }}> Indo</span>
+            </span>
           </Link>
 
-          {/* === MENU DESKTOP (Hidden di Mobile) === */}
-          <div className="hidden sm:flex items-center gap-1">
-            <Link
-              to="/dashboard"
-              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
-            >
-              <LayoutDashboard size={18} /> {t("navbar.topics")}
-            </Link>
-            <Link
-              to="/classrooms"
-              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
-            >
-              <GraduationCap size={18} /> {t("navbar.classes")}
-            </Link>
-            <Link
-              to="/challenges"
-              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
-            >
-              <Swords size={18} /> {t("navbar.duel")}
-            </Link>
-            <Link
-              to="/leaderboard/global"
-              className="px-3 py-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-slate-50 font-bold transition flex items-center gap-2"
-            >
-              <Trophy size={18} /> {t("navbar.rank")}
-            </Link>
+          {/* Desktop nav links */}
+          <div className="hidden sm:flex items-center gap-0.5 flex-1 justify-center">
+            {navLinks.map(({ to, icon: Icon, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150"
+                style={{ color: "var(--color-surface-400)" }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.color = "var(--color-surface-100)";
+                  e.currentTarget.style.background = "var(--color-surface-800)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.color = "var(--color-surface-400)";
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <Icon size={15} />
+                {label}
+              </Link>
+            ))}
           </div>
 
-          {/* === STATS & PROFIL DESKTOP (Hidden di Mobile) === */}
-          <div className="hidden sm:flex items-center gap-4 border-l pl-4 ml-4">
+          {/* Desktop right: stats + profile */}
+          <div
+            className="hidden sm:flex items-center gap-2 flex-shrink-0 border-l pl-4"
+            style={{ borderColor: "var(--color-surface-800)" }}
+          >
+            {/* Notifications */}
             <Link
               to="/notifications"
-              className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"
+              className="relative p-2 rounded-lg transition-colors duration-150"
+              style={{ color: "var(--color-surface-400)" }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = "var(--color-surface-100)";
+                e.currentTarget.style.background = "var(--color-surface-800)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = "var(--color-surface-400)";
+                e.currentTarget.style.background = "transparent";
+              }}
             >
-              <Bell size={20} />
+              <Bell size={18} />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 ring-2 ring-white text-[10px] font-bold text-white">
+                <span
+                  className="absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                  style={{ background: "var(--color-danger)" }}
+                >
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </Link>
 
-            {/* Desktop Streak */}
+            {/* Streak chip */}
             <div
-              className="relative group cursor-pointer"
+              className="relative"
               onMouseEnter={() => setShowStreak(true)}
               onMouseLeave={() => setShowStreak(false)}
             >
-              <div className="flex items-center gap-1 bg-orange-50 text-orange-600 px-3 py-1 rounded-full text-xs font-bold border border-orange-100 transition hover:bg-orange-100">
-                <Flame
-                  size={14}
-                  fill="currentColor"
-                  className={user?.streak_count > 0 ? "animate-pulse" : ""}
-                />
+              <button
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all border cursor-pointer"
+                style={{
+                  background: user?.streak_count >= 7 ? undefined : "rgb(249 115 22 / 0.10)",
+                  borderColor: "rgb(249 115 22 / 0.25)",
+                  color: "#fb923c",
+                }}
+              >
+                <Flame size={13} fill="currentColor" className={user?.streak_count > 0 ? "animate-pulse" : ""} />
                 {user?.streak_count || 0}
-              </div>
+              </button>
               <AnimatePresence>
                 {showStreak && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full mt-2 right-0"
                   >
                     <StreakHoverCard
                       streakCount={user?.streak_count || 0}
                       activityDates={calendarDates}
-                      missions={missions} // <--- Oper data misi ke sini
+                      missions={missions}
                       onOpenCalendar={() => {
                         setShowStreak(false);
                         setShowFullCalendar(true);
@@ -222,326 +251,346 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            {/* Desktop Level */}
-            <div className="flex items-center gap-1 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold border border-indigo-100">
-              <Star size={14} fill="currentColor" /> Level {user?.level || 1}
-            </div>
-
-            {/* Desktop Coin */}
-            <div className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold border border-yellow-200">
-              <Coins size={14} fill="currentColor" /> {user?.coins || 0}
-            </div>
-
-            {/* Desktop Dropdown */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full hover:bg-slate-50 transition border border-transparent hover:border-slate-100 group"
-              >
-                <div className="text-right hidden lg:block">
-                  <div className="text-sm font-bold text-slate-700 group-hover:text-indigo-700 transition">
-                    {user?.name}
-                  </div>
-                </div>
-                <UserAvatar user={user} size="md" />
-                <ChevronDown
-                  size={16}
-                  className={`text-slate-400 transition-transform duration-200 ${
-                    dropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 animate-scaleIn origin-top-right z-50">
-                  <Link
-                    to={`/@${user?.username}`}
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
-                  >
-                    <User size={16} /> {t("navbar.myProfile")}
-                  </Link>
-                  <Link
-                    to="/friends"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
-                  >
-                    <Users size={16} /> {t("navbar.friends")}
-                  </Link>
-                  <Link
-                    to="/history"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
-                  >
-                    <History size={16} /> {t("navbar.history")}
-                  </Link>
-                  <Link
-                    to="/shop"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
-                  >
-                    <ShoppingBag size={16} /> {t("navbar.shop")}
-                  </Link>
-                  <Link
-                    to="/inventory"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
-                  >
-                    <Package size={16} /> {t("navbar.inventory")}
-                  </Link>
-                  <Link
-                    to="/settings"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
-                  >
-                    <Settings size={16} /> {t("navbar.settings")}
-                  </Link>
-                  <Link
-                    to="/about"
-                    onClick={() => setDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition font-medium"
-                  >
-                    <Info size={16} /> {t("navbar.about")}
-                  </Link>
-                  <div className="h-px bg-slate-100 my-1"></div>
-                  <button
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      setIsLogoutModalOpen(true);
-                    }}
-                    className="w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition font-medium"
-                  >
-                    <LogOut size={16} /> {t("navbar.logout")}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* === STATS & MENU MOBILE === */}
-          <div className="flex items-center gap-2 sm:hidden">
-            {/* 1. Streak */}
-            <button
-              onClick={() => setShowFullCalendar(true)}
-              className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1.5 rounded-lg text-xs font-bold border border-orange-100 active:scale-95 transition"
+            {/* Level chip */}
+            <div
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border"
+              style={{
+                background: "rgb(99 102 241 / 0.10)",
+                borderColor: "rgb(99 102 241 / 0.25)",
+                color: "var(--color-brand-400)",
+              }}
             >
-              <Flame
-                size={13}
-                fill="currentColor"
-                className={user?.streak_count > 0 ? "animate-pulse" : ""}
-              />
-              {user?.streak_count || 0}
-            </button>
-
-            {/* 2. Level Badge (BAGUS / PREMIUM LOOK) */}
-            <div className="flex items-center gap-1 bg-indigo-600 text-white px-2 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-indigo-200 border border-indigo-500">
-              <Star size={12} fill="#fbbf24" className="text-yellow-400" />
-              <span>Level {user?.level || 1}</span>
+              <Star size={12} fill="currentColor" />
+              Lv.{user?.level || 1}
             </div>
 
-            {/* 3. Coin */}
-            <div className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-1.5 rounded-lg text-xs font-bold border border-yellow-200">
-              <Coins size={13} fill="currentColor" />
+            {/* Coins chip */}
+            <div
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border"
+              style={{
+                background: "rgb(245 158 11 / 0.10)",
+                borderColor: "rgb(245 158 11 / 0.25)",
+                color: "#fbbf24",
+              }}
+            >
+              <Coins size={12} fill="currentColor" />
               {user?.coins || 0}
             </div>
 
-            {/* 4. Hamburger */}
+            {/* Profile dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 pl-2 pr-1.5 py-1 rounded-full transition-colors duration-150 border cursor-pointer"
+                style={{
+                  borderColor: dropdownOpen ? "var(--color-brand-500)" : "var(--color-surface-700)",
+                  background: dropdownOpen ? "var(--color-surface-800)" : "transparent",
+                }}
+              >
+                <span
+                  className="text-sm font-semibold hidden lg:block"
+                  style={{ color: "var(--color-surface-200)" }}
+                >
+                  {user?.name}
+                </span>
+                <UserAvatar user={user} size="sm" />
+                <ChevronDown
+                  size={14}
+                  style={{ color: "var(--color-surface-400)" }}
+                  className={clsx("transition-transform duration-200", dropdownOpen && "rotate-180")}
+                />
+              </button>
+
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2 w-52 py-1.5 rounded-xl border z-50"
+                    style={{
+                      background: "var(--color-surface-900)",
+                      borderColor: "var(--color-surface-700)",
+                      boxShadow: "0 8px 32px rgb(0 0 0 / 0.4)",
+                    }}
+                  >
+                    {[
+                      { to: `/@${user?.username}`, icon: User, label: t("navbar.myProfile") },
+                      { to: "/friends",   icon: Users,       label: t("navbar.friends")   },
+                      { to: "/history",   icon: History,     label: t("navbar.history")   },
+                      { to: "/shop",      icon: ShoppingBag, label: t("navbar.shop")      },
+                      { to: "/inventory", icon: Package,     label: t("navbar.inventory") },
+                      { to: "/settings",  icon: Settings,    label: t("navbar.settings")  },
+                      { to: "/about",     icon: Info,        label: t("navbar.about")     },
+                    ].map(({ to, icon: Icon, label }) => (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors"
+                        style={{ color: "var(--color-surface-300)" }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.color = "var(--color-surface-50)";
+                          e.currentTarget.style.background = "var(--color-surface-800)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.color = "var(--color-surface-300)";
+                          e.currentTarget.style.background = "transparent";
+                        }}
+                      >
+                        <Icon size={15} /> {label}
+                      </Link>
+                    ))}
+                    <div
+                      className="h-px my-1"
+                      style={{ background: "var(--color-surface-800)" }}
+                    />
+                    <button
+                      onClick={() => { setDropdownOpen(false); setIsLogoutModalOpen(true); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer border-none bg-transparent"
+                      style={{ color: "var(--color-danger)" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgb(239 68 68 / 0.08)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <LogOut size={15} /> {t("navbar.logout")}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* ── MOBILE: stats + hamburger ── */}
+          <div className="flex items-center gap-1.5 sm:hidden">
             <button
-              className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition relative"
+              onClick={() => setShowFullCalendar(true)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border cursor-pointer"
+              style={{
+                background: "rgb(249 115 22 / 0.10)",
+                borderColor: "rgb(249 115 22 / 0.25)",
+                color: "#fb923c",
+              }}
+            >
+              <Flame size={12} fill="currentColor" className={user?.streak_count > 0 ? "animate-pulse" : ""} />
+              {user?.streak_count || 0}
+            </button>
+            <div
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
+              style={{
+                background: "rgb(99 102 241 / 0.15)",
+                borderColor: "rgb(99 102 241 / 0.30)",
+                color: "var(--color-brand-400)",
+              }}
+            >
+              <Star size={11} fill="currentColor" />
+              Lv.{user?.level || 1}
+            </div>
+            <div
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold border"
+              style={{
+                background: "rgb(245 158 11 / 0.10)",
+                borderColor: "rgb(245 158 11 / 0.25)",
+                color: "#fbbf24",
+              }}
+            >
+              <Coins size={11} fill="currentColor" />
+              {user?.coins || 0}
+            </div>
+            <button
+              className="p-1.5 rounded-lg transition-colors cursor-pointer border-none"
+              style={{
+                color: "var(--color-surface-300)",
+                background: open ? "var(--color-surface-800)" : "transparent",
+              }}
               onClick={() => setOpen(!open)}
             >
-              {open ? <X size={24} /> : <Menu size={24} />}
+              {open ? <X size={22} /> : <Menu size={22} />}
               {!open && unreadCount > 0 && (
-                <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                <span
+                  className="absolute top-1 right-1 h-2 w-2 rounded-full"
+                  style={{ background: "var(--color-danger)" }}
+                />
               )}
             </button>
           </div>
         </div>
 
-        {/* === DRAWER MENU MOBILE (Simple Grid) === */}
-        {open && (
-          <div className="sm:hidden fixed inset-0 top-16 bg-slate-50 z-40 flex flex-col animate-fadeIn">
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
-              {/* Menu Utama */}
-              <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">
-                  {t("navbar.mainMenu")}
-                </h3>
+        {/* ── MOBILE DRAWER ── */}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="sm:hidden fixed inset-0 top-14 z-40 flex flex-col"
+              style={{ background: "var(--color-surface-950)" }}
+            >
+              <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+                {/* Main menu grid */}
+                <div>
+                  <h3
+                    className="text-xs font-bold uppercase mb-3 px-1 tracking-widest"
+                    style={{ color: "var(--color-surface-500)" }}
+                  >
+                    {t("navbar.mainMenu")}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { to: "/dashboard",        icon: LayoutDashboard, label: t("navbar.topics"),  color: "brand"   },
+                      { to: "/challenges",       icon: Swords,          label: t("navbar.duel"),    color: "orange"  },
+                      { to: "/friends",          icon: Users,           label: t("navbar.friends"), color: "pink"    },
+                      { to: "/history",          icon: History,         label: t("navbar.history"), color: "blue"    },
+                      { to: "/classrooms",       icon: GraduationCap,   label: t("navbar.classes"), color: "green"   },
+                      { to: "/leaderboard/global", icon: Trophy,        label: t("navbar.rank"),    color: "yellow"  },
+                    ].map(({ to, icon: Icon, label, color }) => (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => setOpen(false)}
+                        className="p-4 rounded-xl border flex flex-col items-center gap-2 transition active:scale-95"
+                        style={{
+                          background: "var(--color-surface-900)",
+                          borderColor: "var(--color-surface-800)",
+                        }}
+                      >
+                        <div
+                          className="p-2 rounded-lg"
+                          style={{
+                            background: color === "brand"  ? "rgb(99 102 241 / 0.15)"
+                                      : color === "orange" ? "rgb(249 115 22 / 0.15)"
+                                      : color === "pink"   ? "rgb(236 72 153 / 0.15)"
+                                      : color === "blue"   ? "rgb(59 130 246 / 0.15)"
+                                      : color === "green"  ? "rgb(34 197 94 / 0.15)"
+                                      : "rgb(234 179 8 / 0.15)",
+                            color:  color === "brand"  ? "var(--color-brand-400)"
+                                  : color === "orange" ? "#fb923c"
+                                  : color === "pink"   ? "#f472b6"
+                                  : color === "blue"   ? "#60a5fa"
+                                  : color === "green"  ? "#4ade80"
+                                  : "#fbbf24",
+                          }}
+                        >
+                          <Icon size={18} />
+                        </div>
+                        <span
+                          className="text-xs font-bold"
+                          style={{ color: "var(--color-surface-200)" }}
+                        >
+                          {label}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Others */}
+                <div>
+                  <h3
+                    className="text-xs font-bold uppercase mb-3 px-1 tracking-widest"
+                    style={{ color: "var(--color-surface-500)" }}
+                  >
+                    {t("navbar.others")}
+                  </h3>
+                  <div
+                    className="rounded-xl border overflow-hidden"
+                    style={{
+                      background: "var(--color-surface-900)",
+                      borderColor: "var(--color-surface-800)",
+                    }}
+                  >
+                    {[
+                      { to: "/shop",          icon: ShoppingBag, label: t("navbar.itemShop"),      color: "#c084fc" },
+                      { to: "/inventory",     icon: Package,     label: t("navbar.inventory"),      color: "#fbbf24" },
+                      { to: "/notifications", icon: Bell,        label: t("navbar.notifications"),  color: "var(--color-danger)" },
+                      { to: "/about",         icon: Info,        label: t("navbar.about"),           color: "#fbbf24" },
+                    ].map(({ to, icon: Icon, label, color }, i, arr) => (
+                      <Link
+                        key={to}
+                        to={to}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center justify-between px-4 py-3.5 transition"
+                        style={{
+                          borderBottom: i < arr.length - 1 ? "1px solid var(--color-surface-800)" : "none",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "var(--color-surface-800)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon size={16} style={{ color }} />
+                          <span className="text-sm font-semibold" style={{ color: "var(--color-surface-200)" }}>
+                            {label}
+                          </span>
+                        </div>
+                        {to === "/notifications" && unreadCount > 0 && (
+                          <span
+                            className="text-white text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: "var(--color-danger)" }}
+                          >
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile footer: profile */}
+              <div
+                className="border-t p-4"
+                style={{
+                  background: "var(--color-surface-900)",
+                  borderColor: "var(--color-surface-800)",
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <UserAvatar user={user} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate" style={{ color: "var(--color-surface-50)" }}>
+                      {user?.name}
+                    </p>
+                    <p className="text-xs truncate" style={{ color: "var(--color-surface-500)" }}>
+                      @{user?.username}
+                    </p>
+                  </div>
+                  <Link
+                    to="/settings"
+                    onClick={() => setOpen(false)}
+                    className="p-2 rounded-lg transition"
+                    style={{ color: "var(--color-surface-400)", background: "var(--color-surface-800)" }}
+                  >
+                    <Settings size={18} />
+                  </Link>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Link
-                    to="/dashboard"
+                    to={`/@${user?.username}`}
                     onClick={() => setOpen(false)}
-                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-indigo-300 transition active:scale-95"
+                    className="btn-primary justify-center text-sm"
                   >
-                    <div className="bg-indigo-100 p-2 rounded-full text-indigo-600">
-                      <LayoutDashboard size={20} />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.topics")}
-                    </span>
+                    {t("navbar.viewProfile")}
                   </Link>
-                  <Link
-                    to="/challenges"
-                    onClick={() => setOpen(false)}
-                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-orange-300 transition active:scale-95"
+                  <button
+                    onClick={() => { setOpen(false); setIsLogoutModalOpen(true); }}
+                    className="py-2.5 rounded-full text-sm font-semibold border transition cursor-pointer bg-transparent"
+                    style={{
+                      color: "var(--color-danger)",
+                      borderColor: "rgb(239 68 68 / 0.30)",
+                      background: "rgb(239 68 68 / 0.08)",
+                    }}
                   >
-                    <div className="bg-orange-100 p-2 rounded-full text-orange-600">
-                      <Swords size={20} />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.duel")}
-                    </span>
-                  </Link>
-                  <Link
-                    to="/friends"
-                    onClick={() => setOpen(false)}
-                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-pink-300 transition active:scale-95"
-                  >
-                    <div className="bg-pink-100 p-2 rounded-full text-pink-600">
-                      <Users size={20} />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.friends")}
-                    </span>
-                  </Link>
-                  <Link
-                    to="/history"
-                    onClick={() => setOpen(false)}
-                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-blue-300 transition active:scale-95"
-                  >
-                    <div className="bg-blue-100 p-2 rounded-full text-blue-600">
-                      <History size={20} />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.history")}
-                    </span>
-                  </Link>
-                  <Link
-                    to="/classrooms"
-                    onClick={() => setOpen(false)}
-                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-green-300 transition active:scale-95"
-                  >
-                    <div className="bg-green-100 p-2 rounded-full text-green-600">
-                      <GraduationCap size={20} />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.classes")}
-                    </span>
-                  </Link>
-                  <Link
-                    to="/leaderboard/global"
-                    onClick={() => setOpen(false)}
-                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center gap-2 hover:border-yellow-300 transition active:scale-95"
-                  >
-                    <div className="bg-yellow-100 p-2 rounded-full text-yellow-600">
-                      <Trophy size={20} />
-                    </div>
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.rank")}
-                    </span>
-                  </Link>
+                    {t("navbar.logout")}
+                  </button>
                 </div>
               </div>
-
-              {/* Lainnya */}
-              <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 px-1">
-                  {t("navbar.others")}
-                </h3>
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <Link
-                    to="/shop"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100"
-                  >
-                    <ShoppingBag size={18} className="text-purple-500" />{" "}
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.itemShop")}
-                    </span>
-                  </Link>
-                  <Link
-                    to="/inventory"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100"
-                  >
-                    <Package size={18} className="text-amber-500" />{" "}
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.inventory")}
-                    </span>
-                  </Link>
-                  <Link
-                    to="/notifications"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 active:bg-slate-100"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Bell size={18} className="text-red-500" />{" "}
-                      <span className="text-sm font-bold text-slate-700">
-                        {t("navbar.notifications")}
-                      </span>
-                    </div>
-                    {unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link
-                    to="/about"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 hover:bg-slate-50 active:bg-slate-100"
-                  >
-                    <Info size={18} className="text-amber-500" />{" "}
-                    <span className="text-sm font-bold text-slate-700">
-                      {t("navbar.about")}
-                    </span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Profil */}
-            <div className="bg-white border-t border-slate-200 p-4">
-              <div className="flex items-center gap-3 mb-4">
-                <UserAvatar user={user} size="md" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-slate-800 truncate">
-                    {user?.name}
-                  </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    @{user?.username}
-                  </p>
-                </div>
-                <Link
-                  to="/settings"
-                  onClick={() => setOpen(false)}
-                  className="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition"
-                >
-                  <Settings size={20} />
-                </Link>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Link
-                  to={`/@${user?.username}`}
-                  onClick={() => setOpen(false)}
-                  className="py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm text-center hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
-                >
-                  {t("navbar.viewProfile")}
-                </Link>
-                <button
-                  onClick={() => {
-                    setOpen(false);
-                    setIsLogoutModalOpen(true);
-                  }}
-                  className="py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-100 font-bold text-sm text-center hover:bg-red-100 transition"
-                >
-                  {t("navbar.logout")}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
+      {/* Modals — semua preserved */}
       <CalendarModal
         isOpen={showFullCalendar}
         onClose={() => setShowFullCalendar(false)}
@@ -549,38 +598,47 @@ const Navbar = () => {
         currentStreak={user?.streak_count || 0}
       />
 
-      {/* Modal Logout */}
       <Modal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
         maxWidth="max-w-sm"
       >
-        <div className="flex items-center gap-3 text-red-600 mb-4">
-          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-            <AlertTriangle size={24} />
+        <div className="flex items-center gap-3 mb-4" style={{ color: "var(--color-danger)" }}>
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: "rgb(239 68 68 / 0.12)" }}
+          >
+            <AlertTriangle size={22} />
           </div>
-          <h2 className="text-lg font-bold text-slate-800">
+          <h2 className="text-lg font-bold" style={{ color: "var(--color-surface-50)" }}>
             {t("navbar.confirmLogout")}
           </h2>
         </div>
-        <p className="text-slate-600 mb-6 text-sm">{t("navbar.logoutDesc")}</p>
+        <p className="mb-6 text-sm" style={{ color: "var(--color-surface-400)" }}>
+          {t("navbar.logoutDesc")}
+        </p>
         <div className="flex gap-3">
           <button
             onClick={() => setIsLogoutModalOpen(false)}
-            className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition"
+            className="flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer border"
+            style={{
+              background: "var(--color-surface-800)",
+              color: "var(--color-surface-200)",
+              borderColor: "var(--color-surface-700)",
+            }}
           >
             {t("navbar.cancel")}
           </button>
           <button
             onClick={handleLogout}
-            className="flex-1 px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
+            className="flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm text-white transition cursor-pointer border-none"
+            style={{ background: "var(--color-danger)" }}
           >
             {t("navbar.yesLogout")}
           </button>
         </div>
       </Modal>
 
-      {/* Announcement Modal (Global) */}
       <AnnouncementModal
         isOpen={showAnnouncement}
         onClose={handleCloseAnnouncement}
