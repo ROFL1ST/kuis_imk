@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 
 const BRAND = "var(--color-brand-400)";
 const S100  = "var(--color-surface-100)";
+const S200  = "var(--color-surface-200)";
 const S400  = "var(--color-surface-400)";
 const S500  = "var(--color-surface-500)";
 const S600  = "var(--color-surface-600)";
@@ -16,7 +17,7 @@ const S800  = "var(--color-surface-800)";
 const S950  = "var(--color-surface-950, #05050f)";
 
 const ForgotPassword = () => {
-  const [email, setEmail]   = useState("");
+  const [email, setEmail]     = useState("");
   const [loading, setLoading] = useState(false);
   const [isSent, setIsSent]   = useState(false);
 
