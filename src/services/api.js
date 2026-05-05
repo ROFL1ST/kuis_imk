@@ -3,23 +3,32 @@ import axios from "axios";
 /**
  * ═══════════════════════════════════════════════════════════
  *  QuizzApp Indo — Centralized API Client
- *  SECURITY: VITE_API_KEY removed. No secrets in frontend.
- *  All requests go to our own backend via /api proxy.
- *  Backend holds SBERT keys & other third-party secrets.
+ *
+ *  SECURITY ARCHITECTURE:
+ *  Frontend → /api/* → Vercel Proxy (api/proxy.js) → Backend
+ *
+ *  X-API-KEY di-inject oleh Vercel proxy di server-side.
+ *  Frontend tidak menyimpan atau mengirim API key sama sekali.
+ *  API_KEY disimpan di Vercel Environment Variables (bukan VITE_*).
  * ═══════════════════════════════════════════════════════════
  */
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
-  withCredentials: true, // Cookie-based auth
+  /**
+   * Di production (Vercel): /api → Vercel proxy → backend
+   * Di development (local): /api → vite.config.js proxy → localhost:8080
+   * Tidak perlu baseURL absolut — relative URL cukup.
+   */
+  baseURL: "/api",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
-    // NOTE: X-API-KEY removed — never expose secrets in frontend bundle
+    // ❌ X-API-KEY dihapus dari sini
+    // ✅ Vercel proxy (api/proxy.js) yang inject X-API-KEY server-side
   },
 });
 
-// ── Request Interceptor ─────────────────────────────────────────────
-// Attach JWT from localStorage if present (fallback for token-based auth)
+// ── Request Interceptor: Attach JWT jika ada ──────────────────────
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("auth_token");
@@ -31,8 +40,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response Interceptor ────────────────────────────────────────────
-// Redirect to /login on 401 Unauthorized
+// ── Response Interceptor: Redirect ke /login saat 401 ───────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -119,7 +127,7 @@ export const userAPI = {
   getActivityCalendar: () => api.get("/users/activity/calendar"),
 };
 
-// ── Standalone auth helpers (used by individual pages) ───────────────
+// ── Standalone helpers ──────────────────────────────────────────────
 export const updateProfile = async (data) => {
   const response = await api.put("/users/me", data);
   return response.data;
@@ -160,7 +168,7 @@ export const shopAPI = {
   equipItem: (itemId) => api.post("/shop/equip", { item_id: itemId }),
 };
 
-// ── Daily Missions & Login Bonus ──────────────────────────────────────
+// ── Daily Missions ───────────────────────────────────────────────────
 export const dailyAPI = {
   getInfo: () => api.get("/daily/info"),
   claimLogin: () => api.post("/daily/claim-login"),
@@ -174,7 +182,7 @@ export const translationAPI = {
   sync: (data) => api.post("/admin/translations/sync", data),
 };
 
-// ── ASAG Grading (routes via backend, no direct AI key) ───────────────
+// ── ASAG Grading ───────────────────────────────────────────────────
 export const gradingAPI = {
   gradeShortAnswer: (questionId, studentAnswer) =>
     api.post("/grading/asag", { questionId, studentAnswer }),
