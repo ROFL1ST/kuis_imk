@@ -6,7 +6,6 @@ import {
   Trash2, CheckCheck, Clock,
 } from "lucide-react";
 import { notificationAPI } from "../../services/api";
-import { getToken } from "../../services/auth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import Modal from "../../components/ui/Modal";
@@ -50,11 +49,12 @@ const Notifications = () => {
     }
   }, [activeTab]);
 
+  // SSE — gunakan /api/* proxy, X-API-KEY diinject oleh proxy
   useEffect(() => {
-    const eventSource = new EventSourcePolyfill(
-      `${import.meta.env.VITE_API_URL}/notifications/stream`,
-      { headers: { "X-API-KEY": import.meta.env.VITE_API_KEY }, withCredentials: true, heartbeatTimeout: 120000 }
-    );
+    const eventSource = new EventSourcePolyfill("/api/notifications/stream", {
+      withCredentials: true,
+      heartbeatTimeout: 120000,
+    });
     eventSource.onmessage = (event) => {
       if (event.data === ":keepalive") return;
       try {
@@ -64,7 +64,7 @@ const Notifications = () => {
       } catch (err) { console.error(err); }
     };
     eventSource.onerror = () => eventSource.close();
-    return () => { eventSource.close(); document.cookie = "token=; path=/; max-age=0"; };
+    return () => { eventSource.close(); };
   }, []);
 
   const handleMarkRead = async (id, link) => {
@@ -97,7 +97,6 @@ const Notifications = () => {
     finally { setConfirmModal({ isOpen: false }); }
   };
 
-  /* ── Style helpers ─────────────────────────────────────── */
   const getStyle = (type) => {
     switch (type) {
       case "success": return {
@@ -138,7 +137,6 @@ const Notifications = () => {
     return `${Math.floor(diff / 86400)}${t("notifications.time.dAgo")}`;
   };
 
-  /* ── Skeleton ─────────────────────────────────────────── */
   if (loading) return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
       <div className="flex justify-between items-center">
@@ -167,7 +165,6 @@ const Notifications = () => {
     </div>
   );
 
-  /* ── Main ─────────────────────────────────────────────── */
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -176,8 +173,6 @@ const Notifications = () => {
     >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-
-        {/* Title */}
         <div className="flex items-center gap-3">
           <div
             className="p-2 rounded-xl shrink-0"
@@ -195,7 +190,6 @@ const Notifications = () => {
           </div>
         </div>
 
-        {/* Tabs */}
         <div
           className="flex p-1 rounded-xl"
           style={{ background: "var(--color-surface-800)" }}
@@ -230,7 +224,6 @@ const Notifications = () => {
           </button>
         </div>
 
-        {/* Action Buttons */}
         {activeTab === "notifications" && notifs.length > 0 && (
           <div className="flex items-center gap-2 self-start md:self-auto w-full md:w-auto">
             <button
@@ -257,7 +250,6 @@ const Notifications = () => {
         )}
       </div>
 
-      {/* Notification List */}
       {activeTab === "notifications" ? (
         <div className="space-y-2">
           {notifs.length === 0 ? (
@@ -299,15 +291,12 @@ const Notifications = () => {
                     style={n.is_read ? readStyle : style.bg}
                   >
                     <div className="flex gap-3 md:gap-4">
-                      {/* Icon */}
                       <div
                         className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5"
                         style={n.is_read ? { background: "var(--color-surface-800)", filter: "grayscale(1)", opacity: 0.5 } : style.iconBox}
                       >
                         {style.icon}
                       </div>
-
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
                           <h4
@@ -354,7 +343,6 @@ const Notifications = () => {
           )}
         </div>
       ) : (
-        /* Broadcast List */
         <div className="space-y-3">
           {announcements.length === 0 ? (
             <div
@@ -383,7 +371,6 @@ const Notifications = () => {
                   className="p-5 rounded-2xl relative overflow-hidden"
                   style={{ background: "var(--color-surface-900)", border: `1px solid ${style.stripe}30` }}
                 >
-                  {/* Left stripe accent */}
                   <div
                     className="absolute top-0 left-0 w-1 h-full rounded-l-2xl"
                     style={{ background: style.stripe }}
@@ -422,7 +409,6 @@ const Notifications = () => {
         </div>
       )}
 
-      {/* Confirm Delete Modal */}
       <Modal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false })}

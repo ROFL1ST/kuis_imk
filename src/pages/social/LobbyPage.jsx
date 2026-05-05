@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { socialAPI } from "../../services/api";
-import { getToken } from "../../services/auth";
 import { useLanguage } from "../../context/LanguageContext";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import toast from "react-hot-toast";
@@ -66,12 +65,10 @@ const LobbyPage = () => {
     getCode();
   }, [id]);
 
-  // SSE
+  // SSE — gunakan /api/* proxy, X-API-KEY diinject oleh proxy
   useEffect(() => {
     if (!id) return;
-    const sseUrl = `${import.meta.env.VITE_API_URL}/challenges/${id}/lobby-stream`;
-    const eventSource = new EventSourcePolyfill(sseUrl, {
-      headers: { "X-API-KEY": import.meta.env.VITE_API_KEY },
+    const eventSource = new EventSourcePolyfill(`/api/challenges/${id}/lobby-stream`, {
       withCredentials: true,
       heartbeatTimeout: 120000,
     });
@@ -171,7 +168,6 @@ const LobbyPage = () => {
   /* ── Skeleton ────────────────────────────────────────── */
   if (loading || isSyncing) return (
     <div className="min-h-screen pb-24" style={{ background: "var(--color-surface-950)" }}>
-      {/* Sticky top bar */}
       <div className="sticky top-0 z-10 px-4 py-4" style={{ background: "var(--color-surface-950)", borderBottom: "1px solid var(--color-surface-800)" }}>
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Skeleton className="w-10 h-10 rounded-xl" />
@@ -252,7 +248,6 @@ const LobbyPage = () => {
             boxShadow: "0 8px 32px rgb(99 102 241 / 0.30)",
           }}
         >
-          {/* deco */}
           <Gamepad2 size={110} className="absolute -bottom-4 -right-4 rotate-12" style={{ color: "rgb(255 255 255 / 0.08)" }} />
           <Users size={90} className="absolute -top-4 -left-4 -rotate-12" style={{ color: "rgb(255 255 255 / 0.06)" }} />
 
@@ -466,7 +461,6 @@ const LobbyPage = () => {
                 style={{ background: "var(--color-surface-900)", border: "1px solid var(--color-surface-800)" }}
               >
                 <div className="flex items-center gap-3">
-                  {/* Avatar */}
                   <div
                     className="w-10 h-10 rounded-full font-black flex items-center justify-center relative shrink-0"
                     style={{
@@ -487,7 +481,6 @@ const LobbyPage = () => {
                   </div>
                 </div>
 
-                {/* Status Badge */}
                 {p.status === "accepted" ? (
                   p.is_finished ? (
                     <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-lg" style={{ background: "rgb(59 130 246 / 0.12)", color: "#60a5fa" }}>
