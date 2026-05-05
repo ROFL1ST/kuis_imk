@@ -34,6 +34,7 @@ import Shop from "./pages/shop/Shop";
 import Inventory from "./pages/shop/Inventory";
 import Community from "./pages/community/Community";
 import LandingPage from "./pages/landing/LandingPage";
+import { getUser } from "./services/auth";
 
 // Dark toast style constants
 const TOAST_STYLE = {
@@ -53,6 +54,16 @@ const MainLayout = ({ children }) => (
     <div className="container mx-auto px-4 py-8">{children}</div>
   </>
 );
+
+/**
+ * RootRedirect:
+ * - Jika ada data user di localStorage (pernah login sebelumnya) → /login
+ * - Jika belum pernah login sama sekali (pengunjung baru) → LandingPage
+ */
+const RootRedirect = () => {
+  const hasVisited = !!getUser();
+  return hasVisited ? <Navigate to="/login" replace /> : <LandingPage />;
+};
 
 function App() {
   return (
@@ -80,7 +91,7 @@ function App() {
         />
         <EmailAlert />
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
