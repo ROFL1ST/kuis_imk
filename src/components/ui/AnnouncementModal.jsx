@@ -1,138 +1,125 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
-import { Megaphone, X, Info, AlertTriangle, CheckCircle } from "lucide-react";
-import { useLanguage } from "../../context/LanguageContext";
+// src/components/ui/AnnouncementModal.jsx
 
-export default function AnnouncementModal({ isOpen, onClose, announcement }) {
-  const { t, language } = useLanguage();
+import { motion, AnimatePresence } from "framer-motion";
+import { Megaphone, X, ExternalLink } from "lucide-react";
+
+const AnnouncementModal = ({ isOpen, onClose, announcement }) => {
   if (!announcement) return null;
 
-  const getStyle = (type) => {
-    switch (type) {
-      case "success":
-        return {
-          icon: <CheckCircle size={32} className="text-white animate-pulse" />,
-          bg: "from-green-500 to-green-600",
-          shadow: "shadow-green-200",
-          btn: "bg-green-600 hover:bg-green-700 shadow-green-200",
-        };
-      case "warning":
-        return {
-          icon: (
-            <AlertTriangle size={32} className="text-white animate-pulse" />
-          ),
-          bg: "from-orange-500 to-orange-600",
-          shadow: "shadow-orange-200",
-          btn: "bg-orange-600 hover:bg-orange-700 shadow-orange-200",
-        };
-      case "danger":
-        return {
-          icon: <Megaphone size={32} className="text-white animate-pulse" />,
-          bg: "from-red-500 to-red-600",
-          shadow: "shadow-red-200",
-          btn: "bg-red-600 hover:bg-red-700 shadow-red-200",
-        };
-      default:
-        return {
-          icon: <Megaphone size={32} className="text-white animate-pulse" />,
-          bg: "from-indigo-500 to-indigo-600",
-          shadow: "shadow-indigo-200",
-          btn: "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200",
-        };
-    }
-  };
-
-  const style = getStyle(announcement.type || "info");
-
-  // Localize date
-  const localeMap = {
-    id: "id-ID",
-    en: "en-US",
-    jp: "ja-JP",
-  };
-  const currentLocale = localeMap[language] || "id-ID";
-
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)" }}
+          onClick={onClose}
         >
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-        </Transition.Child>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", bounce: 0.3 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl overflow-hidden border"
+            style={{
+              background: "var(--color-surface-900)",
+              borderColor: "var(--color-surface-700)",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+            }}
+          >
+            {/* Accent bar */}
+            <div
+              className="h-1 w-full"
+              style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa, #38bdf8)" }}
+            />
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
+            {/* Header */}
+            <div
+              className="flex items-center justify-between p-5 border-b"
+              style={{ borderColor: "var(--color-surface-800)" }}
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all border border-slate-100 relative">
-                <button
-                  onClick={onClose}
-                  className="absolute top-4 right-4 p-1 rounded-full text-slate-400 hover:bg-slate-100 transition"
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: "rgb(99 102 241 / 0.15)", color: "#818cf8" }}
                 >
-                  <X size={20} />
-                </button>
-
-                <div className="flex flex-col items-center text-center">
-                  <div
-                    className={`w-16 h-16 bg-gradient-to-tr ${style.bg} rounded-full flex items-center justify-center mb-4 shadow-lg ${style.shadow}`}
-                  >
-                    {style.icon}
-                  </div>
-
-                  <Dialog.Title
-                    as="h3"
-                    className="text-xl font-bold leading-6 text-slate-800"
-                  >
-                    {announcement.title}
-                  </Dialog.Title>
-
-                  <div className="mt-3">
-                    <p className="text-sm text-slate-500 leading-relaxed">
-                      {announcement.content}
-                    </p>
-                  </div>
-
-                  <div className="mt-6 w-full">
-                    <button
-                      type="button"
-                      className={`inline-flex w-full justify-center rounded-xl border border-transparent px-4 py-3 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 transition shadow-lg ${style.btn}`}
-                      onClick={onClose}
-                    >
-                      {t("modals.understand")}
-                    </button>
-                  </div>
-
-                  <p className="text-[10px] text-slate-400 mt-4">
-                    {new Date(announcement.CreatedAt).toLocaleDateString(
-                      currentLocale,
-                      {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      }
-                    )}
+                  <Megaphone size={17} />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm" style={{ color: "var(--color-surface-50)" }}>
+                    {announcement.title || "Pengumuman"}
+                  </h3>
+                  <p className="text-[10px]" style={{ color: "var(--color-surface-500)" }}>
+                    {announcement.date || ""}
                   </p>
                 </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer border"
+                style={{
+                  background: "var(--color-surface-800)",
+                  borderColor: "var(--color-surface-700)",
+                  color: "var(--color-surface-400)",
+                }}
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5">
+              {announcement.image && (
+                <img
+                  src={announcement.image}
+                  alt="announcement"
+                  className="w-full rounded-xl mb-4 object-cover max-h-48"
+                  style={{ border: "1px solid var(--color-surface-700)" }}
+                />
+              )}
+              <p
+                className="text-sm leading-relaxed font-medium mb-5"
+                style={{ color: "var(--color-surface-300)" }}
+              >
+                {announcement.content}
+              </p>
+
+              <div className="flex gap-2">
+                {announcement.link && (
+                  <a
+                    href={announcement.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-3 rounded-xl font-black text-white flex items-center justify-center gap-2"
+                    style={{
+                      background: "linear-gradient(135deg, #6366f1, #818cf8)",
+                      boxShadow: "0 8px 24px rgb(99 102 241 / 0.25)",
+                    }}
+                  >
+                    <ExternalLink size={15} /> Selengkapnya
+                  </a>
+                )}
+                <button
+                  onClick={onClose}
+                  className="flex-1 py-3 rounded-xl font-bold cursor-pointer border"
+                  style={{
+                    background: "var(--color-surface-800)",
+                    borderColor: "var(--color-surface-700)",
+                    color: "var(--color-surface-300)",
+                  }}
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
-}
+};
+
+export default AnnouncementModal;
