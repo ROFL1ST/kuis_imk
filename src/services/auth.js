@@ -3,6 +3,7 @@ export const getToken = () => null; // Deprecated
 export const setToken = () => {}; // Deprecated
 export const removeToken = () => {
   localStorage.removeItem("user");
+  
 };
 export const getUser = () => {
   const user = localStorage.getItem("user");

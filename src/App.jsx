@@ -35,6 +35,7 @@ import Inventory from "./pages/shop/Inventory";
 import Community from "./pages/community/Community";
 import LandingPage from "./pages/landing/LandingPage";
 import { getUser } from "./services/auth";
+import { useEffect } from "react";
 
 // Dark toast style constants
 const TOAST_STYLE = {
@@ -62,10 +63,15 @@ const MainLayout = ({ children }) => (
  */
 const RootRedirect = () => {
   const hasVisited = !!getUser();
+  console.log(hasVisited);
   return hasVisited ? <Navigate to="/login" replace /> : <LandingPage />;
 };
 
+
 function App() {
+  useEffect(() => {
+    RootRedirect()
+  }, [])
   return (
     <BrowserRouter>
       <AuthProvider>

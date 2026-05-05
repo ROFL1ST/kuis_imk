@@ -1073,7 +1073,7 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
                         color: feedbackData.score >= 70 ? "#4ade80" : "#f87171",
                       }}
                     >
-                      <div className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">AI Grading Score</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest opacity-90 mb-0.5">AI Grading Score</div>
                       <div className="text-4xl font-black tracking-tighter mb-1">{feedbackData.score.toFixed(0)}</div>
                       <div className="text-xs italic opacity-80 leading-relaxed border-t border-current/20 pt-2">"{feedbackData.text}"</div>
                     </motion.div>
