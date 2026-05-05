@@ -1,383 +1,307 @@
+// src/pages/dashboard/History.jsx
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
-  Clock,
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
-  Swords,
-  History as HistoryIcon,
-  BarChart3,
-  Timer,
-  Loader2,
-  BrainCircuit,
+  Clock, Calendar, CheckCircle2, ChevronRight, Swords,
+  History as HistoryIcon, BarChart3, Timer, Loader2, BrainCircuit,
 } from "lucide-react";
 import { quizAPI } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import Skeleton from "../../components/ui/Skeleton";
 import { useLanguage } from "../../context/LanguageContext";
+import { motion } from "framer-motion";
+
+/* ── CSS var shortcuts ── */
+const BRAND = "var(--color-brand-400)";
+const S50   = "var(--color-surface-50)";
+const S100  = "var(--color-surface-100)";
+const S200  = "var(--color-surface-200)";
+const S300  = "var(--color-surface-300)";
+const S400  = "var(--color-surface-400)";
+const S500  = "var(--color-surface-500)";
+const S600  = "var(--color-surface-600)";
+const S700  = "var(--color-surface-700)";
+const S800  = "var(--color-surface-800)";
+const S900  = "var(--color-surface-900)";
+
+/* ── type color map ── */
+const TYPE = {
+  duel:     { accent: "#fb923c", bg: "rgb(249 115 22 / 0.10)", border: "rgb(249 115 22 / 0.25)", bar: "#f97316", label: "DUEL" },
+  survival: { accent: "#a78bfa", bg: "rgb(167 139 250 / 0.10)", border: "rgb(167 139 250 / 0.25)", bar: "#8b5cf6", label: "SURVIVAL" },
+  remedial: { accent: "#f87171", bg: "rgb(239 68 68 / 0.10)",  border: "rgb(239 68 68 / 0.25)",  bar: "#ef4444", label: "REMEDIAL" },
+  pass:     { accent: "#4ade80", bg: "rgb(34 197 94 / 0.08)",  border: "rgb(34 197 94 / 0.18)",  bar: "#22c55e", label: "" },
+  fail:     { accent: "#f87171", bg: "rgb(239 68 68 / 0.08)",  border: "rgb(239 68 68 / 0.18)",  bar: "#ef4444", label: "" },
+};
 
 const History = () => {
-  const { t } = useLanguage();
-  const [histories, setHistories] = useState([]);
-  const [stats, setStats] = useState({ total_quiz: 0, average_score: 0 }); // State untuk statistik
+  const { t }      = useLanguage();
+  const navigate   = useNavigate();
+  const observer   = useRef();
 
-  const [loading, setLoading] = useState(false);
+  const [histories, setHistories]         = useState([]);
+  const [stats, setStats]                 = useState({ total_quiz: 0, average_score: 0 });
+  const [loading, setLoading]             = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-
-  // State Pagination
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage]                   = useState(1);
+  const [hasMore, setHasMore]             = useState(true);
   const limit = 10;
 
-  const navigate = useNavigate();
-  const observer = useRef();
-
-  useEffect(() => {
-    document.title = "History | QuizApp";
-  }, []);
-
-  useEffect(() => {
-    fetchHistory(page);
-  }, [page]);
+  useEffect(() => { document.title = "History | QuizApp"; }, []);
+  useEffect(() => { fetchHistory(page); }, [page]);
 
   const fetchHistory = async (pageNum) => {
     setLoading(true);
     try {
       const res = await quizAPI.getMyHistory(pageNum, limit);
-
-      // [PENTING] Struktur baru dari Backend (Utils Response)
-      // res.data.data berisi { list: [...], stats: {...} }
       const { list, stats: serverStats } = res.data.data;
       const meta = res.data.meta || {};
-
-      setHistories((prev) => {
-        return pageNum === 1 ? list : [...prev, ...list];
-      });
-
-      // Update stats hanya saat load halaman pertama agar konsisten
-      if (pageNum === 1 && serverStats) {
-        setStats(serverStats);
-      }
-
-      // Cek apakah masih ada data berikutnya
-      if (list.length < limit || meta.current_page >= meta.total_pages) {
-        setHasMore(false);
-      }
-    } catch (err) {
-      console.error("Gagal load history:", err);
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
-    }
+      setHistories(prev => pageNum === 1 ? list : [...prev, ...list]);
+      if (pageNum === 1 && serverStats) setStats(serverStats);
+      if (list.length < limit || meta.current_page >= meta.total_pages) setHasMore(false);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); setInitialLoading(false); }
   };
 
-  // Logic Infinite Scroll (Intersection Observer)
-  const lastHistoryElementRef = useCallback(
-    (node) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
+  const lastHistoryElementRef = useCallback((node) => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) setPage(p => p + 1);
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
 
-      observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setPage((prevPage) => prevPage + 1);
-        }
-      });
-
-      if (node) observer.current.observe(node);
-    },
-    [loading, hasMore]
-  );
-
-  const goToReview = (historyId) => {
-    navigate(`/history/review/${historyId}`);
-  };
+  const goToReview = (id) => navigate(`/history/review/${id}`);
 
   const formatDuration = (seconds) => {
     if (!seconds && seconds !== 0) return "-";
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    if (m === 0) return `${s}s`;
-    return `${m}m ${s}s`;
+    return m === 0 ? `${s}s` : `${m}m ${s}s`;
   };
 
-  if (initialLoading) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* Title Skeleton */}
-        <Skeleton className="h-10 w-48 mb-6" />
+  const getType = (item) => {
+    if (item.quiz_title.includes("[DUEL]"))         return "duel";
+    if (item.quiz_title.includes("Smart Remedial")) return "remedial";
+    if (item.quiz_id === 0)                          return "survival";
+    return item.score >= 70 ? "pass" : "fail";
+  };
 
-        {/* Stats Summary (Kotak-kotak di atas biasanya) */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl hidden md:block" />
-        </div>
-
-        {/* List History Items */}
-        <div className="space-y-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                {/* Icon/Score Badge */}
-                <Skeleton className="w-14 h-14 rounded-xl" />
-                <div className="space-y-2">
-                  {/* Quiz Title */}
-                  <Skeleton className="h-5 w-48" />
-                  {/* Date/Time */}
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </div>
-              {/* Arrow/Action */}
-              <Skeleton className="w-8 h-8 rounded-full" />
-            </div>
-          ))}
-        </div>
+  /* ───────────── SKELETON ───────────── */
+  if (initialLoading) return (
+    <div className="max-w-4xl mx-auto px-4 py-8 pb-24 space-y-6">
+      <Skeleton className="h-36 w-full rounded-3xl" />
+      <div className="grid grid-cols-2 gap-3">
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-24 rounded-2xl" />
       </div>
-    );
-  }
+      <div className="space-y-3">
+        {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+      </div>
+    </div>
+  );
 
+  /* ───────────── RENDER ───────────── */
   return (
-    <div className="max-w-5xl mx-auto pb-12 space-y-8">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-            <HistoryIcon className="text-indigo-600" /> {t("history.title")}
-          </h1>
-          <p className="text-slate-500 mt-1">{t("history.subtitle")}</p>
-        </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-4xl mx-auto pb-24 px-4"
+    >
 
-        {/* Stats Card (Menggunakan Data dari Backend) */}
-        {!initialLoading && (
+      {/* ═══ HEADER BANNER ═══ */}
+      <div
+        className="w-full rounded-3xl p-6 md:p-8 mb-6 relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)" }}
+      >
+        <div style={{ position:"absolute", top:"-50px", right:"-40px", width:"220px", height:"220px", borderRadius:"50%", background:"rgb(99 102 241 / 0.18)", filter:"blur(50px)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:"-20px", left:"20px", width:"140px", height:"140px", borderRadius:"50%", background:"rgb(168 85 247 / 0.12)", filter:"blur(30px)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(circle, rgb(255 255 255 / 0.04) 1px, transparent 1px)", backgroundSize:"24px 24px", pointerEvents:"none" }} />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black flex items-center gap-3" style={{ color: "#fff" }}>
+              <span className="p-2 rounded-xl" style={{ background: "rgb(255 255 255 / 0.12)" }}>
+                <HistoryIcon size={22} style={{ color: "#c7d2fe" }} />
+              </span>
+              {t("history.title")}
+            </h1>
+            <p className="mt-1.5 text-sm" style={{ color: "rgb(199 210 254 / 0.75)" }}>{t("history.subtitle")}</p>
+          </div>
+
+          {/* Stat chips */}
           <div className="flex gap-3">
-            <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-              <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                <CheckCircle2 size={18} />
-              </div>
+            <div
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+              style={{ background: "rgb(255 255 255 / 0.08)", border: "1px solid rgb(255 255 255 / 0.12)" }}
+            >
+              <span className="p-2 rounded-xl" style={{ background: "rgb(99 102 241 / 0.20)", color: "#a5b4fc" }}>
+                <CheckCircle2 size={16} />
+              </span>
               <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  {t("history.totalQuiz")}
-                </p>
-                <p className="text-sm font-bold text-slate-800">
-                  {stats.total_quiz} Kuis
-                </p>
+                <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: "rgb(199 210 254 / 0.6)" }}>{t("history.totalQuiz")}</p>
+                <p className="text-lg font-black leading-tight" style={{ color: "#e0e7ff" }}>{stats.total_quiz}</p>
               </div>
             </div>
-            <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-              <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
-                <BarChart3 size={18} />
-              </div>
+            <div
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+              style={{ background: "rgb(255 255 255 / 0.08)", border: "1px solid rgb(255 255 255 / 0.12)" }}
+            >
+              <span className="p-2 rounded-xl" style={{ background: "rgb(52 211 153 / 0.20)", color: "#6ee7b7" }}>
+                <BarChart3 size={16} />
+              </span>
               <div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                  {t("history.averageScore")}
-                </p>
-                <p className="text-sm font-bold text-slate-800">
-                  {stats.average_score}
-                </p>
+                <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: "rgb(199 210 254 / 0.6)" }}>{t("history.averageScore")}</p>
+                <p className="text-lg font-black leading-tight" style={{ color: "#e0e7ff" }}>{stats.average_score}</p>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* CONTENT */}
-      {initialLoading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-4"></div>
-          <p className="text-slate-500 text-sm font-medium">
-            {t("history.loading")}
-          </p>
-        </div>
-      ) : histories.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-slate-300">
-          <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-            <Clock size={40} />
+      {/* ═══ CONTENT ═══ */}
+      {histories.length === 0 ? (
+        <div
+          className="text-center py-20 rounded-3xl"
+          style={{ background: S900, border: `1px dashed ${S700}` }}
+        >
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ background: S800, color: S700 }}
+          >
+            <Clock size={36} />
           </div>
-          <h3 className="text-lg font-bold text-slate-700">
-            {t("history.empty")}
-          </h3>
-          <p className="text-slate-500 max-w-xs mx-auto mt-1">
-            {t("history.emptyDesc")}
-          </p>
+          <h3 className="text-base font-black mb-1" style={{ color: S300 }}>{t("history.empty")}</h3>
+          <p className="text-sm" style={{ color: S600 }}>{t("history.emptyDesc")}</p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-3">
           {histories.map((item, index) => {
-            const isDuel = item.quiz_title.includes("[DUEL]");
-            const isRemedial = item.quiz_title.includes("Smart Remedial");
+            const type       = getType(item);
+            const cfg        = TYPE[type];
             const cleanTitle = item.quiz_title.replace("[DUEL]", "").trim();
-            const isSurvival = item.quiz_id === 0 && !isRemedial; // Ensure remedial doesn't overlap if id=0
-            const isPass = isSurvival ? item.score > 0 : item.score >= 70;
-            const isLastElement = index === histories.length - 1;
+            const isLast     = index === histories.length - 1;
 
             return (
-              <div
+              <motion.div
                 key={`${item.ID}-${index}`}
-                ref={isLastElement ? lastHistoryElementRef : null}
+                ref={isLast ? lastHistoryElementRef : null}
+                initial={{ y: 8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: Math.min(index * 0.04, 0.3) }}
                 onClick={() => goToReview(item.ID)}
-                className={`group relative overflow-hidden p-5 rounded-2xl border shadow-sm hover:shadow-lg transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 
-                  ${
-                    isDuel
-                      ? "bg-gradient-to-r from-orange-50/80 to-white border-orange-200 hover:border-orange-300"
-                      : isSurvival
-                      ? "bg-gradient-to-r from-purple-50/80 to-white border-purple-200 hover:border-purple-300"
-                      : isRemedial
-                      ? "bg-gradient-to-r from-rose-50/80 to-white border-rose-200 hover:border-rose-300"
-                      : "bg-white border-slate-200 hover:border-indigo-200"
-                  }`}
+                className="group relative overflow-hidden rounded-2xl cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 transition-all"
+                style={{
+                  background: S900,
+                  border: `1px solid ${S800}`,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = cfg.border; e.currentTarget.style.background = cfg.bg; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = S800; e.currentTarget.style.background = S900; }}
               >
-                {/* Visual Tambahan untuk Duel / Survival / Remedial */}
-                {isDuel ? (
-                  <>
-                    <div className="absolute -right-6 -bottom-6 text-orange-500/10 rotate-12 pointer-events-none">
-                      <Swords size={100} strokeWidth={1.5} />
-                    </div>
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-400"></div>
-                  </>
-                ) : isSurvival ? (
-                  <>
-                    <div className="absolute -right-6 -bottom-6 text-purple-500/10 rotate-12 pointer-events-none">
-                      <Swords size={100} strokeWidth={1.5} />
-                    </div>
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-400"></div>
-                  </>
-                ) : isRemedial ? (
-                  <>
-                    <div className="absolute -right-6 -bottom-6 text-rose-500/10 rotate-12 pointer-events-none">
-                      <BrainCircuit size={100} strokeWidth={1.5} />
-                    </div>
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-400"></div>
-                  </>
-                ) : (
-                  <div
-                    className={`absolute left-0 top-0 bottom-0 w-1.5 ${
-                      isPass ? "bg-emerald-500" : "bg-red-400"
-                    }`}
-                  ></div>
-                )}
+                {/* Left accent bar */}
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1"
+                  style={{ background: cfg.bar, borderRadius: "0 0 0 0" }}
+                />
 
-                <div className="flex items-start gap-4 pl-2 w-full sm:w-auto z-10">
-                  {/* Score Badge */}
+                {/* Background icon */}
+                <div
+                  className="absolute -right-4 -bottom-4 pointer-events-none opacity-5"
+                  style={{ color: cfg.accent }}
+                >
+                  {type === "duel" || type === "survival"
+                    ? <Swords size={90} strokeWidth={1.5} />
+                    : type === "remedial"
+                    ? <BrainCircuit size={90} strokeWidth={1.5} />
+                    : null
+                  }
+                </div>
+
+                <div className="flex items-start gap-4 pl-3 w-full sm:w-auto z-10">
+
+                  {/* Score badge */}
                   <div
-                    className={`
-                    w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 border-2 shadow-sm
-                    ${
-                      isDuel
-                        ? "bg-white border-orange-100 text-orange-600"
-                        : isSurvival
-                        ? "bg-white border-purple-100 text-purple-600"
-                        : isRemedial
-                        ? "bg-white border-rose-100 text-rose-500"
-                        : isPass
-                        ? "bg-emerald-50 border-emerald-100 text-emerald-600"
-                        : "bg-red-50 border-red-100 text-red-500"
-                    }
-                  `}
+                    className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0"
+                    style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, color: cfg.accent }}
                   >
-                    <span className="font-extrabold text-xl leading-none">
-                      {item.score}
+                    <span className="font-black text-xl leading-none">{item.score}</span>
+                    <span className="text-[9px] font-black uppercase mt-0.5" style={{ opacity: 0.75 }}>
+                      {type === "survival" ? t("history.rounds") : (type === "pass" ? t("history.passed") : type === "fail" ? t("history.failed") : type.toUpperCase())}
                     </span>
-                    {isDuel ? (
-                      <Swords size={12} className="mt-0.5 opacity-60" />
-                    ) : isSurvival ? (
-                      <span className="text-[9px] font-bold uppercase mt-0.5 opacity-80">
-                        {t("history.rounds")}
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-bold uppercase mt-0.5 opacity-80">
-                        {isPass ? t("history.passed") : t("history.failed")}
-                      </span>
-                    )}
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      {isDuel && (
-                        <span className="bg-orange-500 text-white px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                          <Swords size={10} /> {t("history.duelMode")}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      {(type === "duel" || type === "survival" || type === "remedial") && (
+                        <span
+                          className="text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider"
+                          style={{ background: cfg.bg, color: cfg.accent, border: `1px solid ${cfg.border}` }}
+                        >
+                          {cfg.label}
                         </span>
                       )}
-                      <h3
-                        className={`text-lg font-bold transition-colors line-clamp-1 ${
-                          isDuel
-                            ? "text-slate-900"
-                            : "text-slate-800 group-hover:text-indigo-600"
-                        }`}
-                      >
-                        {cleanTitle}
-                      </h3>
+                      <h3 className="font-black text-base truncate" style={{ color: S100 }}>{cleanTitle}</h3>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500 mt-2">
-                      <span className="flex items-center gap-1.5 text-xs font-medium bg-white/60 px-2 py-1 rounded-md border border-slate-200/50">
-                        <Calendar size={12} className="text-slate-400" />
-                        {new Date(item.CreatedAt).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-
+                    <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md border 
-                        ${
-                          isDuel
-                            ? "bg-orange-100/50 text-orange-700 border-orange-200/50"
-                            : "bg-indigo-50 text-indigo-600 border-indigo-100"
-                        }`}
+                        className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-lg"
+                        style={{ background: S800, color: S400, border: `1px solid ${S700}` }}
                       >
-                        <Timer size={12} /> {formatDuration(item.time_taken)}
+                        <Calendar size={11} />
+                        {new Date(item.CreatedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                      </span>
+                      <span
+                        className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-lg"
+                        style={{ background: S800, color: S400, border: `1px solid ${S700}` }}
+                      >
+                        <Timer size={11} /> {formatDuration(item.time_taken)}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center self-end sm:self-center z-10">
+                {/* Review arrow */}
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center z-10">
                   <span
-                    className={`text-xs font-bold mr-2 transition-colors uppercase tracking-wide hidden sm:block ${
-                      isDuel
-                        ? "text-orange-400 group-hover:text-orange-600"
-                        : "text-slate-400 group-hover:text-indigo-600"
-                    }`}
+                    className="text-xs font-black uppercase tracking-wide hidden sm:block transition-colors"
+                    style={{ color: S600 }}
                   >
                     Review
                   </span>
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm
-                        ${
-                          isDuel
-                            ? "bg-white text-orange-400 group-hover:bg-orange-500 group-hover:text-white"
-                            : "bg-slate-100 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white"
-                        }`}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                    style={{ background: S800, color: S500 }}
+                    onMouseEnter={e => { e.currentTarget.style.background = cfg.bar; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = S800; e.currentTarget.style.color = S500; }}
                   >
                     <ChevronRight size={16} />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-          {/* Loader saat Fetching Data Baru */}
+
+          {/* Load more indicator */}
           {loading && (
-            <div className="py-4 flex justify-center items-center text-slate-400 gap-2">
-              <Loader2 className="animate-spin" size={20} />
-              <span className="text-sm font-medium">
-                Memuat lebih banyak...
-              </span>
+            <div className="py-4 flex justify-center items-center gap-2" style={{ color: S500 }}>
+              <Loader2 className="animate-spin" size={18} />
+              <span className="text-sm font-black">Memuat lebih banyak...</span>
             </div>
           )}
-          {/* Tanda sudah habis */}
+
+          {/* End of list */}
           {!hasMore && histories.length > 0 && (
-            <div className="py-6 text-center text-slate-400 text-xs font-medium border-t border-dashed border-slate-200 mt-4">
+            <div
+              className="py-5 text-center text-xs font-black"
+              style={{ color: S700, borderTop: `1px dashed ${S800}`, marginTop: "0.5rem" }}
+            >
               Semua riwayat telah ditampilkan
             </div>
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

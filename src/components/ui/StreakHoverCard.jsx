@@ -30,7 +30,6 @@ const StreakHoverCard = ({
     }).format(date);
   };
 
-  // Helper cek hari sebelumnya
   const isPreviousDayActive = (currentDateStr) => {
     const date = new Date(currentDateStr);
     date.setDate(date.getDate() - 1);
@@ -42,24 +41,19 @@ const StreakHoverCard = ({
     const days = [];
     const now = new Date();
     const jakartaTodayStr = getJakartaDateString(now);
-
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const dateStr = getJakartaDateString(d);
-
       const isActive = activityDates.includes(dateStr);
       const isToday = dateStr === jakartaTodayStr;
       const isPast = dateStr < jakartaTodayStr;
-
-      // Logic Frozen Pintar: Hanya beku jika hari sebelumnya aktif
       const isFrozen = isPast && !isActive && isPreviousDayActive(dateStr);
-
       days.push({
         label: d.toLocaleDateString("id-ID", { weekday: "narrow" }),
-        isActive: isActive,
-        isToday: isToday,
-        isFrozen: isFrozen,
+        isActive,
+        isToday,
+        isFrozen,
         date: d.getDate(),
       });
     }
@@ -81,43 +75,82 @@ const StreakHoverCard = ({
     totalMissions > 0 ? (completedMissions / totalMissions) * 100 : 0;
 
   return (
-    <div className="absolute top-full mt-3 right-0 w-[360px] bg-white rounded-3xl shadow-2xl border border-slate-200 z-50 transform origin-top-right animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-      <div className="absolute -top-2 right-8 w-4 h-4 bg-orange-50 border-t border-l border-orange-100 transform rotate-45 z-0"></div>
+    <div
+      className="absolute top-full mt-3 right-0 w-[360px] rounded-2xl z-50 origin-top-right animate-in fade-in zoom-in-95 duration-200 overflow-hidden border"
+      style={{
+        background: "var(--color-surface-900)",
+        borderColor: "var(--color-surface-700)",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)",
+      }}
+    >
+      {/* Arrow */}
+      <div
+        className="absolute -top-2 right-8 w-4 h-4 rotate-45 border-t border-l z-0"
+        style={{
+          background: "var(--color-surface-900)",
+          borderColor: "var(--color-surface-700)",
+        }}
+      />
 
       {/* HEADER */}
-      <div className="relative z-10 bg-gradient-to-r from-orange-50 to-orange-100/50 p-5 border-b border-orange-100">
+      <div
+        className="relative z-10 p-5 border-b"
+        style={{
+          background: "linear-gradient(135deg, rgb(249 115 22 / 0.12) 0%, var(--color-surface-900) 100%)",
+          borderColor: "var(--color-surface-700)",
+        }}
+      >
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
             <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md border-4 border-white ${
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${
                 streakCount > 0
-                  ? "bg-gradient-to-br from-orange-400 to-red-500"
-                  : "bg-slate-200"
+                  ? "border-orange-500/30"
+                  : ""
               }`}
+              style={{
+                background: streakCount > 0
+                  ? "linear-gradient(135deg, #f97316, #ef4444)"
+                  : "var(--color-surface-800)",
+                borderColor: streakCount > 0 ? "rgb(249 115 22 / 0.3)" : "var(--color-surface-700)",
+                boxShadow: streakCount > 0 ? "0 8px 24px rgb(249 115 22 / 0.30)" : "none",
+              }}
             >
               <Flame
                 className={`w-8 h-8 ${
-                  streakCount > 0
-                    ? "text-white animate-pulse fill-white"
-                    : "text-slate-400"
+                  streakCount > 0 ? "text-white fill-white animate-pulse" : ""
                 }`}
+                style={{ color: streakCount > 0 ? "#fff" : "var(--color-surface-500)" }}
               />
             </div>
-
             <div>
-              <h4 className="text-xs font-bold text-orange-400 uppercase tracking-widest mb-1">
+              <h4
+                className="text-[10px] font-black uppercase tracking-widest mb-1"
+                style={{ color: "#fb923c" }}
+              >
                 {t("modals.streakCurrent")}
               </h4>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black text-slate-800 leading-none">
+                <span
+                  className="text-3xl font-black leading-none"
+                  style={{ color: "var(--color-surface-50)" }}
+                >
                   {streakCount}
                 </span>
-                <span className="text-sm font-bold text-slate-500">Hari</span>
+                <span className="text-sm font-bold" style={{ color: "var(--color-surface-400)" }}>
+                  Hari
+                </span>
               </div>
             </div>
           </div>
-
-          <span className="text-[10px] font-bold bg-white text-orange-500 px-2 py-1 rounded-full shadow-sm border border-orange-100 flex items-center gap-1">
+          <span
+            className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 border"
+            style={{
+              background: "var(--color-surface-800)",
+              color: "var(--color-surface-400)",
+              borderColor: "var(--color-surface-700)",
+            }}
+          >
             <CalendarDays size={10} /> {t("modals.last7Days")}
           </span>
         </div>
@@ -125,63 +158,94 @@ const StreakHoverCard = ({
 
       {/* CONTENT */}
       <div className="p-5 space-y-5">
-        {/* REWARD SECTION */}
-        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+        {/* REWARD PROGRESS */}
+        <div
+          className="rounded-xl p-3 border"
+          style={{
+            background: "var(--color-surface-800)",
+            borderColor: "var(--color-surface-700)",
+          }}
+        >
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-2">
-              <Gift size={14} className="text-purple-500" />
-              <span className="text-xs font-bold text-slate-700">
+              <Gift size={14} style={{ color: "#a78bfa" }} />
+              <span className="text-xs font-bold" style={{ color: "var(--color-surface-300)" }}>
                 {t("modals.bigPrize")} ({t("dashboard.day")} {nextMilestone})
               </span>
             </div>
-            <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">
-              {daysLeft === 0
-                ? t("modals.today")
-                : `${daysLeft} ${t("modals.daysLeft")}`}
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded border"
+              style={{
+                background: "rgb(139 92 246 / 0.15)",
+                color: "#c084fc",
+                borderColor: "rgb(139 92 246 / 0.25)",
+              }}
+            >
+              {daysLeft === 0 ? t("modals.today") : `${daysLeft} ${t("modals.daysLeft")}`}
             </span>
           </div>
-          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div
+            className="w-full h-1.5 rounded-full overflow-hidden"
+            style={{ background: "var(--color-surface-700)" }}
+          >
             <div
-              className="h-full bg-purple-500 rounded-full transition-all duration-500"
-              style={{ width: `${milestoneProgress}%` }}
-            ></div>
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${milestoneProgress}%`, background: "linear-gradient(90deg, #8b5cf6, #a78bfa)" }}
+            />
           </div>
         </div>
 
         {/* CALENDAR GRID */}
         <div>
-          <div className="flex justify-between items-center mb-2 px-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">
-              {t("modals.activityHistory")}
-            </span>
-          </div>
+          <span
+            className="text-[10px] font-bold uppercase block mb-3"
+            style={{ color: "var(--color-surface-500)" }}
+          >
+            {t("modals.activityHistory")}
+          </span>
           <div className="flex justify-between items-start">
             {weekData.map((day, idx) => (
               <div key={idx} className="flex flex-col items-center gap-2">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 relative overflow-hidden
-                  ${
-                    day.isActive
-                      ? "bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-200"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold border-2 transition-all duration-300"
+                  style={{
+                    background: day.isActive
+                      ? "linear-gradient(135deg, #f97316, #ef4444)"
                       : day.isFrozen
-                      ? "bg-frozen"
+                      ? "rgb(14 165 233 / 0.15)"
                       : day.isToday
-                      ? "bg-white border-slate-300 border-dashed text-slate-300"
-                      : "bg-transparent border-slate-100 text-slate-200"
-                  }`}
+                      ? "var(--color-surface-800)"
+                      : "transparent",
+                    borderColor: day.isActive
+                      ? "rgb(249 115 22 / 0.50)"
+                      : day.isFrozen
+                      ? "rgb(14 165 233 / 0.30)"
+                      : day.isToday
+                      ? "var(--color-surface-600)"
+                      : "var(--color-surface-800)",
+                    color: day.isActive
+                      ? "#fff"
+                      : day.isFrozen
+                      ? "#38bdf8"
+                      : day.isToday
+                      ? "var(--color-surface-300)"
+                      : "var(--color-surface-600)",
+                    boxShadow: day.isActive ? "0 4px 12px rgb(249 115 22 / 0.30)" : "none",
+                  }}
                 >
                   {day.isActive ? (
-                    <Check size={14} strokeWidth={4} />
+                    <Check size={14} strokeWidth={3} />
                   ) : day.isFrozen ? (
-                    <Snowflake size={14} className="animate-pulse" />
+                    <Snowflake size={13} className="animate-pulse" />
                   ) : (
                     day.date
                   )}
                 </div>
                 <span
-                  className={`text-[9px] font-bold uppercase ${
-                    day.isToday ? "text-orange-500" : "text-slate-300"
-                  }`}
+                  className="text-[9px] font-bold uppercase"
+                  style={{
+                    color: day.isToday ? "#fb923c" : "var(--color-surface-600)",
+                  }}
                 >
                   {day.label}
                 </span>
@@ -192,38 +256,61 @@ const StreakHoverCard = ({
 
         {/* MISSIONS */}
         {missions.length > 0 && (
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div
+            className="flex items-center justify-between pt-3 border-t"
+            style={{ borderColor: "var(--color-surface-800)" }}
+          >
             <div className="flex items-center gap-2">
-              <Target size={14} className="text-blue-500" />
-              <span className="text-xs font-bold text-slate-600">
+              <Target size={14} style={{ color: "#60a5fa" }} />
+              <span className="text-xs font-bold" style={{ color: "var(--color-surface-300)" }}>
                 {t("dashboard.dailyMissions")}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-800">
+              <span className="text-xs font-bold" style={{ color: "var(--color-surface-200)" }}>
                 {completedMissions}/{totalMissions}
               </span>
-              <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="w-16 h-1.5 rounded-full overflow-hidden"
+                style={{ background: "var(--color-surface-700)" }}
+              >
                 <div
-                  className="h-full bg-blue-500 rounded-full"
-                  style={{ width: `${missionProgress}%` }}
-                ></div>
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${missionProgress}%`, background: "#3b82f6" }}
+                />
               </div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-3 bg-slate-50 border-t border-slate-100">
+      {/* FOOTER */}
+      <div
+        className="p-3 border-t"
+        style={{
+          background: "var(--color-surface-950)",
+          borderColor: "var(--color-surface-800)",
+        }}
+      >
         <button
           onClick={onOpenCalendar}
-          className="w-full py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 font-bold text-xs uppercase flex items-center justify-center gap-2 transition-all hover:shadow-sm group"
+          className="w-full py-2.5 rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-2 transition-all cursor-pointer border group"
+          style={{
+            background: "var(--color-surface-800)",
+            borderColor: "var(--color-surface-700)",
+            color: "var(--color-surface-300)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--color-surface-700)";
+            e.currentTarget.style.color = "var(--color-surface-100)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--color-surface-800)";
+            e.currentTarget.style.color = "var(--color-surface-300)";
+          }}
         >
-          {t("modals.viewCalendar")}{" "}
-          <ChevronRight
-            size={14}
-            className="group-hover:translate-x-1 transition-transform"
-          />
+          {t("modals.viewCalendar")}
+          <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
     </div>

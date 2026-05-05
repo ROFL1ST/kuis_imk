@@ -1,5 +1,3 @@
-// src/pages/dashboard/Dashboard.jsx
-
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -14,37 +12,33 @@ import {
   BrainCircuit,
   Globe,
   Play,
-  AlertTriangle, // Icon Warning
-  Loader2, // Icon Loading
-  XCircle, // Icon Weakness
+  AlertTriangle,
+  Loader2,
+  XCircle,
   ArrowRight,
+  Sparkles,
+  Target,
 } from "lucide-react";
 import { topicAPI, dailyAPI, quizAPI } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import toast from "react-hot-toast";
 import Skeleton from "../../components/ui/Skeleton";
-import Modal from "../../components/ui/Modal"; // Pastikan Modal diimport
-
-import { useLanguage } from "../../context/LanguageContext"; // Import useLanguage
+import Modal from "../../components/ui/Modal";
+import { useLanguage } from "../../context/LanguageContext";
 
 const Dashboard = () => {
-  const { t } = useLanguage(); // Destructure t
+  const { t } = useLanguage();
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
-  // State Data Utama
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dailyData, setDailyData] = useState(null);
-
-  // State Modal Remedial & Analisis
   const [showRemedialModal, setShowRemedialModal] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [weakTopics, setWeakTopics] = useState([]);
 
-  useEffect(() => {
-    document.title = "Dashboard | QuizApp";
-  }, []);
+  useEffect(() => { document.title = "Dashboard | QuizzApp Indo"; }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,14 +48,8 @@ const Dashboard = () => {
           topicAPI.getAllTopics(),
           dailyAPI.getInfo(),
         ]);
-
-        if (topicRes.status === "fulfilled") {
-          setTopics(topicRes.value.data.data || []);
-        }
-
-        if (dailyRes.status === "fulfilled") {
-          setDailyData(dailyRes.value.data.data);
-        }
+        if (topicRes.status === "fulfilled") setTopics(topicRes.value.data.data || []);
+        if (dailyRes.status === "fulfilled") setDailyData(dailyRes.value.data.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -75,11 +63,7 @@ const Dashboard = () => {
     try {
       const res = await dailyAPI.claimLogin();
       toast.success(`+${res.data.data.coins_gained} Koin!`);
-
-      setDailyData((prev) => ({
-        ...prev,
-        streak: { ...prev.streak, status: "claimed" },
-      }));
+      setDailyData((prev) => ({ ...prev, streak: { ...prev.streak, status: "claimed" } }));
       refreshProfile();
     } catch (error) {
       toast.error(error.response?.data?.message || "Gagal klaim");
@@ -90,12 +74,9 @@ const Dashboard = () => {
     try {
       const res = await dailyAPI.claimMission(missionId);
       toast.success(`Misi Selesai! +${res.data.data.reward} Koin`);
-
       setDailyData((prev) => ({
         ...prev,
-        missions: prev.missions.map((m) =>
-          m.id === missionId ? { ...m, status: "claimed" } : m
-        ),
+        missions: prev.missions.map((m) => m.id === missionId ? { ...m, status: "claimed" } : m),
       }));
       refreshProfile();
     } catch (error) {
@@ -103,43 +84,21 @@ const Dashboard = () => {
     }
   };
 
-  // --- LOGIC DIAGNOSIS REMEDIAL ---
   const handleOpenRemedial = async () => {
     setShowRemedialModal(true);
     setAnalyzing(true);
     setWeakTopics([]);
-
     try {
-      // 1. Fetch soal remedial dulu untuk diintip isinya
       const res = await quizAPI.getRemedial();
       const questions = res.data.data || [];
-
-      // 2. Ekstrak nama Quiz/Topik dari soal
-      // Note: Backend perlu Preload("Quiz") agar properti 'Quiz.Title' atau 'quiz.title' tersedia.
-      // Jika backend belum update, akan tampil "Materi Umum" atau "Quiz ID: ..."
-      const topicsFound = questions.map((q) => {
-        // Cek berbagai kemungkinan struktur response (CamelCase/SnakeCase)
-        return (
-          q.Quiz?.Title ||
-          q.quiz?.title ||
-          q.Quiz?.title ||
-          (q.quiz_id ? `Quiz Materi #${q.quiz_id}` : "Materi Umum")
-        );
-      });
-
-      // Hilangkan duplikat
-      const uniqueTopics = [...new Set(topicsFound)];
-
-      // Ambil maksimal 3 topik untuk ditampilkan
-      setWeakTopics(uniqueTopics.slice(0, 3));
+      const topicsFound = questions.map((q) =>
+        q.Quiz?.Title || q.quiz?.title || q.Quiz?.title || (q.quiz_id ? `Quiz Materi #${q.quiz_id}` : "Materi Umum")
+      );
+      setWeakTopics([...new Set(topicsFound)].slice(0, 3));
     } catch (err) {
-      // Jika 404, artinya tidak ada remedial (User Aman)
-      if (err.response && err.response.status === 404) {
+      if (err.response?.status === 404) {
         setShowRemedialModal(false);
-        toast.success("Hebat! Tidak ada materi yang perlu diulang saat ini.", {
-          icon: "🎉",
-          duration: 4000,
-        });
+        toast.success("Hebat! Tidak ada materi yang perlu diulang saat ini.", { icon: "🎉", duration: 4000 });
       } else {
         toast.error("Gagal menganalisis data remedial.");
         setShowRemedialModal(false);
@@ -149,209 +108,288 @@ const Dashboard = () => {
     }
   };
 
-  const startRemedial = () => {
-    setShowRemedialModal(false);
-    navigate("/play/remedial");
-  };
+  const startRemedial = () => { setShowRemedialModal(false); navigate("/play/remedial"); };
 
-  const quizStreakCount =
-    dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
+  const quizStreakCount = dailyData?.streak?.quiz_streak ?? user?.streak_count ?? 0;
   const isQuizDoneToday = dailyData?.streak?.is_quiz_done ?? false;
   const loginStreakDay = dailyData?.streak?.day ?? 1;
-  const isLoginRewardClaimed =
-    dailyData?.streak?.status === "cooldown" ||
-    dailyData?.streak?.status === "claimed";
+  const isLoginRewardClaimed = dailyData?.streak?.status === "cooldown" || dailyData?.streak?.status === "claimed";
 
+  // ────────────── LOADING SKELETON ──────────────
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        <Skeleton className="w-full h-48 md:h-64 rounded-3xl" />
+        <Skeleton className="w-full h-48 rounded-2xl" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
+          {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
         </div>
-        <div>
-          <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-4"
-              >
-                <Skeleton className="w-12 h-12 rounded-xl" />
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-                <Skeleton className="h-10 w-full rounded-lg mt-2" />
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 w-full rounded-2xl" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-12">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
-            <Zap className="text-yellow-500 fill-yellow-500" />
-            {t("dashboard.welcome")} {user?.name}!
-          </h1>
-          <p className="text-slate-500 mt-1">{t("dashboard.readyToLearn")}</p>
-        </div>
-        <div className="flex gap-4">
-          <div className="bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-              <Trophy size={20} />
+    <div
+      className="max-w-6xl mx-auto space-y-8 pb-16 px-4"
+      style={{ color: "var(--color-surface-100)" }}
+    >
+      {/* ═══════════════════════════════════════════════════════════
+           HERO HEADER
+      ═══════════════════════════════════════════════════════════ */}
+      <div
+        className="relative rounded-2xl p-6 md:p-8 overflow-hidden border"
+        style={{
+          background: "linear-gradient(135deg, rgb(79 70 229 / 0.15) 0%, rgb(99 102 241 / 0.05) 50%, rgb(139 92 246 / 0.10) 100%)",
+          borderColor: "rgb(99 102 241 / 0.20)",
+        }}
+      >
+        {/* decorative glow */}
+        <div
+          className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl pointer-events-none"
+          style={{ background: "rgb(99 102 241 / 0.12)", transform: "translate(30%, -30%)" }}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-48 h-48 rounded-full blur-3xl pointer-events-none"
+          style={{ background: "rgb(139 92 246 / 0.08)", transform: "translate(-20%, 20%)" }}
+        />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-3 border"
+              style={{
+                background: "rgb(99 102 241 / 0.15)",
+                borderColor: "rgb(99 102 241 / 0.30)",
+                color: "var(--color-brand-400)",
+              }}
+            >
+              <Sparkles size={12} />
+              {t("dashboard.readyToLearn")}
             </div>
-            <div>
-              <p className="text-xs text-slate-400 font-bold uppercase">
-                {t("dashboard.level")}
-              </p>
-              <p className="text-lg font-bold text-slate-800">
-                {user?.level || 1}
-              </p>
+            <h1 className="text-2xl md:text-3xl font-black flex items-center gap-2" style={{ color: "var(--color-surface-50)" }}>
+              <Zap size={28} style={{ color: "#fbbf24" }} fill="#fbbf24" />
+              {t("dashboard.welcome")}, {user?.name}!
+            </h1>
+            <p className="mt-1 text-sm" style={{ color: "var(--color-surface-400)" }}>
+              Terus belajar, raih level berikutnya.
+            </p>
+          </div>
+
+          {/* Stats row */}
+          <div className="flex flex-wrap gap-3">
+            <div
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border"
+              style={{
+                background: "var(--color-surface-900)",
+                borderColor: "var(--color-surface-700)",
+              }}
+            >
+              <div
+                className="p-1.5 rounded-lg"
+                style={{ background: "rgb(99 102 241 / 0.15)", color: "var(--color-brand-400)" }}
+              >
+                <Trophy size={16} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--color-surface-500)" }}>
+                  {t("dashboard.level")}
+                </p>
+                <p className="text-base font-black" style={{ color: "var(--color-surface-50)" }}>
+                  {user?.level || 1}
+                </p>
+              </div>
+            </div>
+
+            <div
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border"
+              style={{
+                background: "var(--color-surface-900)",
+                borderColor: "var(--color-surface-700)",
+              }}
+            >
+              <div
+                className="p-1.5 rounded-lg"
+                style={{ background: "rgb(245 158 11 / 0.15)", color: "#fbbf24" }}
+              >
+                <Coins size={16} fill="currentColor" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--color-surface-500)" }}>
+                  Koin
+                </p>
+                <p className="text-base font-black" style={{ color: "var(--color-surface-50)" }}>
+                  {user?.coins || 0}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* DAILY SECTION */}
+      {/* ═══════════════════════════════════════════════════════════
+           DAILY SECTION
+      ═══════════════════════════════════════════════════════════ */}
       {dailyData && dailyData.streak && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Card 1: Streak (Belajar) & Daily Gift (Login) */}
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
-
-            {/* Bagian Atas: QUIZ STREAK (Activity) */}
-            <div>
-              <div className="flex items-center gap-2 mb-2 opacity-90">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Streak Card */}
+          <div
+            className="rounded-2xl p-6 border relative overflow-hidden flex flex-col justify-between"
+            style={{
+              background: "linear-gradient(135deg, rgb(99 102 241 / 0.20) 0%, rgb(139 92 246 / 0.15) 100%)",
+              borderColor: "rgb(99 102 241 / 0.25)",
+            }}
+          >
+            <div
+              className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl pointer-events-none"
+              style={{ background: "rgb(99 102 241 / 0.20)", transform: "translate(40%, -40%)" }}
+            />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3">
                 <Flame
                   size={18}
-                  className={
-                    quizStreakCount > 0 || isQuizDoneToday
-                      ? "fill-white text-orange-400"
-                      : "text-slate-300"
-                  }
+                  fill={quizStreakCount > 0 || isQuizDoneToday ? "currentColor" : "none"}
+                  style={{ color: quizStreakCount > 0 ? "#fb923c" : "var(--color-surface-500)" }}
                 />
-                <span className="font-bold">{t("dashboard.seriousMode")}</span>
+                <span className="text-sm font-bold" style={{ color: "var(--color-surface-300)" }}>
+                  {t("dashboard.seriousMode")}
+                </span>
               </div>
-
-              <h2 className="text-4xl font-black mb-1">
-                {quizStreakCount} {t("dashboard.day")}
+              <h2 className="text-5xl font-black mb-1" style={{ color: "var(--color-surface-50)" }}>
+                {quizStreakCount}
               </h2>
-              <p className="opacity-80 text-sm font-medium">
-                {t("dashboard.quizStreak")}
+              <p className="text-sm" style={{ color: "var(--color-surface-400)" }}>
+                {t("dashboard.quizStreak")} {t("dashboard.day")}
               </p>
-
               <div
-                className={`mt-4 text-xs p-2 rounded-lg backdrop-blur-sm inline-block font-bold ${
-                  isQuizDoneToday
-                    ? "bg-green-500/20 text-green-100"
-                    : "bg-orange-500/20 text-orange-100"
-                }`}
+                className="mt-4 text-xs px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 font-bold"
+                style={{
+                  background: isQuizDoneToday ? "rgb(34 197 94 / 0.15)" : "rgb(249 115 22 / 0.15)",
+                  color: isQuizDoneToday ? "#4ade80" : "#fb923c",
+                }}
               >
-                {isQuizDoneToday
-                  ? t("dashboard.streakSafe")
-                  : t("dashboard.streakDanger")}
+                {isQuizDoneToday ? "✓ " + t("dashboard.streakSafe") : "⚠ " + t("dashboard.streakDanger")}
               </div>
             </div>
 
-            {/* Bagian Bawah: LOGIN STREAK (Hadiah Harian) */}
-            <div className="mt-6 pt-4 border-t border-white/10">
+            {/* Login reward */}
+            <div
+              className="mt-5 pt-4 relative z-10"
+              style={{ borderTop: "1px solid rgb(255 255 255 / 0.08)" }}
+            >
               <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-indigo-100 uppercase font-bold">
-                    {t("dashboard.loginGift")} ({t("dashboard.day")}{" "}
-                    {loginStreakDay})
+                <div>
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: "var(--color-surface-500)" }}
+                  >
+                    {t("dashboard.loginGift")} · {t("dashboard.day")} {loginStreakDay}
                   </span>
-                  <span className="font-bold flex items-center gap-1 text-sm">
-                    <Gift size={14} className="text-yellow-300" />
-                    {dailyData.streak.reward} Koin
-                  </span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <Gift size={13} style={{ color: "#fbbf24" }} />
+                    <span className="font-bold text-sm" style={{ color: "var(--color-surface-200)" }}>
+                      {dailyData.streak.reward} Koin
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={handleClaimLogin}
                   disabled={dailyData.streak.status !== "claimable"}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-md ${
-                    dailyData.streak.status === "claimable"
-                      ? "bg-white text-indigo-600 hover:bg-indigo-50 cursor-pointer animate-bounce"
-                      : "bg-black/20 text-white/70 cursor-not-allowed"
-                  }`}
+                  className="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border-none"
+                  style={{
+                    background: dailyData.streak.status === "claimable"
+                      ? "var(--color-brand-500)"
+                      : "rgb(255 255 255 / 0.08)",
+                    color: dailyData.streak.status === "claimable" ? "#fff" : "var(--color-surface-500)",
+                    cursor: dailyData.streak.status === "claimable" ? "pointer" : "not-allowed",
+                    animation: dailyData.streak.status === "claimable" ? "pulse 2s infinite" : "none",
+                  }}
                 >
-                  {isLoginRewardClaimed
-                    ? t("dashboard.claimed")
-                    : t("dashboard.claim")}
+                  {isLoginRewardClaimed ? t("dashboard.claimed") : t("dashboard.claim")}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Daily Missions */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                <CheckCircle className="text-emerald-500" size={20} />{" "}
+          {/* Daily Missions */}
+          <div
+            className="lg:col-span-2 rounded-2xl border p-6"
+            style={{
+              background: "var(--color-surface-900)",
+              borderColor: "var(--color-surface-800)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-base flex items-center gap-2" style={{ color: "var(--color-surface-100)" }}>
+                <CheckCircle size={18} style={{ color: "#4ade80" }} />
                 {t("dashboard.dailyMissions")}
               </h3>
-              <span className="text-xs font-medium text-slate-400">
+              <span className="text-xs" style={{ color: "var(--color-surface-500)" }}>
                 {t("dashboard.resetDaily")}
               </span>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-3">
               {dailyData.missions?.map((mission) => (
                 <div
                   key={mission.id}
-                  className="border border-slate-100 rounded-xl p-4 hover:border-indigo-100 transition-colors bg-slate-50/50"
+                  className="rounded-xl p-4 border transition-colors"
+                  style={{
+                    background: "var(--color-surface-800)",
+                    borderColor: mission.status === "claimed"
+                      ? "rgb(34 197 94 / 0.20)"
+                      : mission.status === "claimable"
+                      ? "rgb(34 197 94 / 0.30)"
+                      : "var(--color-surface-700)",
+                  }}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-bold text-slate-700 text-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1 pr-2">
+                      <h4 className="font-bold text-sm" style={{ color: "var(--color-surface-100)" }}>
                         {mission.title}
                       </h4>
-                      <p className="text-xs text-slate-500 line-clamp-1">
+                      <p className="text-xs line-clamp-1 mt-0.5" style={{ color: "var(--color-surface-500)" }}>
                         {mission.description}
                       </p>
                     </div>
-                    <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Coins size={10} /> {mission.reward}
+                    <span
+                      className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                      style={{
+                        background: "rgb(245 158 11 / 0.15)",
+                        color: "#fbbf24",
+                      }}
+                    >
+                      <Coins size={9} /> {mission.reward}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-3">
+                  <div className="flex items-center gap-3">
                     <div className="flex-1">
-                      <div className="w-full bg-slate-200 rounded-full h-1.5">
+                      <div
+                        className="w-full rounded-full h-1.5"
+                        style={{ background: "var(--color-surface-700)" }}
+                      >
                         <div
-                          className={`h-1.5 rounded-full transition-all ${
-                            mission.status === "claimable" ||
-                            mission.status === "claimed"
-                              ? "bg-emerald-500"
-                              : "bg-indigo-500"
-                          }`}
+                          className="h-1.5 rounded-full transition-all"
                           style={{
-                            width: `${Math.min(
-                              (mission.progress / mission.target) * 100,
-                              100
-                            )}%`,
+                            background: mission.status === "claimable" || mission.status === "claimed"
+                              ? "#4ade80" : "var(--color-brand-500)",
+                            width: `${Math.min((mission.progress / mission.target) * 100, 100)}%`,
                           }}
-                        ></div>
+                        />
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-1 text-right">
+                      <div className="text-[10px] mt-1 text-right" style={{ color: "var(--color-surface-500)" }}>
                         {mission.progress}/{mission.target}
                       </div>
                     </div>
                     <button
                       onClick={() => handleClaimMission(mission.id)}
                       disabled={mission.status !== "claimable"}
-                      className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-                        mission.status === "claimable"
-                          ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm"
-                          : "bg-slate-200 text-slate-400"
-                      }`}
+                      className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border-none"
+                      style={{
+                        background: mission.status === "claimable" ? "#4ade80" : "var(--color-surface-700)",
+                        color: mission.status === "claimable" ? "#052e16" : "var(--color-surface-500)",
+                        cursor: mission.status === "claimable" ? "pointer" : "default",
+                      }}
                     >
                       {mission.status === "claimed"
                         ? t("dashboard.missionDone")
@@ -367,112 +405,202 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* MENU PINTAR (Remedial & Komunitas) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 1. Smart Remedial (Active with Modal Insight) */}
-        <div className="bg-gradient-to-r from-rose-50 to-orange-50 rounded-2xl p-6 border border-rose-100 flex items-center justify-between shadow-sm relative overflow-hidden group">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-rose-200/20 rounded-full blur-2xl translate-x-1/2 -translate-y-1/2"></div>
+      {/* ═══════════════════════════════════════════════════════════
+           SMART MENU: Remedial + Community
+      ═══════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Smart Remedial */}
+        <div
+          className="rounded-2xl p-6 border flex items-center justify-between relative overflow-hidden group cursor-pointer"
+          style={{
+            background: "linear-gradient(135deg, rgb(239 68 68 / 0.12) 0%, rgb(249 115 22 / 0.08) 100%)",
+            borderColor: "rgb(239 68 68 / 0.20)",
+          }}
+        >
+          <div
+            className="absolute right-0 top-0 w-32 h-32 rounded-full blur-2xl pointer-events-none"
+            style={{ background: "rgb(239 68 68 / 0.15)", transform: "translate(40%, -40%)" }}
+          />
           <div className="relative z-10">
-            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <BrainCircuit className="text-rose-500" />{" "}
+            <h3
+              className="text-base font-bold flex items-center gap-2 mb-1"
+              style={{ color: "var(--color-surface-100)" }}
+            >
+              <BrainCircuit size={18} style={{ color: "#f87171" }} />
               {t("dashboard.smartRemedial")}
             </h3>
-            <p className="text-sm text-slate-500 mt-1 max-w-xs">
+            <p className="text-sm mb-4 max-w-xs" style={{ color: "var(--color-surface-400)" }}>
               {t("dashboard.aiDetect")}
             </p>
-            {/* Ubah onClick ke handleOpenRemedial */}
             <button
               onClick={handleOpenRemedial}
-              className="mt-4 px-5 py-2 bg-white text-rose-600 font-bold rounded-lg shadow-sm border border-rose-100 hover:shadow-md transition text-sm cursor-pointer"
+              className="px-5 py-2 rounded-lg text-sm font-bold transition-all border cursor-pointer"
+              style={{
+                background: "var(--color-surface-900)",
+                borderColor: "rgb(239 68 68 / 0.30)",
+                color: "#f87171",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgb(239 68 68 / 0.15)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--color-surface-900)"; }}
             >
               {t("dashboard.analyzeWeakness")}
             </button>
           </div>
-          <div className="hidden sm:block text-rose-200 relative z-0">
-            <BrainCircuit size={64} />
-          </div>
+          <BrainCircuit
+            size={56}
+            className="hidden sm:block flex-shrink-0 relative z-0"
+            style={{ color: "rgb(239 68 68 / 0.20)" }}
+          />
         </div>
 
-        {/* 2. Kuis Komunitas (Coming Soon) */}
-        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 shadow-inner flex flex-col justify-between relative">
-          <div className="flex justify-between items-start mb-2 opacity-70">
+        {/* Community Quiz (Coming Soon) */}
+        <div
+          className="rounded-2xl p-6 border flex flex-col justify-between relative"
+          style={{
+            background: "var(--color-surface-900)",
+            borderColor: "var(--color-surface-800)",
+            opacity: 0.7,
+          }}
+        >
+          <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="font-bold text-slate-600 flex items-center gap-2">
-                <Globe className="text-slate-400" />{" "}
+              <h3
+                className="font-bold flex items-center gap-2 text-base"
+                style={{ color: "var(--color-surface-300)" }}
+              >
+                <Globe size={18} style={{ color: "var(--color-surface-500)" }} />
                 {t("dashboard.communityQuiz")}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs mt-1" style={{ color: "var(--color-surface-500)" }}>
                 {t("dashboard.communityDesc")}
               </p>
             </div>
-            <div className="p-3 bg-white rounded-full text-slate-300 border border-slate-100">
-              <Globe size={24} />
+            <div
+              className="p-2.5 rounded-xl"
+              style={{ background: "var(--color-surface-800)", color: "var(--color-surface-600)" }}
+            >
+              <Globe size={20} />
             </div>
           </div>
-
           <button
             disabled
-            className="w-full text-center py-2 bg-slate-200 text-slate-400 rounded-lg font-bold cursor-not-allowed text-sm border border-slate-300"
+            className="w-full py-2.5 rounded-xl font-bold text-sm cursor-not-allowed border"
+            style={{
+              background: "var(--color-surface-800)",
+              color: "var(--color-surface-600)",
+              borderColor: "var(--color-surface-700)",
+            }}
           >
             {t("dashboard.soon")}
           </button>
         </div>
       </div>
 
-      {/* TOPICS GRID */}
+      {/* ═══════════════════════════════════════════════════════════
+           TOPIC GRID
+      ═══════════════════════════════════════════════════════════ */}
       <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <BookOpen className="text-indigo-600" />{" "}
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: "var(--color-surface-50)" }}>
+            <BookOpen size={20} style={{ color: "var(--color-brand-400)" }} />
             {t("dashboard.exploreTopics")}
           </h2>
         </div>
+
         {topics.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {topics.map((topic) => (
-              <Link
-                key={topic.ID}
-                to={`/topic/${topic.slug}`}
-                className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 flex flex-col h-full"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                    <Hash size={24} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {topics.map((topic, idx) => {
+              const colors = [
+                { bg: "rgb(99 102 241 / 0.12)",  icon: "var(--color-brand-400)",  border: "rgb(99 102 241 / 0.20)"  },
+                { bg: "rgb(139 92 246 / 0.12)",  icon: "#c084fc",                border: "rgb(139 92 246 / 0.20)"  },
+                { bg: "rgb(14 165 233 / 0.12)",  icon: "#38bdf8",                border: "rgb(14 165 233 / 0.20)"  },
+                { bg: "rgb(34 197 94 / 0.12)",   icon: "#4ade80",                border: "rgb(34 197 94 / 0.20)"   },
+                { bg: "rgb(249 115 22 / 0.12)",  icon: "#fb923c",                border: "rgb(249 115 22 / 0.20)"  },
+                { bg: "rgb(236 72 153 / 0.12)",  icon: "#f472b6",                border: "rgb(236 72 153 / 0.20)"  },
+              ];
+              const c = colors[idx % colors.length];
+              return (
+                <Link
+                  key={topic.ID}
+                  to={`/topic/${topic.slug}`}
+                  className="group rounded-2xl border p-5 flex flex-col h-full transition-all duration-200"
+                  style={{
+                    background: "var(--color-surface-900)",
+                    borderColor: "var(--color-surface-800)",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = c.border;
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = `0 8px 32px ${c.bg}`;
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = "var(--color-surface-800)";
+                    e.currentTarget.style.transform = "none";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  {/* Icon */}
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-all"
+                    style={{ background: c.bg, color: c.icon }}
+                  >
+                    <Hash size={20} />
                   </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">
-                    {topic.title}
-                  </h3>
-                  <p className="text-slate-500 text-sm line-clamp-2">
-                    {topic.description ||
-                      "Topik menarik untuk mengasah pengetahuanmu."}
-                  </p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-400 group-hover:text-indigo-500 transition-colors uppercase tracking-wider">
-                    {t("dashboard.startQuiz")}
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                    <Play size={14} fill="currentColor" />
+
+                  {/* Content */}
+                  <div className="flex-1">
+                    <h3
+                      className="text-base font-bold mb-1.5 transition-colors"
+                      style={{ color: "var(--color-surface-100)" }}
+                    >
+                      {topic.title}
+                    </h3>
+                    <p className="text-sm line-clamp-2" style={{ color: "var(--color-surface-500)" }}>
+                      {topic.description || "Topik menarik untuk mengasah pengetahuanmu."}
+                    </p>
                   </div>
-                </div>
-              </Link>
-            ))}
+
+                  {/* Footer */}
+                  <div
+                    className="mt-5 pt-4 flex items-center justify-between"
+                    style={{ borderTop: "1px solid var(--color-surface-800)" }}
+                  >
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-surface-500)" }}>
+                      {t("dashboard.startQuiz")}
+                    </span>
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center transition-all"
+                      style={{ background: "var(--color-surface-800)", color: "var(--color-surface-400)" }}
+                    >
+                      <Play size={12} fill="currentColor" />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
-            <div className="inline-flex bg-slate-50 p-4 rounded-full mb-4">
-              <BookOpen size={32} className="text-slate-300" />
+          <div
+            className="text-center py-20 rounded-2xl border border-dashed"
+            style={{
+              background: "var(--color-surface-900)",
+              borderColor: "var(--color-surface-700)",
+            }}
+          >
+            <div
+              className="inline-flex p-4 rounded-full mb-4"
+              style={{ background: "var(--color-surface-800)" }}
+            >
+              <BookOpen size={28} style={{ color: "var(--color-surface-600)" }} />
             </div>
-            <p className="text-slate-500 font-medium">
+            <p className="font-medium" style={{ color: "var(--color-surface-500)" }}>
               {t("dashboard.noTopics")}
             </p>
           </div>
         )}
       </div>
 
-      {/* --- MODAL DIAGNOSIS REMEDIAL --- */}
+      {/* ── REMEDIAL MODAL ── */}
       <Modal
         isOpen={showRemedialModal}
         onClose={() => setShowRemedialModal(false)}
@@ -480,34 +608,41 @@ const Dashboard = () => {
       >
         <div className="text-center">
           {analyzing ? (
-            <div className="py-8">
-              <Loader2
-                size={48}
-                className="animate-spin text-indigo-500 mx-auto mb-4"
-              />
-              <h3 className="text-lg font-bold text-slate-700">
+            <div className="py-10">
+              <Loader2 size={44} className="animate-spin mx-auto mb-4" style={{ color: "var(--color-brand-400)" }} />
+              <h3 className="text-lg font-bold" style={{ color: "var(--color-surface-100)" }}>
                 {t("modals.analyzing")}
               </h3>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm mt-1" style={{ color: "var(--color-surface-500)" }}>
                 {t("modals.analyzingDesc")}
               </p>
             </div>
           ) : (
             <>
-              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-bounce-slow">
-                <AlertTriangle size={32} />
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                style={{ background: "rgb(239 68 68 / 0.15)", color: "#f87171" }}
+              >
+                <AlertTriangle size={30} />
               </div>
-
-              <h2 className="text-2xl font-black text-slate-800 mb-2">
+              <h2 className="text-xl font-black mb-2" style={{ color: "var(--color-surface-50)" }}>
                 {t("modals.diagnosisComplete")}
               </h2>
-              <p className="text-slate-500 text-sm mb-6 px-4">
+              <p className="text-sm mb-6 px-2" style={{ color: "var(--color-surface-400)" }}>
                 {t("modals.weaknessFocus")}
               </p>
 
-              {/* Daftar Topik Lemah */}
-              <div className="bg-slate-50 rounded-xl p-4 text-left border border-slate-100 mb-6">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              <div
+                className="rounded-xl p-4 text-left border mb-6"
+                style={{
+                  background: "var(--color-surface-800)",
+                  borderColor: "var(--color-surface-700)",
+                }}
+              >
+                <h4
+                  className="text-xs font-bold uppercase tracking-wider mb-3"
+                  style={{ color: "var(--color-surface-500)" }}
+                >
                   {t("modals.todayFocus")}
                 </h4>
                 <div className="space-y-2">
@@ -515,16 +650,20 @@ const Dashboard = () => {
                     weakTopics.map((topicName, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-3 bg-white p-3 rounded-lg border border-slate-100 shadow-sm"
+                        className="flex items-center gap-3 p-3 rounded-lg border"
+                        style={{
+                          background: "var(--color-surface-900)",
+                          borderColor: "rgb(239 68 68 / 0.20)",
+                        }}
                       >
-                        <XCircle size={18} className="text-red-500 shrink-0" />
-                        <span className="font-bold text-slate-700 text-sm">
+                        <XCircle size={16} style={{ color: "#f87171", flexShrink: 0 }} />
+                        <span className="font-bold text-sm" style={{ color: "var(--color-surface-200)" }}>
                           {topicName}
                         </span>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center text-slate-400 text-xs italic">
+                    <div className="text-center text-xs italic" style={{ color: "var(--color-surface-500)" }}>
                       {t("modals.noWeakness")}
                     </div>
                   )}
@@ -534,15 +673,24 @@ const Dashboard = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowRemedialModal(false)}
-                  className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition"
+                  className="flex-1 py-3 rounded-xl font-bold transition border cursor-pointer"
+                  style={{
+                    background: "var(--color-surface-800)",
+                    color: "var(--color-surface-300)",
+                    borderColor: "var(--color-surface-700)",
+                  }}
                 >
                   {t("modals.later")}
                 </button>
                 <button
                   onClick={startRemedial}
-                  className="flex-1 py-3 bg-gradient-to-r from-rose-500 to-orange-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-rose-200 transition flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl font-bold text-white transition flex items-center justify-center gap-2 border-none cursor-pointer"
+                  style={{
+                    background: "linear-gradient(135deg, #ef4444, #f97316)",
+                    boxShadow: "0 4px 20px rgb(239 68 68 / 0.25)",
+                  }}
                 >
-                  {t("modals.startRemedial")} <ArrowRight size={18} />
+                  {t("modals.startRemedial")} <ArrowRight size={16} />
                 </button>
               </div>
             </>

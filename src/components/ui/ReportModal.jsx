@@ -1,119 +1,200 @@
+// src/components/ui/ReportModal.jsx
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Flag, AlertOctagon } from "lucide-react";
+import { Flag, X, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { quizAPI } from "../../services/api";
 import toast from "react-hot-toast";
-import { reportAPI } from "../../services/newFeatures";
 import { useLanguage } from "../../context/LanguageContext";
 
-const ReportModal = ({ isOpen, onClose, targetId, targetType }) => {
+const REPORT_REASONS = [
+  "Soal tidak jelas",
+  "Jawaban salah",
+  "Gambar rusak / tidak tampil",
+  "Konten tidak pantas",
+  "Soal duplikat",
+  "Lainnya",
+];
+
+const ReportModal = ({ isOpen, onClose, questionId }) => {
   const { t } = useLanguage();
-  const [reason, setReason] = useState("");
+  const [selectedReason, setSelectedReason] = useState("");
+  const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!reason.trim()) return toast.error(t("modals.noReason"));
-
+  const handleSubmit = async () => {
+    if (!selectedReason) { toast.error("Pilih alasan laporan."); return; }
     setLoading(true);
     try {
-      const res = await reportAPI.createReport({
-        target_id: targetId,
-        target_type: targetType,
-        reason: reason,
-      });
-
-      if (res.data.status === "success") {
-        toast.success(t("modals.successReport"));
-        onClose();
-        setReason("");
-      }
-    } catch (error) {
-      toast.error(t("modals.errorReport"));
+      await quizAPI.reportQuestion(questionId, { reason: selectedReason, note });
+      setDone(true);
+    } catch {
+      toast.error(t("modals.reportFailed") || "Gagal mengirim laporan.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    onClose();
+    setTimeout(() => { setSelectedReason(""); setNote(""); setDone(false); }, 300);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)" }}
+          onClick={handleClose}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", bounce: 0.3 }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl overflow-hidden border"
+            style={{
+              background: "var(--color-surface-900)",
+              borderColor: "var(--color-surface-700)",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+            }}
           >
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md pointer-events-auto overflow-hidden">
-              <div className="p-6 bg-red-50 border-b border-red-100 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <Flag className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">
-                      {t("modals.reportTitle")}
-                    </h3>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mt-0.5">
-                      {targetType}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+            {/* Header */}
+            <div
+              className="flex items-center justify-between p-5 border-b"
+              style={{ borderColor: "var(--color-surface-800)" }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: "rgb(239 68 68 / 0.15)", color: "#f87171" }}
                 >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t("modals.reportReason")}
-                  </label>
-                  <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder={t("modals.placeholderReason")}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none h-32 text-gray-700"
-                  />
+                  <Flag size={17} />
                 </div>
+                <div>
+                  <h3 className="font-black text-sm" style={{ color: "var(--color-surface-50)" }}>
+                    {t("modals.reportTitle") || "Laporkan Soal"}
+                  </h3>
+                  <p className="text-[10px]" style={{ color: "var(--color-surface-500)" }}>
+                    ID #{questionId}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleClose}
+                className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer border"
+                style={{
+                  background: "var(--color-surface-800)",
+                  borderColor: "var(--color-surface-700)",
+                  color: "var(--color-surface-400)",
+                }}
+              >
+                <X size={15} />
+              </button>
+            </div>
 
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+            <div className="p-5">
+              {done ? (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-center py-6"
+                >
+                  <div
+                    className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                    style={{ background: "rgb(34 197 94 / 0.15)", color: "#4ade80" }}
                   >
-                    {t("modals.cancel")}
-                  </button>
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <h4 className="font-black text-base mb-1" style={{ color: "var(--color-surface-50)" }}>
+                    {t("modals.reportSent") || "Laporan Terkirim!"}
+                  </h4>
+                  <p className="text-xs" style={{ color: "var(--color-surface-500)" }}>
+                    {t("modals.reportThanks") || "Terima kasih, tim kami akan meninjau laporan ini."}
+                  </p>
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+                    onClick={handleClose}
+                    className="mt-5 w-full py-3 rounded-xl font-bold cursor-pointer border"
+                    style={{
+                      background: "var(--color-surface-800)",
+                      borderColor: "var(--color-surface-700)",
+                      color: "var(--color-surface-300)",
+                    }}
+                  >
+                    Tutup
+                  </button>
+                </motion.div>
+              ) : (
+                <>
+                  <p className="text-xs mb-3 font-bold" style={{ color: "var(--color-surface-400)" }}>
+                    {t("modals.reportReason") || "Pilih alasan:"}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {REPORT_REASONS.map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setSelectedReason(r)}
+                        className="p-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer border"
+                        style={{
+                          background: selectedReason === r
+                            ? "rgb(239 68 68 / 0.15)"
+                            : "var(--color-surface-800)",
+                          borderColor: selectedReason === r
+                            ? "rgb(239 68 68 / 0.40)"
+                            : "var(--color-surface-700)",
+                          color: selectedReason === r
+                            ? "#f87171"
+                            : "var(--color-surface-400)",
+                        }}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder={t("modals.reportNote") || "Catatan tambahan (opsional)..."}
+                    rows={3}
+                    className="w-full p-3 rounded-xl text-sm font-medium outline-none resize-none mb-4"
+                    style={{
+                      background: "var(--color-surface-800)",
+                      border: "2px solid var(--color-surface-700)",
+                      color: "var(--color-surface-100)",
+                    }}
+                  />
+
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading || !selectedReason}
+                    className="w-full py-3 rounded-xl font-black flex items-center justify-center gap-2 cursor-pointer border-none"
+                    style={{
+                      background: loading || !selectedReason
+                        ? "var(--color-surface-800)"
+                        : "linear-gradient(135deg, #ef4444, #f97316)",
+                      color: loading || !selectedReason
+                        ? "var(--color-surface-600)"
+                        : "#fff",
+                    }}
                   >
                     {loading ? (
-                      t("modals.sending")
+                      <><Loader2 size={15} className="animate-spin" /> Mengirim...</>
                     ) : (
-                      <>
-                        <AlertOctagon className="w-4 h-4" />
-                        {t("modals.sendReport")}
-                      </>
+                      <><Send size={15} /> {t("modals.reportSubmit") || "Kirim Laporan"}</>
                     )}
                   </button>
-                </div>
-              </form>
+                </>
+              )}
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );

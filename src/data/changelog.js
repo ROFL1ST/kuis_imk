@@ -1,6 +1,99 @@
-export const APP_VERSION = "1.8.0";
+export const APP_VERSION = "2.0.0";
 
 export const changelogData = [
+  {
+    version: "2.0.0",
+    date: {
+      id: "5 Mei 2026",
+      en: "May 5, 2026",
+      jp: "2026年5月5日",
+    },
+    title: {
+      id: "Dark Premium UI Overhaul",
+      en: "Dark Premium UI Overhaul",
+      jp: "ダークプレミアムUIオーバーホール",
+    },
+    highlight: true,
+    description: {
+      id: "Pembaruan terbesar sejak Grand Launch. Seluruh antarmuka aplikasi kini hadir dalam tema gelap premium dengan palet warna CSS variables yang konsisten, glassmorphism, glow effects, dan tipografi font-black di setiap sudut. Rasakan QuizApp yang benar-benar baru.",
+      en: "The biggest update since Grand Launch. The entire app interface now comes in a premium dark theme with consistent CSS variable color palette, glassmorphism, glow effects, and font-black typography throughout. Experience a whole new QuizApp.",
+      jp: "グランドローンチ以来最大のアップデート。アプリ全体のインターフェイスが、一貫したCSS変数カラーパレット、グラスモーフィズム、グロー効果、そしてfont-blackタイポグラフィを備えたプレミアムダークテーマに生まれ変わりました。",
+    },
+    changes: [
+      {
+        type: "new",
+        text: {
+          id: "Tema Gelap Premium: Seluruh halaman — Dashboard, History, ReviewPage, Shop, Inventory, About, WhatsNew, Friends, Notifications — kini menggunakan sistem warna gelap berbasis CSS variables (--color-surface-* dan --color-brand-*) yang konsisten dan elegan.",
+          en: "Premium Dark Theme: Every page — Dashboard, History, ReviewPage, Shop, Inventory, About, WhatsNew, Friends, Notifications — now uses a consistent, elegant dark color system based on CSS variables (--color-surface-* and --color-brand-*).",
+          jp: "プレミアムダークテーマ：ダッシュボード、履歴、レビューページ、ショップ、インベントリ、概要、新機能、フレンド、通知など、すべてのページが一貫したエレガントなCSSカスタムプロパティに基づくダークカラーシステムを採用しました。",
+        },
+      },
+      {
+        type: "new",
+        text: {
+          id: "Banner Header Immersif: Setiap halaman utama kini memiliki banner gelap premium dengan efek glow blob, dot grid overlay, dan ikon dekoratif semi-transparan.",
+          en: "Immersive Header Banners: Every main page now features a premium dark banner with glow blob effects, dot grid overlay, and semi-transparent decorative icons.",
+          jp: "没入型ヘッダーバナー：メインページごとにグローブロブ効果、ドットグリッドオーバーレイ、半透明の装飾アイコンを備えたプレミアムダークバナーが追加されました。",
+        },
+      },
+      {
+        type: "new",
+        text: {
+          id: "Glassmorphism Komponen: Header sticky, modal, chip statistik, dan kartu profil kini menggunakan efek glassmorphism dark dengan backdrop-blur dan border semi-transparan.",
+          en: "Glassmorphism Components: Sticky headers, modals, stat chips, and profile cards now use dark glassmorphism effects with backdrop-blur and semi-transparent borders.",
+          jp: "グラスモーフィズムコンポーネント：スティッキーヘッダー、モーダル、統計チップ、プロフィールカードが半透明ボーダーとバックドロップブラーを持つダークグラスモーフィズムエフェクトに変更されました。",
+        },
+      },
+      {
+        type: "improvement",
+        text: {
+          id: "Kartu Quiz & Riwayat Kontekstual: Kartu soal, kartu riwayat, dan lencana kini berwarna sesuai konteks — hijau untuk benar, merah untuk salah, oranye untuk duel, ungu untuk survival — semuanya dalam palet gelap yang konsisten.",
+          en: "Contextual Quiz & History Cards: Question cards, history cards, and badges are now colored by context — green for correct, red for wrong, orange for duel, purple for survival — all in a consistent dark palette.",
+          jp: "コンテキスト別クイズ・履歴カード：問題カード、履歴カード、バッジがコンテキストに応じて色分け — 正解は緑、不正解は赤、デュエルはオレンジ、サバイバルは紫 — すべて一貫したダークパレットで統一されました。",
+        },
+      },
+      {
+        type: "improvement",
+        text: {
+          id: "Tipografi & Hirarki Visual: Seluruh judul dan label penting kini menggunakan font-black untuk hierarki yang lebih tegas dan mudah dibaca di atas latar gelap.",
+          en: "Typography & Visual Hierarchy: All titles and important labels now use font-black for bolder hierarchy that's easier to read on dark backgrounds.",
+          jp: "タイポグラフィ＆ビジュアル階層：すべてのタイトルと重要なラベルがfont-blackを使用し、ダーク背景での読みやすさが大幅に向上しました。",
+        },
+      },
+      {
+        type: "improvement",
+        text: {
+          id: "Animasi & Transisi Halus: Kartu dan elemen halaman kini hadir dengan stagger animation (motion.div) dan hover transition yang lebih responsif dan natural.",
+          en: "Smooth Animations & Transitions: Cards and page elements now feature stagger animations (motion.div) and more responsive, natural hover transitions.",
+          jp: "スムーズなアニメーションとトランジション：カードとページ要素にスタガーアニメーション（motion.div）とより自然なホバートランジションが追加されました。",
+        },
+      },
+      {
+        type: "improvement",
+        text: {
+          id: "Refactor Logika Warna: Setiap halaman kini menggunakan objek konfigurasi terpusat (TYPE, QUIZ_TYPE, qCardColor, dst.) sehingga tidak ada lagi ternary panjang berulang di JSX.",
+          en: "Color Logic Refactor: Each page now uses centralized config objects (TYPE, QUIZ_TYPE, qCardColor, etc.) eliminating long repetitive ternaries in JSX.",
+          jp: "カラーロジックのリファクタリング：各ページが一元化された設定オブジェクト（TYPE、QUIZ_TYPE、qCardColorなど）を使用し、JSX内の長い繰り返し三項演算子を排除しました。",
+        },
+      },
+      {
+        type: "improvement",
+        text: {
+          id: "AI Assessment Dark: Kotak penilaian AI di ReviewPage kini hadir dalam varian gelap tinted — oranye-emas untuk jawaban memukau (skor ≥90), brand-indigo untuk jawaban standar.",
+          en: "Dark AI Assessment Box: The AI grading box in ReviewPage now comes in dark tinted variants — golden-amber for stunning answers (score ≥90), brand-indigo for standard ones.",
+          jp: "ダークAI評価ボックス：レビューページのAI採点ボックスがダークティント仕様に — 優秀な回答（スコア≥90）はゴールドアンバー、標準はブランドインディゴになりました。",
+        },
+      },
+      {
+        type: "fix",
+        text: {
+          id: "Konsistensi Warna Modal & Overlay: Semua modal, dropdown, dan overlay kini mengikuti sistem warna gelap yang sama sehingga tidak ada lagi komponen yang tampak terang di tengah antarmuka gelap.",
+          en: "Modal & Overlay Color Consistency: All modals, dropdowns, and overlays now follow the same dark color system — no more light components appearing in the middle of a dark interface.",
+          jp: "モーダル＆オーバーレイの色一貫性：すべてのモーダル、ドロップダウン、オーバーレイが同じダークカラーシステムに統一され、ダークインターフェース内に明るいコンポーネントが表示されなくなりました。",
+        },
+      },
+    ],
+  },
   {
     version: "1.8.0",
     date: {
@@ -13,7 +106,7 @@ export const changelogData = [
       en: "Lobby Upgrades, Wagers & Machine Learning",
       jp: "ロビーのアップグレード、賭け、機械学習",
     },
-    highlight: true,
+    highlight: false,
     changes: [
       {
         type: "new",
@@ -45,7 +138,7 @@ export const changelogData = [
           id: "Lobby Challenge: Kini kamu bisa menantang teman untuk duel langsung di lobi.",
           en: "Lobby Challenge: Now you can challenge friends to a duel directly in the lobby.",
           jp: "ロビーチャレンジ：今すぐ友達にロビーで直接決闘を挑むことができます。",
-        },  
+        },
       },
       {
         type: "new",
@@ -53,7 +146,7 @@ export const changelogData = [
           id: "Machine Learning: Sistem rekomendasi soal berdasarkan tingkat kesulitan dan performa pengguna.",
           en: "Machine Learning: Question recommendation system based on difficulty level and user performance.",
           jp: "機械学習：難易度とユーザーのパフォーマンスに基づいた問題推薦システム。",
-        }
+        },
       },
       {
         type: "improvement",
@@ -98,9 +191,9 @@ export const changelogData = [
       {
         type: "improvement",
         text: {
-          id: "Smart Context Button: Tombol terjemahan pintar yang hanya muncul saat kamu membutuhkannya (misal: Aplikasi Bahasa Indonesia, Soal Bahasa Inggris).",
-          en: "Smart Context Button: A smart translation button that only appears when you need it (e.g., App in English, Question in Indonesian).",
-          jp: "スマートコンテキストボタン：必要な場合にのみ表示されるスマート翻訳ボタン（例：アプリは英語、質問はインドネシア語）。",
+          id: "Smart Context Button: Tombol terjemahan pintar yang hanya muncul saat kamu membutuhkannya.",
+          en: "Smart Context Button: A smart translation button that only appears when you need it.",
+          jp: "スマートコンテキストボタン：必要な場合にのみ表示されるスマート翻訳ボタン。",
         },
       },
       {

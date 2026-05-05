@@ -3,122 +3,106 @@ import React, { useState, useEffect } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Zap,
-  Trophy,
-  Target,
-  Users,
-  ShoppingBag,
-  ArrowRight,
-  Star,
-  CheckCircle2,
-  Play,
-  BarChart3,
-  Crown,
-  Sparkles,
-  Smartphone,
-  X,
-  Menu,
-  Monitor,
-  Infinity,
-  Layers,
-  Database,
-  Gamepad2,
+  Zap, Trophy, Target, Users, ShoppingBag, ArrowRight, Star,
+  CheckCircle2, Play, BarChart3, Crown, Sparkles, Smartphone,
+  X, Menu, Monitor, Infinity, Layers, Database, Gamepad2,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useLanguage } from "../../context/LanguageContext";
 
-// --- KOMPONEN MINI DEMO ---
+/* ── CSS var shortcuts ── */
+const BRAND  = "var(--color-brand-400)";
+const S100   = "var(--color-surface-100)";
+const S200   = "var(--color-surface-200)";
+const S300   = "var(--color-surface-300)";
+const S400   = "var(--color-surface-400)";
+const S500   = "var(--color-surface-500)";
+const S600   = "var(--color-surface-600)";
+const S700   = "var(--color-surface-700)";
+const S800   = "var(--color-surface-800)";
+const S900   = "var(--color-surface-900)";
+const S950   = "var(--color-surface-950, #05050f)";
+
+// =========================================================
+// MINI QUIZ DEMO
+// =========================================================
 const MiniQuizDemo = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t }    = useLanguage();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected]   = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
 
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (user) return <Navigate to="/dashboard" replace />;
 
-  const questions = [
-    {
-      text: t("landing.demo.q1"),
-      options: [
-        t("landing.demo.opt1a"),
-        t("landing.demo.opt1b"),
-        t("landing.demo.opt1c"),
-      ],
-      answer: 0,
-    },
-  ];
+  const questions = [{
+    text:    t("landing.demo.q1"),
+    options: [t("landing.demo.opt1a"), t("landing.demo.opt1b"), t("landing.demo.opt1c")],
+    answer:  0,
+  }];
 
-  const currentQuestion = questions[currentQuestionIndex];
+  const current = questions[currentQuestionIndex];
 
-  const handleAnswer = (index) => {
-    setSelected(index);
-    if (index === currentQuestion.answer) {
-      setIsCorrect(true);
-    } else {
-      setIsCorrect(false);
-    }
+  const handleAnswer = (idx) => {
+    setSelected(idx);
+    setIsCorrect(idx === current.answer);
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setSelected(null);
-      setIsCorrect(null);
-    } else {
-      setCurrentQuestionIndex(0);
-      setSelected(null);
-      setIsCorrect(null);
-    }
-  };
-
-  const resetSelection = () => {
+    setCurrentQuestionIndex(prev =>
+      prev < questions.length - 1 ? prev + 1 : 0
+    );
     setSelected(null);
     setIsCorrect(null);
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 max-w-lg w-full mx-auto border border-slate-100 relative overflow-hidden">
-      {/* Header Demo */}
+    <div
+      className="rounded-3xl p-6 md:p-8 max-w-lg w-full mx-auto relative overflow-hidden"
+      style={{ background: S900, border: `1px solid ${S800}`, boxShadow: "0 24px 60px rgb(0 0 0 / 0.45)" }}
+    >
+      {/* Subtle glow blob inside card */}
+      <div style={{ position:"absolute", top:"-40px", right:"-40px", width:"140px", height:"140px", borderRadius:"50%", background:"rgb(99 102 241 / 0.08)", filter:"blur(40px)", pointerEvents:"none" }} />
+
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: S600 }}>
             {t("landing.livePreview")}
           </span>
         </div>
-        <div className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold">
+        <div
+          className="px-3 py-1 rounded-full text-xs font-black"
+          style={{ background: "rgb(99 102 241 / 0.10)", color: BRAND, border: "1px solid rgb(99 102 241 / 0.20)" }}
+        >
           {t("landing.question")} {currentQuestionIndex + 1}/{questions.length}
         </div>
       </div>
 
-      {/* Transisi Soal */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentQuestionIndex}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
+          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <h3 className="text-xl font-bold text-slate-800 mb-6 leading-snug">
-            {currentQuestion.text}
+          <h3 className="text-lg font-black mb-6 leading-snug" style={{ color: S100 }}>
+            {current.text}
           </h3>
 
           <div className="space-y-3">
-            {currentQuestion.options.map((opt, idx) => {
-              let stateClass =
-                "border-slate-200 hover:border-indigo-300 hover:bg-slate-50";
+            {current.options.map((opt, idx) => {
+              let bg     = S800;
+              let border = S700;
+              let color  = S300;
 
-              if (selected === idx) {
-                if (isCorrect && idx === currentQuestion.answer) {
-                  stateClass =
-                    "border-green-500 bg-green-50 text-green-700 font-bold";
-                } else if (!isCorrect && idx === selected) {
-                  stateClass =
-                    "border-red-500 bg-red-50 text-red-700 font-bold";
+              if (selected !== null) {
+                if (idx === current.answer) {
+                  bg = "rgb(34 197 94 / 0.10)"; border = "rgb(34 197 94 / 0.40)"; color = "#4ade80";
+                } else if (idx === selected && !isCorrect) {
+                  bg = "rgb(239 68 68 / 0.10)"; border = "rgb(239 68 68 / 0.40)"; color = "#f87171";
+                } else {
+                  bg = S900; border = S800; color = S600;
                 }
               }
 
@@ -126,15 +110,14 @@ const MiniQuizDemo = () => {
                 <motion.button
                   key={idx}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => !selected && handleAnswer(idx)}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group ${stateClass} ${
-                    selected ? "cursor-default" : "cursor-pointer"
-                  }`}
+                  onClick={() => selected === null && handleAnswer(idx)}
+                  className="w-full text-left p-4 rounded-xl flex items-center justify-between transition-all"
+                  style={{ background: bg, border: `2px solid ${border}`, color, cursor: selected ? "default" : "pointer" }}
                 >
-                  <span>{opt}</span>
+                  <span className="text-sm font-bold">{opt}</span>
                   {selected === idx && (
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                      {isCorrect ? <CheckCircle2 size={20} /> : <X size={20} />}
+                      {isCorrect ? <CheckCircle2 size={18} /> : <X size={18} />}
                     </motion.div>
                   )}
                 </motion.button>
@@ -144,39 +127,29 @@ const MiniQuizDemo = () => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Feedback & Navigation */}
       <AnimatePresence>
         {selected !== null && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="mt-6 pt-4 border-t border-slate-100 text-center"
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+            className="mt-6 pt-4 text-center"
+            style={{ borderTop: `1px solid ${S800}` }}
           >
-            <p
-              className={`font-bold mb-3 ${
-                isCorrect ? "text-green-600" : "text-red-500"
-              }`}
-            >
+            <p className="font-black mb-3 text-sm" style={{ color: isCorrect ? "#4ade80" : "#f87171" }}>
               {isCorrect ? "Jawaban Benar! 🎉" : "Ups, kurang tepat!"}
             </p>
-
             {isCorrect ? (
               <button
                 onClick={handleNext}
-                className="text-sm text-indigo-600 font-bold hover:underline flex items-center justify-center gap-1 mx-auto"
+                className="text-sm font-black flex items-center justify-center gap-1 mx-auto"
+                style={{ color: BRAND }}
               >
-                {currentQuestionIndex < questions.length - 1 ? (
-                  <>
-                    Soal Selanjutnya <ArrowRight size={14} />
-                  </>
-                ) : (
-                  "Ulangi Demo"
-                )}
+                {currentQuestionIndex < questions.length - 1 ? <> Soal Selanjutnya <ArrowRight size={14} /></> : "Ulangi Demo"}
               </button>
             ) : (
               <button
-                onClick={resetSelection}
-                className="text-sm text-slate-400 hover:text-indigo-600 font-medium underline decoration-dashed"
+                onClick={() => { setSelected(null); setIsCorrect(null); }}
+                className="text-sm font-bold underline decoration-dashed"
+                style={{ color: S500 }}
               >
                 Coba Lagi
               </button>
@@ -188,132 +161,134 @@ const MiniQuizDemo = () => {
   );
 };
 
-// --- LANDING PAGE UTAMA ---
+// =========================================================
+// LANDING PAGE UTAMA
+// =========================================================
 const LandingPage = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
+  const [scrolled, setScrolled]             = useState(false);
+  const [isMobileMenuOpen, setMobileMenu]   = useState(false);
+  const navigate                             = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const fn = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const scrollToSection = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-      setIsMobileMenuOpen(false);
-    }
+  const scrollTo = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setMobileMenu(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900">
-      {/* === NAVBAR === */}
+    <div
+      className="min-h-screen font-sans overflow-x-hidden"
+      style={{ background: S950, color: S200 }}
+    >
+
+      {/* =============== NAVBAR =============== */}
       <nav
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/90 backdrop-blur-md shadow-sm py-4"
-            : "bg-transparent py-4 md:py-6"
-        }`}
+        className="fixed top-0 inset-x-0 z-50 transition-all duration-300"
+        style={{
+          padding: "1rem 0",
+          background: scrolled ? "rgb(8 8 18 / 0.90)" : "transparent",
+          backdropFilter: scrolled ? "blur(20px)" : "none",
+          borderBottom: scrolled ? `1px solid ${S800}` : "none",
+          boxShadow: scrolled ? "0 4px 30px rgb(0 0 0 / 0.30)" : "none",
+        }}
       >
         <div className="container mx-auto px-6 flex justify-between items-center">
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group z-50 relative">
-            <div className="bg-indigo-600 text-white p-2 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-indigo-500/30">
-              <Zap size={24} fill="currentColor" />
+            <div
+              className="p-2 rounded-xl group-hover:rotate-12 transition-transform"
+              style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)", boxShadow: "0 4px 16px rgb(99 102 241 / 0.35)" }}
+            >
+              <Zap size={22} fill="white" style={{ color: "white" }} />
             </div>
-            <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+            <span
+              className="text-2xl font-black"
+              style={{ background: "linear-gradient(90deg, #818cf8, #a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+            >
               QuizApp
             </span>
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8 font-medium text-slate-600">
-            <button
-              onClick={() => scrollToSection("features")}
-              className="hover:text-indigo-600 transition"
-            >
-              Fitur
-            </button>
-            <button
-              onClick={() => scrollToSection("demo")}
-              className="hover:text-indigo-600 transition"
-            >
-              Demo
-            </button>
-            <button
-              onClick={() => scrollToSection("roadmap")}
-              className="hover:text-indigo-600 transition"
-            >
-              Roadmap
-            </button>
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-8 text-sm font-black" style={{ color: S500 }}>
+            {["features", "demo", "roadmap"].map(id => (
+              <button key={id} onClick={() => scrollTo(id)}
+                className="capitalize transition"
+                style={{ color: S500 }}
+                onMouseEnter={e => e.currentTarget.style.color = BRAND}
+                onMouseLeave={e => e.currentTarget.style.color = S500}
+              >
+                {id === "features" ? "Fitur" : id === "demo" ? "Demo" : "Roadmap"}
+              </button>
+            ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
+          {/* Desktop CTA */}
+          <div className="hidden md:flex items-center gap-3">
             <Link
               to="/login"
-              className="font-bold text-slate-600 hover:text-indigo-600 transition"
+              className="font-black text-sm px-4 py-2 rounded-lg transition"
+              style={{ color: S400 }}
+              onMouseEnter={e => e.currentTarget.style.color = BRAND}
+              onMouseLeave={e => e.currentTarget.style.color = S400}
             >
               Masuk
             </Link>
             <Link
               to="/register"
-              className="bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold hover:bg-slate-800 transition-all hover:scale-105 shadow-xl shadow-slate-900/20"
+              className="font-black text-sm px-6 py-2.5 rounded-full transition-all hover:scale-105"
+              style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)", color: "white", boxShadow: "0 4px 20px rgb(99 102 241 / 0.35)" }}
             >
               Daftar Gratis
             </Link>
           </div>
 
-          {/* Mobile Menu Toggle Button */}
-          <div className="md:hidden z-50">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-slate-700 p-2 focus:outline-none"
-            >
-              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
-          </div>
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden p-2 rounded-lg z-50 transition"
+            style={{ color: S300 }}
+            onClick={() => setMobileMenu(v => !v)}
+            onMouseEnter={e => e.currentTarget.style.background = S800}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+          >
+            {isMobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
         </div>
 
-        {/* Mobile Menu Dropdown Overlay */}
+        {/* Mobile menu */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-              className="absolute top-0 left-0 w-full bg-white shadow-xl border-b border-slate-100 pt-24 pb-8 px-6 md:hidden flex flex-col gap-6"
+              initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
+              className="absolute top-0 left-0 w-full pt-24 pb-8 px-6 md:hidden flex flex-col gap-5"
+              style={{ background: "rgb(8 8 18 / 0.97)", backdropFilter: "blur(20px)", borderBottom: `1px solid ${S800}` }}
             >
-              <button
-                onClick={() => scrollToSection("features")}
-                className="text-lg font-medium text-slate-700 hover:text-indigo-600 text-left border-b border-slate-50 pb-2"
-              >
-                Fitur
-              </button>
-              <button
-                onClick={() => scrollToSection("demo")}
-                className="text-lg font-medium text-slate-700 hover:text-indigo-600 text-left border-b border-slate-50 pb-2"
-              >
-                Demo
-              </button>
-              <button
-                onClick={() => scrollToSection("roadmap")}
-                className="text-lg font-medium text-slate-700 hover:text-indigo-600 text-left border-b border-slate-50 pb-2"
-              >
-                Roadmap
-              </button>
+              {["features", "demo", "roadmap"].map(id => (
+                <button
+                  key={id} onClick={() => scrollTo(id)}
+                  className="text-base font-black text-left pb-3 capitalize"
+                  style={{ color: S300, borderBottom: `1px solid ${S800}` }}
+                >
+                  {id === "features" ? "Fitur" : id === "demo" ? "Demo" : "Roadmap"}
+                </button>
+              ))}
               <div className="flex flex-col gap-3 mt-2">
                 <Link
                   to="/login"
-                  className="w-full text-center py-3 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 transition"
+                  className="w-full text-center py-3 rounded-xl font-black text-sm"
+                  style={{ border: `1px solid ${S700}`, color: S300, background: S900 }}
                 >
                   Masuk
                 </Link>
                 <Link
                   to="/register"
-                  className="w-full text-center py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition"
+                  className="w-full text-center py-3 rounded-xl font-black text-sm"
+                  style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)", color: "white", boxShadow: "0 4px 20px rgb(99 102 241 / 0.30)" }}
                 >
                   Daftar Gratis
                 </Link>
@@ -323,133 +298,99 @@ const LandingPage = () => {
         </AnimatePresence>
       </nav>
 
-      {/* === HERO SECTION === */}
-      <header className="relative pt-32 pb-16 md:pt-48 md:pb-32 overflow-hidden">
-        {/* Background Blobs */}
-        <div className="absolute top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-200/40 rounded-full blur-[80px] md:blur-[100px] -translate-y-1/2 translate-x-1/2 -z-10" />
-        <div className="absolute bottom-0 left-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-indigo-200/40 rounded-full blur-[80px] md:blur-[100px] translate-y-1/2 -translate-x-1/2 -z-10" />
+      {/* =============== HERO =============== */}
+      <header className="relative pt-36 pb-20 md:pt-52 md:pb-36 overflow-hidden">
+        {/* Blobs */}
+        <div style={{ position:"absolute", top:0, right:0, width:"520px", height:"520px", background:"rgb(139 92 246 / 0.10)", borderRadius:"50%", filter:"blur(100px)", transform:"translate(40%, -40%)", pointerEvents:"none", zIndex:0 }} />
+        <div style={{ position:"absolute", bottom:0, left:0, width:"520px", height:"520px", background:"rgb(99 102 241 / 0.10)", borderRadius:"50%", filter:"blur(100px)", transform:"translate(-40%, 40%)", pointerEvents:"none", zIndex:0 }} />
+        {/* Dot grid */}
+        <div style={{ position:"absolute", inset:0, backgroundImage:`radial-gradient(circle, ${S800} 1px, transparent 1px)`, backgroundSize:"32px 32px", opacity:0.35, pointerEvents:"none", zIndex:0 }} />
 
-        <div className="container mx-auto px-6 text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="inline-flex items-center gap-2 bg-white border border-indigo-100 px-4 py-2 rounded-full text-xs md:text-sm font-bold text-indigo-600 mb-6 md:mb-8 shadow-sm hover:shadow-md transition cursor-default">
-              <Sparkles
-                size={16}
-                className="text-yellow-400 fill-yellow-400 animate-pulse"
-              />
+        <div className="container mx-auto px-6 text-center relative" style={{ zIndex:1 }}>
+          <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6 }}>
+
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-black mb-8 cursor-default"
+              style={{ background: "rgb(99 102 241 / 0.10)", border: "1px solid rgb(99 102 241 / 0.22)", color: BRAND }}
+            >
+              <Sparkles size={14} className="fill-yellow-400" style={{ color: "#facc15" }} />
               <span>Baru: Mode Battle Royale & Smart Remedial</span>
             </div>
 
-            <h1 className="text-4xl md:text-7xl font-black text-slate-900 mb-6 tracking-tight leading-[1.1]">
+            {/* Headline */}
+            <h1 className="text-4xl md:text-7xl font-black mb-6 tracking-tight leading-[1.1]" style={{ color: S100 }}>
               Ubah Cara Belajarmu <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">
+              <span style={{ background: "linear-gradient(90deg, #818cf8, #a78bfa, #f472b6)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
                 Jadi Petualangan
               </span>
             </h1>
 
-            <p className="text-base md:text-xl text-slate-500 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
-              Platform kuis interaktif yang menggabungkan analisis AI canggih
-              dengan keseruan game kompetitif.
+            <p className="text-base md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed" style={{ color: S500 }}>
+              Platform kuis interaktif yang menggabungkan analisis AI canggih dengan keseruan game kompetitif.
             </p>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16 md:mb-20">
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-20">
               <Link
                 to="/register"
-                className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-500/30 hover:-translate-y-1"
+                className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-black text-lg transition-all hover:-translate-y-1"
+                style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)", color:"white", boxShadow:"0 8px 30px rgb(99 102 241 / 0.40)" }}
               >
                 Mulai Sekarang <ArrowRight size={20} />
               </Link>
               <button
-                onClick={() => scrollToSection("demo")}
-                className="flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-200 px-8 py-4 rounded-2xl font-bold text-lg hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                onClick={() => scrollTo("demo")}
+                className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-black text-lg transition-all"
+                style={{ background: S900, color: S300, border: `2px solid ${S700}` }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = BRAND; e.currentTarget.style.color = BRAND; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = S700; e.currentTarget.style.color = S300; }}
               >
-                <Play size={20} fill="currentColor" /> Coba Demo
+                <Play size={18} fill="currentColor" /> Coba Demo
               </button>
             </div>
           </motion.div>
-
-          {/* --- STATS BAR YANG BARU DAN MENARIK --- */}
-          {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto px-2">
-            <StatItem 
-              icon={<Database size={24} />} 
-              number="500+" 
-              label="Bank Soal" 
-              desc="Terus Bertambah"
-              color="bg-indigo-50 text-indigo-600"
-              delay={0.1}
-            />
-            <StatItem 
-              icon={<Gamepad2 size={24} />} 
-              number="3+" 
-              label="Mode Game" 
-              desc="Solo, Duel, BR"
-              color="bg-purple-50 text-purple-600"
-              delay={0.2}
-            />
-            <StatItem 
-              icon={<Monitor size={24} />} 
-              number="Multi" 
-              label="Platform" 
-              desc="Web & Mobile"
-              color="bg-blue-50 text-blue-600"
-              delay={0.3}
-            />
-            <StatItem 
-              icon={<Infinity size={24} />} 
-              number="100%" 
-              label="Akses Gratis" 
-              desc="Tanpa Biaya"
-              color="bg-green-50 text-green-600"
-              delay={0.4}
-            />
-          </div> */}
         </div>
       </header>
 
-      {/* === DEMO SECTION (INTERACTIVE) === */}
-      <section
-        id="demo"
-        className="py-16 md:py-24 bg-gradient-to-b from-white to-slate-50 relative"
-      >
+      {/* =============== DEMO SECTION =============== */}
+      <section id="demo" className="py-20 md:py-32 relative" style={{ background: S950 }}>
+        {/* Divider glow line top */}
+        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:"60%", height:"1px", background:"linear-gradient(90deg, transparent, rgb(99 102 241 / 0.25), transparent)" }} />
+
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center gap-12 md:gap-16">
+          <div className="flex flex-col md:flex-row items-center gap-14 md:gap-20">
+            {/* Left copy */}
             <div className="md:w-1/2">
-              <span className="text-indigo-600 font-bold uppercase tracking-wider text-sm mb-2 block">
-                Coba Langsung
-              </span>
-              <h2 className="text-3xl md:text-5xl font-black mb-6">
+              <span className="text-xs font-black uppercase tracking-widest mb-3 block" style={{ color: BRAND }}>Coba Langsung</span>
+              <h2 className="text-3xl md:text-5xl font-black mb-6" style={{ color: S100 }}>
                 Rasakan Pengalaman Kuis Interaktif
               </h2>
-              <p className="text-slate-500 text-lg mb-8 leading-relaxed">
-                Tidak perlu mendaftar untuk melihat betapa mudahnya mengerjakan
-                kuis. Coba jawab soal di samping ini! Sistem kami akan langsung
-                memberikan umpan balik instan.
+              <p className="text-base mb-8 leading-relaxed" style={{ color: S500 }}>
+                Tidak perlu mendaftar untuk melihat betapa mudahnya mengerjakan kuis.
+                Coba jawab soal di samping ini! Sistem kami akan langsung memberikan umpan balik instan.
               </p>
-
               <ul className="space-y-4 mb-8">
-                <ListItem text="Antarmuka bersih dan responsif" />
-                <ListItem text="Feedback instan setelah menjawab" />
-                <ListItem text="Animasi halus yang memanjakan mata" />
+                {["Antarmuka bersih dan responsif", "Feedback instan setelah menjawab", "Animasi halus yang memanjakan mata"].map((txt, i) => (
+                  <ListItem key={i} text={txt} />
+                ))}
               </ul>
-
               <Link
                 to="/register"
-                className="text-indigo-600 font-bold flex items-center gap-2 hover:gap-3 transition-all group"
+                className="font-black flex items-center gap-2 transition-all group text-sm"
+                style={{ color: BRAND }}
+                onMouseEnter={e => e.currentTarget.style.gap = "12px"}
+                onMouseLeave={e => e.currentTarget.style.gap = "8px"}
               >
-                Buat Akun Full Akses <ArrowRight size={18} />
+                Buat Akun Full Akses <ArrowRight size={16} />
               </Link>
             </div>
 
-            {/* Komponen Mini Demo */}
+            {/* Right demo card */}
             <div className="md:w-1/2 w-full">
               <div className="relative">
-                {/* Decorative Elements around demo */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob"></div>
-                <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-400 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-blob animation-delay-2000"></div>
-
+                <div style={{ position:"absolute", top:"-32px", right:"-32px", width:"120px", height:"120px", background:"rgb(234 179 8 / 0.08)", borderRadius:"50%", filter:"blur(40px)" }} />
+                <div style={{ position:"absolute", bottom:"-32px", left:"-32px", width:"120px", height:"120px", background:"rgb(139 92 246 / 0.08)", borderRadius:"50%", filter:"blur(40px)" }} />
                 <MiniQuizDemo />
               </div>
             </div>
@@ -457,175 +398,134 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* === FEATURES GRID === */}
-      <section id="features" className="py-16 md:py-24 bg-white">
+      {/* =============== FEATURES GRID =============== */}
+      <section id="features" className="py-20 md:py-32 relative" style={{ background: S900 }}>
+        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:"60%", height:"1px", background:"linear-gradient(90deg, transparent, rgb(99 102 241 / 0.20), transparent)" }} />
+
         <div className="container mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-12 md:mb-20">
-            <h2 className="text-3xl md:text-5xl font-black mb-6 text-slate-900">
-              Fitur Power-Up Belajarmu
-            </h2>
-            <p className="text-slate-500 text-lg">
-              Kami tidak hanya memberikan soal, tapi juga ekosistem lengkap
-              untuk pertumbuhan akademismu.
-            </p>
+          <div className="text-center max-w-3xl mx-auto mb-16 md:mb-24">
+            <h2 className="text-3xl md:text-5xl font-black mb-6" style={{ color: S100 }}>Fitur Power-Up Belajarmu</h2>
+            <p className="text-base" style={{ color: S500 }}>Kami tidak hanya memberikan soal, tapi juga ekosistem lengkap untuk pertumbuhan akademismu.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-            <FeatureCard
-              icon={<Target className="text-red-500" />}
-              title="Smart Remedial"
-              desc="AI mendeteksi kelemahanmu dan menyusun soal perbaikan khusus secara otomatis."
-            />
-            <FeatureCard
-              icon={<Crown className="text-orange-500" />}
-              title="Battle Royale"
-              desc="Mode bertahan hidup melawan 50 pemain lain. Siapa yang terakhir bertahan?"
-            />
-            <FeatureCard
-              icon={<BarChart3 className="text-indigo-500" />}
-              title="Analisis Mendalam"
-              desc="Grafik perkembangan belajar, analisis topik, dan prediksi performa ujian."
-            />
-            <FeatureCard
-              icon={<Users className="text-blue-500" />}
-              title="Duel Realtime"
-              desc="Tantang teman 1v1 atau 2v2 dengan sinkronisasi skor tanpa delay."
-            />
-            <FeatureCard
-              icon={<ShoppingBag className="text-purple-500" />}
-              title="Gamifikasi Shop"
-              desc="Tukar koin hasil belajar dengan avatar frame eksklusif dan title keren."
-            />
-            <FeatureCard
-              icon={<Smartphone className="text-green-500" />}
-              title="Multi Platform"
-              desc="Akses dari Laptop, Tablet, atau HP dengan tampilan yang tetap optimal."
-            />
+          <div className="grid md:grid-cols-3 gap-5 md:gap-6">
+            <FeatureCard icon={<Target  style={{ color: "#f87171" }} />} title="Smart Remedial"    desc="AI mendeteksi kelemahanmu dan menyusun soal perbaikan khusus secara otomatis." accent="rgb(239 68 68 / 0.08)" border="rgb(239 68 68 / 0.18)" />
+            <FeatureCard icon={<Crown   style={{ color: "#fb923c" }} />} title="Battle Royale"     desc="Mode bertahan hidup melawan 50 pemain lain. Siapa yang terakhir bertahan?"     accent="rgb(249 115 22 / 0.08)" border="rgb(249 115 22 / 0.18)" />
+            <FeatureCard icon={<BarChart3 style={{ color: BRAND }} />}  title="Analisis Mendalam" desc="Grafik perkembangan belajar, analisis topik, dan prediksi performa ujian."       accent="rgb(99 102 241 / 0.08)" border="rgb(99 102 241 / 0.18)" />
+            <FeatureCard icon={<Users   style={{ color: "#60a5fa" }} />} title="Duel Realtime"     desc="Tantang teman 1v1 atau 2v2 dengan sinkronisasi skor tanpa delay."               accent="rgb(96 165 250 / 0.08)" border="rgb(96 165 250 / 0.18)" />
+            <FeatureCard icon={<ShoppingBag style={{ color: "#c084fc" }} />} title="Gamifikasi Shop" desc="Tukar koin hasil belajar dengan avatar frame eksklusif dan title keren."       accent="rgb(192 132 252 / 0.08)" border="rgb(192 132 252 / 0.18)" />
+            <FeatureCard icon={<Smartphone style={{ color: "#4ade80" }} />} title="Multi Platform"  desc="Akses dari Laptop, Tablet, atau HP dengan tampilan yang tetap optimal."          accent="rgb(74 222 128 / 0.08)" border="rgb(74 222 128 / 0.18)" />
           </div>
         </div>
       </section>
 
-      {/* === ROADMAP / GAMIFICATION === */}
-      <section
-        id="roadmap"
-        className="py-16 md:py-24 bg-slate-900 text-white overflow-hidden relative"
-      >
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+      {/* =============== ROADMAP =============== */}
+      <section id="roadmap" className="py-20 md:py-32 overflow-hidden relative" style={{ background: S950 }}>
+        {/* Glow */}
+        <div style={{ position:"absolute", top:0, right:0, width:"600px", height:"600px", background:"rgb(99 102 241 / 0.07)", borderRadius:"50%", filter:"blur(120px)", transform:"translate(40%, -40%)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:"60%", height:"1px", background:"linear-gradient(90deg, transparent, rgb(99 102 241 / 0.20), transparent)" }} />
 
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row gap-12 md:gap-16 items-center">
+        <div className="container mx-auto px-6 relative" style={{ zIndex:1 }}>
+          <div className="flex flex-col md:flex-row gap-14 md:gap-20 items-center">
+            {/* Left */}
             <div className="md:w-1/2">
-              <div className="inline-block px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-bold mb-4 border border-indigo-500/30">
+              <div
+                className="inline-block px-3 py-1 rounded-full text-xs font-black mb-5"
+                style={{ background: "rgb(99 102 241 / 0.10)", color: BRAND, border: "1px solid rgb(99 102 241 / 0.22)" }}
+              >
                 FUTURE UPDATES
               </div>
-              <h2 className="text-3xl md:text-5xl font-black mb-6">
-                Roadmap Masa Depan
-              </h2>
-              <p className="text-slate-400 text-lg mb-8 leading-relaxed">
-                Kami terus berinovasi. Berikut adalah fitur-fitur besar yang
-                sedang kami kembangkan untuk membuat pengalaman belajarmu makin
-                epik.
+              <h2 className="text-3xl md:text-5xl font-black mb-6" style={{ color: S100 }}>Roadmap Masa Depan</h2>
+              <p className="text-base mb-10 leading-relaxed" style={{ color: S500 }}>
+                Kami terus berinovasi. Berikut adalah fitur-fitur besar yang sedang kami kembangkan untuk membuat pengalaman belajarmu makin epik.
               </p>
-
               <div className="space-y-6">
-                <RoadmapItem
-                  title="Challenge Rewards (Q1 2026)"
-                  desc="Dapatkan Koin & XP besar setiap memenangkan duel PvP."
-                  status="Coming Soon"
-                  color="text-yellow-400"
-                />
-                <RoadmapItem
-                  title="Achievement System (Q2 2026)"
-                  desc="Ratusan lencana unik untuk dipamerkan di profilmu."
-                  status="In Progress"
-                  color="text-purple-400"
-                />
-                <RoadmapItem
-                  title="AI Quiz Generator (Future)"
-                  desc="Generate soal otomatis dari materi PDF/Teks apapun."
-                  status="Concept"
-                  color="text-cyan-400"
-                />
+                <RoadmapItem title="Challenge Rewards (Q1 2026)"  desc="Dapatkan Koin & XP besar setiap memenangkan duel PvP."                    status="Coming Soon" color="#facc15" />
+                <RoadmapItem title="Achievement System (Q2 2026)" desc="Ratusan lencana unik untuk dipamerkan di profilmu."                       status="In Progress" color="#c084fc" />
+                <RoadmapItem title="AI Quiz Generator (Future)"   desc="Generate soal otomatis dari materi PDF/Teks apapun."                     status="Concept"     color="#22d3ee" />
               </div>
             </div>
 
-            <div className="md:w-1/2 bg-slate-800/50 p-6 md:p-8 rounded-3xl border border-slate-700 backdrop-blur-sm relative w-full">
-              {/* Visualisasi Kartu Gamifikasi */}
+            {/* Right — Gamification card */}
+            <div
+              className="md:w-1/2 p-6 md:p-8 rounded-3xl w-full"
+              style={{ background: S900, border: `1px solid ${S800}`, backdropFilter: "blur(12px)" }}
+            >
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold shadow-lg shadow-indigo-500/40">
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold"
+                  style={{ background: "linear-gradient(135deg, #4f46e5, #7c3aed)", boxShadow: "0 4px 20px rgb(99 102 241 / 0.35)" }}
+                >
                   🚀
                 </div>
                 <div>
-                  <div className="text-xl font-bold">Level 24</div>
-                  <div className="text-slate-400 text-sm">Master Quizzer</div>
+                  <div className="text-xl font-black" style={{ color: S100 }}>Level 24</div>
+                  <div className="text-sm" style={{ color: S500 }}>Master Quizzer</div>
                 </div>
               </div>
 
-              <div className="mb-2 flex justify-between text-xs font-bold uppercase text-slate-400">
-                <span>XP Progress</span>
-                <span>2,450 / 3,000</span>
+              <div className="flex justify-between text-[10px] font-black uppercase mb-2" style={{ color: S600 }}>
+                <span>XP Progress</span><span>2,450 / 3,000</span>
               </div>
-              <div className="h-4 bg-slate-700 rounded-full overflow-hidden mb-8">
+              <div className="h-3 rounded-full overflow-hidden mb-8" style={{ background: S800 }}>
                 <motion.div
-                  initial={{ width: 0 }}
-                  whileInView={{ width: "80%" }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                  initial={{ width: 0 }} whileInView={{ width: "80%" }} transition={{ duration: 1.5, ease: "easeOut" }}
+                  className="h-full"
+                  style={{ background: "linear-gradient(90deg, #4f46e5, #7c3aed)" }}
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="bg-slate-700/50 p-3 rounded-xl border border-slate-600">
-                  <Trophy className="mx-auto text-yellow-400 mb-2" size={20} />
-                  <div className="font-bold text-lg">15</div>
-                  <div className="text-[10px] text-slate-400 uppercase">
-                    Wins
+                {[
+                  { icon: <Trophy size={20} style={{ color: "#facc15" }} />, val: "15",   label: "Wins"   },
+                  { icon: <Target size={20} style={{ color: "#f87171" }} />, val: "92%",  label: "Akurasi" },
+                  { icon: <Star   size={20} style={{ color: "#c084fc" }} />, val: "Top 3",label: "Rank"   },
+                ].map(({ icon, val, label }, i) => (
+                  <div key={i} className="p-3 rounded-xl" style={{ background: S800, border: `1px solid ${S700}` }}>
+                    <div className="mb-2 flex justify-center">{icon}</div>
+                    <div className="font-black text-lg" style={{ color: S100 }}>{val}</div>
+                    <div className="text-[10px] font-black uppercase" style={{ color: S600 }}>{label}</div>
                   </div>
-                </div>
-                <div className="bg-slate-700/50 p-3 rounded-xl border border-slate-600">
-                  <Target className="mx-auto text-red-400 mb-2" size={20} />
-                  <div className="font-bold text-lg">92%</div>
-                  <div className="text-[10px] text-slate-400 uppercase">
-                    Akurasi
-                  </div>
-                </div>
-                <div className="bg-slate-700/50 p-3 rounded-xl border border-slate-600">
-                  <Star className="mx-auto text-purple-400 mb-2" size={20} />
-                  <div className="font-bold text-lg">Top 3</div>
-                  <div className="text-[10px] text-slate-400 uppercase">
-                    Rank
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* === CTA FOOTER === */}
-      <section className="py-16 md:py-24 text-center container mx-auto px-6">
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2rem] md:rounded-[3rem] p-10 md:p-20 text-white shadow-2xl shadow-indigo-500/40 relative overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+      {/* =============== CTA FOOTER =============== */}
+      <section className="py-20 md:py-32 container mx-auto px-6">
+        <div
+          className="rounded-[2rem] md:rounded-[3rem] p-10 md:p-20 text-center relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)", border: "1px solid rgb(99 102 241 / 0.25)", boxShadow: "0 20px 60px rgb(99 102 241 / 0.20)" }}
+        >
+          {/* Dot grid overlay */}
+          <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(circle, rgb(255 255 255 / 0.04) 1px, transparent 1px)", backgroundSize:"24px 24px", pointerEvents:"none" }} />
+          {/* Corner sparkles */}
+          <Sparkles className="absolute -top-12 -right-12" size={240} style={{ color:"rgb(255 255 255 / 0.04)", transform:"rotate(12deg)" }} />
+          <Sparkles className="absolute -bottom-12 -left-12" size={200} style={{ color:"rgb(255 255 255 / 0.04)", transform:"rotate(-12deg)" }} />
 
           <div className="relative z-10 max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-black mb-6">
-              Siap Menjadi Juara?
-            </h2>
-            <p className="text-indigo-100 text-lg mb-10 leading-relaxed">
-              Bergabunglah sekarang dan buktikan kemampuanmu di hadapan ribuan
-              pengguna lainnya. Gratis selamanya.
+            <h2 className="text-3xl md:text-5xl font-black mb-6" style={{ color: "#fff" }}>Siap Menjadi Juara?</h2>
+            <p className="text-base mb-10 leading-relaxed" style={{ color: "#c7d2fe" }}>
+              Bergabunglah sekarang dan buktikan kemampuanmu di hadapan ribuan pengguna lainnya. Gratis selamanya.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 to="/register"
-                className="bg-white text-indigo-600 px-10 py-4 rounded-xl font-bold text-lg hover:bg-indigo-50 transition-all shadow-lg hover:-translate-y-1"
+                className="px-10 py-4 rounded-xl font-black text-lg transition-all hover:-translate-y-1 hover:scale-105"
+                style={{ background: "rgb(255 255 255 / 0.12)", color: "#e0e7ff", border: "1px solid rgb(255 255 255 / 0.20)" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgb(255 255 255 / 0.20)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgb(255 255 255 / 0.12)"}
               >
                 Buat Akun Sekarang
               </Link>
               <Link
                 to="/login"
-                className="px-10 py-4 rounded-xl font-bold text-lg border border-indigo-400 hover:bg-indigo-700/50 transition-all"
+                className="px-10 py-4 rounded-xl font-black text-lg transition-all"
+                style={{ color: "#a5b4fc", border: "1px solid rgb(99 102 241 / 0.35)" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "rgb(99 102 241 / 0.15)"; e.currentTarget.style.borderColor = "rgb(99 102 241 / 0.50)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgb(99 102 241 / 0.35)"; }}
               >
                 Masuk
               </Link>
@@ -634,23 +534,24 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* === FOOTER SIMPLE === */}
-      <footer className="border-t border-slate-200 bg-white py-12 text-center text-slate-500">
+      {/* =============== FOOTER SIMPLE =============== */}
+      <footer className="py-12 text-center" style={{ borderTop: `1px solid ${S800}`, background: S950 }}>
         <div className="container mx-auto px-6">
-          <div className="flex items-center justify-center gap-2 mb-4 text-slate-900 font-bold text-xl">
-            <Zap size={20} className="text-indigo-600" fill="currentColor" />{" "}
-            QuizApp
+          <div className="flex items-center justify-center gap-2 mb-4 font-black text-xl" style={{ color: S200 }}>
+            <Zap size={18} fill="currentColor" style={{ color: BRAND }} /> QuizApp
           </div>
-          <p className="mb-6 text-sm">
-            © {new Date().getFullYear()} QuizApp. All rights reserved.
-          </p>
-          <div className="flex justify-center gap-6 text-sm font-medium">
-            <Link to="/about" className="hover:text-indigo-600 transition">
-              Tentang
-            </Link>
-            <Link to="/whats-new" className="hover:text-indigo-600 transition">
-              Changelog
-            </Link>
+          <p className="mb-6 text-xs" style={{ color: S600 }}>© {new Date().getFullYear()} QuizApp. All rights reserved.</p>
+          <div className="flex justify-center gap-6 text-xs font-black" style={{ color: S500 }}>
+            <Link to="/about"
+              style={{ color: S500 }}
+              onMouseEnter={e => e.currentTarget.style.color = BRAND}
+              onMouseLeave={e => e.currentTarget.style.color = S500}
+            >Tentang</Link>
+            <Link to="/whats-new"
+              style={{ color: S500 }}
+              onMouseEnter={e => e.currentTarget.style.color = BRAND}
+              onMouseLeave={e => e.currentTarget.style.color = S500}
+            >Changelog</Link>
           </div>
         </div>
       </footer>
@@ -658,71 +559,71 @@ const LandingPage = () => {
   );
 };
 
-// --- SUB-COMPONENTS ---
+// =========================================================
+// SUB-COMPONENTS
+// =========================================================
 
-// Kartu Statistik Baru (Card Style)
 const StatItem = ({ icon, number, label, desc, color, delay }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    transition={{ delay, duration: 0.5 }}
-    whileHover={{ y: -5 }}
-    className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col items-center text-center group hover:border-indigo-100 transition-all"
+    initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} transition={{ delay, duration:0.5 }}
+    whileHover={{ y:-5 }}
+    className="p-6 rounded-3xl flex flex-col items-center text-center group transition-all"
+    style={{ background: "var(--color-surface-900)", border: "1px solid var(--color-surface-800)" }}
   >
-    <div
-      className={`w-12 h-12 mb-4 rounded-2xl ${color} bg-opacity-10 text-opacity-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-    >
+    <div className="w-12 h-12 mb-4 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: "var(--color-surface-800)" }}>
       {icon}
     </div>
-    <div className="text-3xl font-black text-slate-900 mb-1">{number}</div>
-    <div className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">
-      {label}
-    </div>
-    <p className="text-xs text-slate-400 font-medium">{desc}</p>
+    <div className="text-3xl font-black mb-1" style={{ color: "var(--color-surface-100)" }}>{number}</div>
+    <div className="text-xs font-black uppercase tracking-wider mb-2" style={{ color: "var(--color-surface-500)" }}>{label}</div>
+    <p className="text-xs" style={{ color: "var(--color-surface-600)" }}>{desc}</p>
   </motion.div>
 );
 
-const FeatureCard = ({ icon, title, desc }) => (
+const FeatureCard = ({ icon, title, desc, accent, border }) => (
   <motion.div
-    whileHover={{ y: -5 }}
-    className="p-6 md:p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/10 transition-all group"
+    whileHover={{ y:-5 }}
+    className="p-6 md:p-8 rounded-3xl transition-all group"
+    style={{ background: accent, border: `1px solid ${border}` }}
   >
-    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm mb-6 group-hover:scale-110 transition-transform duration-300">
-      {React.cloneElement(icon, { size: 28 })}
+    <div
+      className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+      style={{ background: "var(--color-surface-800)" }}
+    >
+      {React.cloneElement(icon, { size: 26 })}
     </div>
-    <h3 className="text-xl font-bold text-slate-900 mb-3">{title}</h3>
-    <p className="text-slate-600 leading-relaxed text-sm">{desc}</p>
+    <h3 className="text-lg font-black mb-2" style={{ color: "var(--color-surface-100)" }}>{title}</h3>
+    <p className="text-sm leading-relaxed" style={{ color: "var(--color-surface-500)" }}>{desc}</p>
   </motion.div>
 );
 
 const RoadmapItem = ({ title, desc, status, color }) => (
   <div className="flex gap-4">
     <div className="flex flex-col items-center">
-      <div
-        className={`w-4 h-4 rounded-full border-2 border-slate-700 bg-slate-900 ${
-          color === "text-yellow-400" ? "bg-yellow-400 border-yellow-400" : ""
-        }`}
-      />
-      <div className="w-0.5 h-full bg-slate-800 my-2" />
+      <div className="w-4 h-4 rounded-full" style={{ background: color, boxShadow: `0 0 10px ${color}66` }} />
+      <div className="w-px flex-1 my-2" style={{ background: "var(--color-surface-800)" }} />
     </div>
     <div className="pb-8">
       <div className="flex items-center gap-3 mb-1">
-        <h4 className={`font-bold text-lg ${color}`}>{title}</h4>
-        <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-800 rounded text-slate-400 uppercase border border-slate-700">
-          {status}
-        </span>
+        <h4 className="font-black text-base" style={{ color }}>{title}</h4>
+        <span
+          className="text-[9px] font-black px-2 py-0.5 rounded uppercase"
+          style={{ background: "var(--color-surface-800)", color: "var(--color-surface-400)", border: "1px solid var(--color-surface-700)" }}
+        >{status}</span>
       </div>
-      <p className="text-slate-400 text-sm">{desc}</p>
+      <p className="text-sm" style={{ color: "var(--color-surface-500)" }}>{desc}</p>
     </div>
   </div>
 );
 
 const ListItem = ({ text }) => (
-  <div className="flex items-center gap-3 text-slate-700 font-medium">
-    <div className="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
-      <CheckCircle2 size={14} />
+  <div className="flex items-center gap-3 font-bold text-sm">
+    <div
+      className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+      style={{ background: "rgb(74 222 128 / 0.10)", border: "1px solid rgb(74 222 128 / 0.25)" }}
+    >
+      <CheckCircle2 size={13} style={{ color: "#4ade80" }} />
     </div>
-    {text}
+    <span style={{ color: "var(--color-surface-400)" }}>{text}</span>
   </div>
 );
 
