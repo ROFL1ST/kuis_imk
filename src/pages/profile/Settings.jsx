@@ -38,17 +38,22 @@ const inputStyle = {
   fontSize: "0.875rem",
 };
 
+const LANGS = [
+  { code: "id", label: "Indonesia", flag: "🇮🇩" },
+  { code: "en", label: "English",   flag: "🇺🇸" },
+  { code: "jp", label: "日本語",      flag: "🇯🇵" },
+];
+
 const Settings = () => {
   const { user, logout } = useAuth();
   const { t, language, setLanguage } = useLanguage();
 
   const [passForm, setPassForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
-  const [email, setEmail]         = useState("");
+  const [email, setEmail]               = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
-  const [preferences, setPreferences]   = useState({ notifications: true, darkMode: false });
+  const [preferences, setPreferences]   = useState({ notifications: true });
   const [loading, setLoading]           = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("email");
 
   useEffect(() => { document.title = `${t("settings.title")} | QuizApp`; }, [t]);
   useEffect(() => { if (user?.email) setEmail(user.email); }, [user]);
@@ -98,11 +103,17 @@ const Settings = () => {
 
   /* ── Nav items ── */
   const NAV = [
-    { id: "email",       icon: <Mail       size={16} />, label: t("settings.menu.email"),       accent: "#60a5fa" },
-    { id: "security",    icon: <Shield     size={16} />, label: t("settings.menu.security"),    accent: "#a78bfa" },
-    { id: "preferences", icon: <Smartphone size={16} />, label: t("settings.menu.preferences"), accent: "#34d399" },
-    { id: "danger",      icon: <AlertTriangle size={16} />, label: t("settings.danger.title"),  accent: "#f87171" },
+    { id: "email",       icon: <Mail          size={15} />, label: t("settings.menu.email"),       accent: "#60a5fa" },
+    { id: "security",    icon: <Shield        size={15} />, label: t("settings.menu.security"),    accent: "#a78bfa" },
+    { id: "preferences", icon: <Smartphone    size={15} />, label: t("settings.menu.preferences"), accent: "#34d399" },
+    { id: "danger",      icon: <AlertTriangle size={15} />, label: t("settings.danger.title"),     accent: "#f87171" },
   ];
+
+  const scrollTo = (id) => {
+    document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const currentLang = LANGS.find(l => l.code === language) || LANGS[0];
 
   return (
     <motion.div
@@ -110,13 +121,10 @@ const Settings = () => {
       animate={{ opacity: 1 }}
       className="max-w-4xl mx-auto pb-24 px-4"
     >
-      {/* ══ PAGE HEADER ══ */}
+      {/* PAGE HEADER */}
       <div className="mb-8 mt-2">
         <h1 className="text-2xl md:text-3xl font-black flex items-center gap-3" style={{ color: S50 }}>
-          <span
-            className="p-2 rounded-xl"
-            style={{ background: "rgb(99 102 241 / 0.12)", color: BRAND }}
-          >
+          <span className="p-2 rounded-xl" style={{ background: "rgb(99 102 241 / 0.12)", color: BRAND }}>
             <UserCog size={22} />
           </span>
           {t("settings.title")}
@@ -124,10 +132,11 @@ const Settings = () => {
         <p className="mt-1.5 text-sm" style={{ color: S500 }}>{t("settings.subtitle")}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+      {/* LAYOUT: sidebar kiri + konten kanan */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-        {/* ══ SIDEBAR ══ */}
-        <aside className="space-y-4">
+        {/* ══ SIDEBAR ══ — sticky di desktop */}
+        <aside className="w-full lg:w-64 lg:sticky lg:top-4 shrink-0 space-y-4">
 
           {/* User mini card */}
           <div
@@ -135,7 +144,7 @@ const Settings = () => {
             style={{ background: S900, border: `1px solid ${S700}` }}
           >
             <div
-              className="w-12 h-12 rounded-full flex items-center justify-center font-black text-xl shrink-0"
+              className="w-11 h-11 rounded-full flex items-center justify-center font-black text-lg shrink-0"
               style={{ background: "rgb(99 102 241 / 0.15)", color: BRAND }}
             >
               {user?.name?.charAt(0).toUpperCase()}
@@ -153,43 +162,41 @@ const Settings = () => {
                 >
                   {user.is_email_verified
                     ? <><CheckCircle size={9} /> {t("settings.email.verified")}</>
-                    : <><XCircle size={9} /> {t("settings.email.unverified")}</>
+                    : <><XCircle    size={9} /> {t("settings.email.unverified")}</>
                   }
                 </span>
               )}
             </div>
           </div>
 
-          {/* Nav */}
+          {/* Nav list */}
           <nav
-            className="rounded-2xl overflow-hidden p-2 space-y-1"
+            className="rounded-2xl p-2 space-y-1"
             style={{ background: S900, border: `1px solid ${S800}` }}
           >
-            <p
-              className="text-[10px] font-black uppercase px-3 py-2 tracking-widest"
-              style={{ color: S600 }}
-            >
+            <p className="text-[10px] font-black uppercase px-3 py-2 tracking-widest" style={{ color: S600 }}>
               {t("settings.menu.quickMenu")}
             </p>
             {NAV.map(item => (
               <button
                 key={item.id}
-                onClick={() => setActiveSection(item.id)}
+                onClick={() => scrollTo(item.id)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-black text-left transition-all"
-                style={
-                  activeSection === item.id
-                    ? { background: `${item.accent}18`, color: item.accent, border: `1px solid ${item.accent}30` }
-                    : { color: S400, border: "1px solid transparent" }
-                }
-                onMouseEnter={e => { if (activeSection !== item.id) e.currentTarget.style.color = S200; }}
-                onMouseLeave={e => { if (activeSection !== item.id) e.currentTarget.style.color = S400; }}
+                style={{ color: S400, border: "1px solid transparent" }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.color = item.accent;
+                  e.currentTarget.style.background = `${item.accent}12`;
+                  e.currentTarget.style.borderColor = `${item.accent}30`;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.color = S400;
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "transparent";
+                }}
               >
                 <span
-                  className="p-1.5 rounded-lg"
-                  style={activeSection === item.id
-                    ? { background: `${item.accent}25`, color: item.accent }
-                    : { background: S800, color: S500 }
-                  }
+                  className="p-1.5 rounded-lg transition-colors"
+                  style={{ background: S800, color: S500 }}
                 >
                   {item.icon}
                 </span>
@@ -200,22 +207,18 @@ const Settings = () => {
         </aside>
 
         {/* ══ MAIN CONTENT ══ */}
-        <div className="space-y-5">
+        <div className="flex-1 min-w-0 space-y-5">
 
           {/* 1. EMAIL */}
           <motion.section
-            layout
+            id="section-email"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-hidden scroll-mt-4"
             style={{ background: S900, border: `1px solid ${S800}` }}
           >
-            {/* Section header */}
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: `1px solid ${S800}` }}
-            >
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: `1px solid ${S800}` }}>
               <h2 className="font-black text-base flex items-center gap-2" style={{ color: S100 }}>
                 <span className="p-1.5 rounded-lg" style={{ background: "rgb(96 165 250 / 0.12)", color: "#60a5fa" }}>
                   <Mail size={15} />
@@ -232,12 +235,11 @@ const Settings = () => {
                 >
                   {user.is_email_verified
                     ? <><CheckCircle size={10} /> {t("settings.email.verified")}</>
-                    : <><XCircle size={10} /> {t("settings.email.unverified")}</>
+                    : <><XCircle    size={10} /> {t("settings.email.unverified")}</>
                   }
                 </span>
               )}
             </div>
-
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-black uppercase mb-2" style={{ color: S500 }}>
@@ -260,7 +262,7 @@ const Settings = () => {
                   disabled={emailLoading || (email === user?.email && user?.is_email_verified)}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: "rgb(96 165 250 / 0.12)", color: "#60a5fa", border: "1px solid rgb(96 165 250 / 0.25)" }}
-                  onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.background = "rgb(96 165 250 / 0.20)"; }}
+                  onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.background = "rgb(96 165 250 / 0.22)"; }}
                   onMouseLeave={e => e.currentTarget.style.background = "rgb(96 165 250 / 0.12)"}
                 >
                   {emailLoading ? t("settings.email.saving") : <><Save size={15} /> {t("settings.email.save")}</>}
@@ -271,17 +273,14 @@ const Settings = () => {
 
           {/* 2. PASSWORD */}
           <motion.section
-            layout
+            id="section-security"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-hidden scroll-mt-4"
             style={{ background: S900, border: `1px solid ${S800}` }}
           >
-            <div
-              className="px-6 py-4"
-              style={{ borderBottom: `1px solid ${S800}` }}
-            >
+            <div className="px-6 py-4" style={{ borderBottom: `1px solid ${S800}` }}>
               <h2 className="font-black text-base flex items-center gap-2" style={{ color: S100 }}>
                 <span className="p-1.5 rounded-lg" style={{ background: "rgb(167 139 250 / 0.12)", color: "#a78bfa" }}>
                   <Lock size={15} />
@@ -289,7 +288,6 @@ const Settings = () => {
                 {t("settings.security.title")}
               </h2>
             </div>
-
             <form onSubmit={handleChangePassword} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -321,17 +319,11 @@ const Settings = () => {
                   />
                 </div>
               </div>
-
-              {/* Password match hint */}
               {passForm.newPassword && passForm.confirmPassword && (
-                <p
-                  className="text-xs font-black"
-                  style={{ color: passForm.newPassword === passForm.confirmPassword ? "#4ade80" : "#f87171" }}
-                >
+                <p className="text-xs font-black" style={{ color: passForm.newPassword === passForm.confirmPassword ? "#4ade80" : "#f87171" }}>
                   {passForm.newPassword === passForm.confirmPassword ? "✓ Password cocok" : "✗ Password tidak cocok"}
                 </p>
               )}
-
               <div className="flex justify-end">
                 <button
                   type="submit"
@@ -349,17 +341,14 @@ const Settings = () => {
 
           {/* 3. PREFERENCES */}
           <motion.section
-            layout
+            id="section-preferences"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-visible scroll-mt-4"
             style={{ background: S900, border: `1px solid ${S800}` }}
           >
-            <div
-              className="px-6 py-4"
-              style={{ borderBottom: `1px solid ${S800}` }}
-            >
+            <div className="px-6 py-4 rounded-t-2xl" style={{ borderBottom: `1px solid ${S800}` }}>
               <h2 className="font-black text-base flex items-center gap-2" style={{ color: S100 }}>
                 <span className="p-1.5 rounded-lg" style={{ background: "rgb(52 211 153 / 0.12)", color: "#34d399" }}>
                   <Smartphone size={15} />
@@ -375,14 +364,9 @@ const Settings = () => {
                 className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-colors"
                 style={{ background: S800, border: `1px solid ${S700}` }}
                 onClick={toggleNotifications}
-                onMouseEnter={e => e.currentTarget.style.borderColor = S600}
-                onMouseLeave={e => e.currentTarget.style.borderColor = S700}
               >
                 <div className="flex items-center gap-3">
-                  <span
-                    className="p-2 rounded-lg"
-                    style={{ background: "rgb(234 179 8 / 0.12)", color: "#fbbf24" }}
-                  >
+                  <span className="p-2 rounded-lg" style={{ background: "rgb(234 179 8 / 0.12)", color: "#fbbf24" }}>
                     <Bell size={16} />
                   </span>
                   <div>
@@ -390,13 +374,12 @@ const Settings = () => {
                     <p className="text-xs" style={{ color: S600 }}>{t("settings.preferences.notifDesc")}</p>
                   </div>
                 </div>
-                {/* Toggle pill */}
                 <div
-                  className="relative w-11 h-6 rounded-full transition-colors"
+                  className="relative w-11 h-6 rounded-full transition-colors shrink-0"
                   style={{ background: preferences.notifications ? BRAND : S700 }}
                 >
                   <div
-                    className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                    className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all"
                     style={{ left: preferences.notifications ? "calc(100% - 20px)" : "4px" }}
                   />
                 </div>
@@ -414,20 +397,15 @@ const Settings = () => {
                   <div>
                     <p className="text-sm font-black flex items-center gap-2" style={{ color: S200 }}>
                       {t("settings.preferences.darkModeTitle")}
-                      <span
-                        className="text-[9px] font-black px-1.5 py-0.5 rounded"
-                        style={{ background: S700, color: S500 }}
-                      >
-                        Dev
-                      </span>
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded" style={{ background: S700, color: S500 }}>Dev</span>
                     </p>
                     <p className="text-xs" style={{ color: S600 }}>{t("settings.preferences.darkModeDesc")}</p>
                   </div>
                 </div>
-                <div className="w-11 h-6 rounded-full" style={{ background: S700 }} />
+                <div className="w-11 h-6 rounded-full shrink-0" style={{ background: S700 }} />
               </div>
 
-              {/* Language selector */}
+              {/* Language selector — FIXED: overflow-visible + high z-index */}
               <div
                 className="flex items-center justify-between p-4 rounded-xl"
                 style={{ background: S800, border: `1px solid ${S700}` }}
@@ -442,50 +420,40 @@ const Settings = () => {
                   </div>
                 </div>
 
+                {/* Headless UI Listbox — key fix: anchor prop to avoid clipping */}
                 <Listbox value={language} onChange={setLanguage}>
                   <div className="relative">
                     <ListboxButton
-                      className="relative w-28 cursor-pointer rounded-xl py-2 pl-3 pr-8 text-left text-sm font-black transition-all"
-                      style={{ background: S900, border: `1px solid ${S600}`, color: S200 }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-black cursor-pointer transition-all"
+                      style={{ background: S900, border: `1px solid ${S600}`, color: S200, minWidth: "90px" }}
                     >
-                      <span className="flex items-center gap-2">
-                        <span className="text-lg">
-                          {language === "id" ? "🇮🇩" : language === "en" ? "🇺🇸" : "🇯🇵"}
-                        </span>
-                        <span className="text-xs">
-                          {language === "id" ? "ID" : language === "en" ? "EN" : "JP"}
-                        </span>
-                      </span>
-                      <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                        <ChevronDown size={14} style={{ color: S500 }} />
-                      </span>
+                      <span className="text-lg leading-none">{currentLang.flag}</span>
+                      <span className="text-xs">{currentLang.code.toUpperCase()}</span>
+                      <ChevronDown size={13} style={{ color: S500, marginLeft: "auto" }} />
                     </ListboxButton>
 
                     <ListboxOptions
-                      className="absolute right-0 mt-1 w-40 overflow-auto rounded-xl py-1 text-sm shadow-2xl z-50"
-                      style={{ background: S800, border: `1px solid ${S700}` }}
+                      className="absolute right-0 mt-2 w-44 rounded-xl py-1.5 shadow-2xl"
+                      style={{
+                        background: S800,
+                        border: `1px solid ${S600}`,
+                        zIndex: 9999,
+                        top: "100%",
+                      }}
                     >
-                      {[
-                        { code: "id", label: "Indonesia", flag: "🇮🇩" },
-                        { code: "en", label: "English",   flag: "🇺🇸" },
-                        { code: "jp", label: "日本語",      flag: "🇯🇵" },
-                      ].map(lang => (
-                        <ListboxOption
-                          key={lang.code}
-                          value={lang.code}
-                          className=""
-                        >
+                      {LANGS.map(lang => (
+                        <ListboxOption key={lang.code} value={lang.code}>
                           {({ focus, selected }) => (
                             <div
-                              className="flex items-center justify-between px-3 py-2.5 cursor-pointer"
+                              className="flex items-center justify-between px-4 py-2.5 cursor-pointer"
                               style={{
-                                background: focus ? "rgb(99 102 241 / 0.10)" : "transparent",
+                                background: focus ? "rgb(99 102 241 / 0.12)" : "transparent",
                                 color: selected ? BRAND : S300,
                               }}
                             >
-                              <span className="flex items-center gap-2.5">
-                                <span className="text-lg">{lang.flag}</span>
-                                <span className={selected ? "font-black" : "font-medium"}>{lang.label}</span>
+                              <span className="flex items-center gap-3">
+                                <span className="text-xl leading-none">{lang.flag}</span>
+                                <span className={`text-sm ${selected ? "font-black" : "font-medium"}`}>{lang.label}</span>
                               </span>
                               {selected && <Check size={14} style={{ color: BRAND }} />}
                             </div>
@@ -501,17 +469,14 @@ const Settings = () => {
 
           {/* 4. DANGER ZONE */}
           <motion.section
-            layout
+            id="section-danger"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-hidden scroll-mt-4"
             style={{ background: "rgb(239 68 68 / 0.05)", border: "1px solid rgb(239 68 68 / 0.18)" }}
           >
-            <div
-              className="px-6 py-4"
-              style={{ borderBottom: "1px solid rgb(239 68 68 / 0.15)" }}
-            >
+            <div className="px-6 py-4" style={{ borderBottom: "1px solid rgb(239 68 68 / 0.15)" }}>
               <h2 className="font-black text-base flex items-center gap-2" style={{ color: "#f87171" }}>
                 <span className="p-1.5 rounded-lg" style={{ background: "rgb(239 68 68 / 0.12)", color: "#f87171" }}>
                   <AlertTriangle size={15} />
@@ -519,7 +484,6 @@ const Settings = () => {
                 {t("settings.danger.title")}
               </h2>
             </div>
-
             <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <p className="text-sm leading-relaxed" style={{ color: "rgb(252 165 165 / 0.75)" }}>
                 {t("settings.danger.desc")}
@@ -539,7 +503,7 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* ══ DELETE MODAL ══ */}
+      {/* DELETE MODAL */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -563,7 +527,7 @@ const Settings = () => {
           <div className="flex gap-3">
             <button
               onClick={() => setIsDeleteModalOpen(false)}
-              className="flex-1 py-2.5 rounded-xl font-black text-sm transition-colors"
+              className="flex-1 py-2.5 rounded-xl font-black text-sm"
               style={{ background: S800, color: S300, border: `1px solid ${S700}` }}
             >
               {t("settings.danger.cancel")}
