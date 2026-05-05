@@ -1,196 +1,180 @@
+// src/pages/about/WhatsNew.jsx
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Sparkles,
-  Zap,
-  Layout,
-  Globe,
-  Bug,
-  Calendar,
-  Construction,
-} from "lucide-react";
+import { ArrowLeft, Sparkles, Zap, Layout, Globe, Bug, Calendar, Construction } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { changelogData, APP_VERSION } from "../../data/changelog";
 
+/* ── CSS var shortcuts ── */
+const BRAND = "var(--color-brand-400)";
+const S100  = "var(--color-surface-100)";
+const S200  = "var(--color-surface-200)";
+const S300  = "var(--color-surface-300)";
+const S400  = "var(--color-surface-400)";
+const S500  = "var(--color-surface-500)";
+const S600  = "var(--color-surface-600)";
+const S700  = "var(--color-surface-700)";
+const S800  = "var(--color-surface-800)";
+const S900  = "var(--color-surface-900)";
+
+/* change type → dark tinted config */
+const TYPE_CFG = {
+  new:         { icon: <Sparkles size={13} />,     bg: "rgb(234 179 8 / 0.12)",  color: "#fbbf24", border: "rgb(234 179 8 / 0.25)",  label: "Baru"   },
+  improvement: { icon: <Zap      size={13} />,     bg: "rgb(99 102 241 / 0.10)", color: BRAND,    border: "rgb(99 102 241 / 0.20)", label: "Update" },
+  fix:         { icon: <Bug      size={13} />,     bg: "rgb(239 68 68 / 0.10)",  color: "#f87171", border: "rgb(239 68 68 / 0.20)",  label: "Fix"    },
+  default:     { icon: <Construction size={13} />, bg: "rgb(100 116 139 / 0.10)",color: S500,     border: "rgb(100 116 139 / 0.20)",label: "Misc"   },
+};
+
 const WhatsNew = () => {
-  const navigate = useNavigate();
+  const navigate       = useNavigate();
   const { t, language } = useLanguage();
 
-  useEffect(() => {
-    document.title = `${t("whatsNew.title")} | QuizApp`;
-  }, [t]);
+  useEffect(() => { document.title = `${t("whatsNew.title")} | QuizApp`; }, [t]);
 
-  // Helper to get text based on language
   const getText = (item) => {
     if (!item) return "";
     if (typeof item === "string") return item;
     return item[language] || item.id || item.en || "";
   };
 
-  const features = [
-    {
-      icon: <Globe className="text-blue-500" size={24} />,
-      title: t("whatsNew.feature1Title") || "Multi-Language",
-      description:
-        t("whatsNew.feature1Desc") || "Support English, Indonesia, Japan",
-    },
-    {
-      icon: <Sparkles className="text-amber-500" size={24} />,
-      title: t("whatsNew.feature2Title") || "AI Genius Mode",
-      description: t("whatsNew.feature2Desc") || "Generate quizzes with AI",
-    },
-    {
-      icon: <Layout className="text-purple-500" size={24} />,
-      title: t("whatsNew.feature3Title") || "New UI Design",
-      description: t("whatsNew.feature3Desc") || "Fresh look and feel",
-    },
+  const getCfg  = (type) => TYPE_CFG[type] || TYPE_CFG.default;
+
+  const highlights = [
+    { icon: <Globe    size={22} style={{ color: "#60a5fa" }} />, title: t("whatsNew.feature1Title") || "Multi-Language",  desc: t("whatsNew.feature1Desc") || "Support EN, ID, JP",      accent: "rgb(96 165 250 / 0.10)", border: "rgb(96 165 250 / 0.20)" },
+    { icon: <Sparkles size={22} style={{ color: "#fbbf24" }} />, title: t("whatsNew.feature2Title") || "AI Genius Mode",   desc: t("whatsNew.feature2Desc") || "Generate quizzes with AI", accent: "rgb(234 179 8 / 0.10)",  border: "rgb(234 179 8 / 0.22)"  },
+    { icon: <Layout   size={22} style={{ color: "#a78bfa" }} />, title: t("whatsNew.feature3Title") || "New UI Design",    desc: t("whatsNew.feature3Desc") || "Fresh dark look",          accent: "rgb(167 139 250 / 0.10)",border: "rgb(167 139 250 / 0.20)" },
   ];
 
-  // Helper untuk icon & warna tipe perubahan
-  const getTypeConfig = (type) => {
-    switch (type) {
-      case "new":
-        return {
-          icon: <Sparkles size={14} />,
-          color: "text-amber-500 bg-amber-100",
-          label: "Baru",
-        };
-      case "improvement":
-        return {
-          icon: <Zap size={14} />,
-          color: "text-blue-500 bg-blue-100",
-          label: "Update",
-        };
-      case "fix":
-        return {
-          icon: <Bug size={14} />,
-          color: "text-red-500 bg-red-100",
-          label: "Fix",
-        };
-      default:
-        return {
-          icon: <Construction size={14} />,
-          color: "text-slate-500 bg-slate-100",
-          label: "Misc",
-        };
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-20">
+
+      {/* ═══ STICKY HEADER ═══ */}
+      <div
+        className="sticky top-0 z-10"
+        style={{ background: "rgb(10 10 20 / 0.90)", backdropFilter:"blur(16px)", borderBottom: `1px solid ${S800}` }}
+      >
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-slate-100 transition text-slate-600"
+            className="p-2 rounded-full transition"
+            style={{ color: S400 }}
+            onMouseEnter={e => e.currentTarget.style.background = S800}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
           >
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-lg font-bold text-slate-800">
-              {t("whatsNew.title")}
-            </h1>
-            <p className="text-xs text-slate-500">{t("whatsNew.subtitle")}</p>
+            <h1 className="text-base font-black" style={{ color: S100 }}>{t("whatsNew.title")}</h1>
+            <p className="text-xs" style={{ color: S600 }}>{t("whatsNew.subtitle")}</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Featured Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          {features.map((item, idx) => (
-            <div
+
+        {/* ═══ HIGHLIGHT CARDS ═══ */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16">
+          {highlights.map((item, idx) => (
+            <motion.div
               key={idx}
-              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition"
+              initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: idx * 0.08 }}
+              className="p-6 rounded-2xl"
+              style={{ background: item.accent, border: `1px solid ${item.border}` }}
             >
-              <div className="bg-white w-12 h-12 rounded-xl flex items-center justify-center shadow-sm mb-4">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                style={{ background: S800 }}
+              >
                 {item.icon}
               </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">
-                {item.title}
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {item.description}
-              </p>
-            </div>
+              <h3 className="text-base font-black mb-1" style={{ color: S100 }}>{item.title}</h3>
+              <p className="text-sm leading-relaxed" style={{ color: S500 }}>{item.desc}</p>
+            </motion.div>
           ))}
         </div>
 
-        {/* Timeline Pembaruan */}
-        <div className="relative pl-4 sm:pl-8 border-l-2 border-slate-200 space-y-12">
+        {/* ═══ CHANGELOG TIMELINE ═══ */}
+        <div
+          className="relative pl-4 sm:pl-8 space-y-10"
+          style={{ borderLeft: `2px solid ${S800}` }}
+        >
           {changelogData.map((update, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.1 }}
+              initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.08 }}
               className="relative"
             >
-              {/* Dot Timeline */}
+              {/* Timeline dot */}
               <div
-                className={`absolute -left-[21px] sm:-left-[37px] top-0 w-4 h-4 rounded-full border-2 border-white shadow-sm 
-                ${
-                  update.highlight
-                    ? "bg-indigo-600 ring-4 ring-indigo-100"
-                    : "bg-slate-400"
-                }`}
-              ></div>
+                className="absolute -left-[21px] sm:-left-[37px] top-1 w-4 h-4 rounded-full"
+                style={{
+                  background: update.highlight ? BRAND : S700,
+                  border: `2px solid ${update.highlight ? "rgb(99 102 241 / 0.40)" : S800}`,
+                  boxShadow: update.highlight ? "0 0 0 4px rgb(99 102 241 / 0.12)" : "none",
+                }}
+              />
 
-              {/* Content Card */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              {/* Content card */}
+              <div
+                className="rounded-3xl p-6 sm:p-8"
+                style={{
+                  background: S900,
+                  border: `1px solid ${update.highlight ? "rgb(99 102 241 / 0.25)" : S800}`,
+                }}
+              >
+                {/* Version row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          update.highlight
-                            ? "bg-indigo-100 text-indigo-700"
-                            : "bg-slate-100 text-slate-600"
-                        }`}
+                        className="px-3 py-1 rounded-full text-xs font-black"
+                        style={{
+                          background: update.highlight ? "rgb(99 102 241 / 0.12)" : S800,
+                          color:      update.highlight ? BRAND                    : S400,
+                          border:     `1px solid ${update.highlight ? "rgb(99 102 241 / 0.22)" : S700}`,
+                        }}
                       >
                         v{update.version}
                       </span>
-                      <span className="text-sm text-slate-400">
-                        {getText(update.date)}
+                      <span className="text-xs flex items-center gap-1" style={{ color: S600 }}>
+                        <Calendar size={11} /> {getText(update.date)}
                       </span>
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-800">
-                      {getText(update.title)}
-                    </h2>
+                    <h2 className="text-xl font-black" style={{ color: S100 }}>{getText(update.title)}</h2>
                   </div>
                 </div>
 
+                {/* Description */}
                 {getText(update.description) && (
-                  <p className="text-slate-600 mb-6 leading-relaxed bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200">
+                  <p
+                    className="text-sm mb-6 leading-relaxed p-4 rounded-xl"
+                    style={{ background: S800, color: S400, border: `1px dashed ${S700}` }}
+                  >
                     {getText(update.description)}
                   </p>
                 )}
 
+                {/* Change list */}
                 <div className="space-y-4">
                   {update.changes.map((change, cIdx) => {
-                    const config = getTypeConfig(change.type);
+                    const cfg = getCfg(change.type);
                     return (
                       <div key={cIdx} className="flex gap-4">
-                        <div className="mt-1 flex-shrink-0">
-                          <span
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
-                              config.color
-                                .replace("text-", "bg-")
-                                .replace("100", "100")
-                                .split(" ")[1]
-                            } ${config.color.split(" ")[0]}`}
-                          >
-                            {config.icon}
-                          </span>
+                        <div
+                          className="mt-0.5 flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
+                          style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}
+                        >
+                          {cfg.icon}
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-800 text-sm mb-1 uppercase tracking-wider">
-                            {config.label}
-                          </h4>
-                          <p className="text-slate-600 text-sm leading-relaxed">
+                          <span
+                            className="text-[10px] font-black uppercase tracking-wider"
+                            style={{ color: cfg.color }}
+                          >
+                            {cfg.label}
+                          </span>
+                          <p className="text-sm leading-relaxed mt-0.5" style={{ color: S400 }}>
                             {getText(change.text)}
                           </p>
                         </div>
@@ -203,20 +187,30 @@ const WhatsNew = () => {
           ))}
         </div>
 
-        {/* Footer CTA */}
-        <div className="mt-20 text-center bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+        {/* ═══ FOOTER CTA ═══ */}
+        <div
+          className="mt-20 text-center rounded-3xl p-8 sm:p-12 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%)", border: "1px solid rgb(99 102 241 / 0.25)" }}
+        >
+          <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(circle, rgb(255 255 255 / 0.04) 1px, transparent 1px)", backgroundSize:"24px 24px", pointerEvents:"none" }} />
+          <Sparkles className="absolute -top-10 -right-10 pointer-events-none" size={220} style={{ color: "rgb(255 255 255 / 0.05)", transform:"rotate(12deg)" }} />
+
           <div className="relative z-10">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl font-black mb-4" style={{ color: "#fff" }}>
               {t("whatsNew.idea")}
             </h2>
-            <button className="px-8 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition shadow-lg">
+            <button
+              className="px-8 py-3 rounded-xl font-black text-sm transition hover:scale-105"
+              style={{ background: "rgb(255 255 255 / 0.12)", color: "#e0e7ff", border: "1px solid rgb(255 255 255 / 0.20)" }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgb(255 255 255 / 0.20)"}
+              onMouseLeave={e => e.currentTarget.style.background = "rgb(255 255 255 / 0.12)"}
+            >
               {t("whatsNew.contactUs")}
             </button>
           </div>
-          <Sparkles className="absolute -top-10 -right-10 text-white/10 w-64 h-64 rotate-12" />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
