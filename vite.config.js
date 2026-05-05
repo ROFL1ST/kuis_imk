@@ -16,15 +16,22 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         /**
-         * All /api requests in development are proxied to the backend.
-         * This prevents CORS issues and keeps URLs clean.
-         * NEVER put secret API keys in .env with VITE_ prefix.
+         * Local dev proxy: /api/* → backend
+         *
+         * X-API-KEY di-inject di sini (server-side, tidak ke bundle).
+         * Nilai diambil dari .env.local → VITE_API_KEY.
+         *
+         * Di production (Vercel), api/proxy.js yang handle ini.
+         * VITE_API_KEY hanya dipakai lokal, tidak perlu di-set di Vercel.
          */
         "/api": {
           target: env.VITE_API_URL || "http://localhost:8080",
           changeOrigin: true,
           secure: false,
-          // Uncomment below if your backend does NOT have an /api prefix:
+          headers: {
+            "X-API-KEY": env.VITE_API_KEY || "",
+          },
+          // Uncomment jika backend tidak pakai prefix /api:
           // rewrite: (path) => path.replace(/^\/api/, ""),
         },
       },
