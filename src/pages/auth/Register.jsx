@@ -1,37 +1,52 @@
+// src/pages/auth/Register.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authAPI } from "../../services/api";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
-import {
-  Brain,
-  UserPlus,
-  User,
-  Lock,
-  Mail,
-  Sparkles,
-  Trophy,
-  ArrowRight,
-  Zap,
-} from "lucide-react";
+import { UserPlus, User, Lock, Mail, Sparkles, ArrowRight, Zap } from "lucide-react";
+
+const BRAND = "var(--color-brand-400)";
+const S100  = "var(--color-surface-100)";
+const S200  = "var(--color-surface-200)";
+const S300  = "var(--color-surface-300)";
+const S400  = "var(--color-surface-400)";
+const S500  = "var(--color-surface-500)";
+const S600  = "var(--color-surface-600)";
+const S700  = "var(--color-surface-700)";
+const S800  = "var(--color-surface-800)";
+const S900  = "var(--color-surface-900)";
+const S950  = "var(--color-surface-950, #05050f)";
+
+const DarkInput = ({ icon: Icon, label, hint, ...props }) => (
+  <div>
+    {label && <label className="block text-xs font-black mb-2" style={{ color: S400 }}>{label}</label>}
+    <div className="relative">
+      <Icon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: S600 }} />
+      <input
+        {...props}
+        className="w-full pl-12 pr-4 py-3.5 rounded-xl outline-none transition-all font-medium text-sm"
+        style={{ background: S800, border: `1.5px solid ${S700}`, color: S100 }}
+        onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = "0 0 0 3px rgb(99 102 241 / 0.12)"; }}
+        onBlur={e  => { e.target.style.borderColor = S700;  e.target.style.boxShadow = "none"; }}
+      />
+    </div>
+    {hint && <p className="text-[11px] mt-1.5" style={{ color: S600 }}>{hint}</p>}
+  </div>
+);
 
 const Register = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", username: "", password: "" });
+  const [form, setForm] = useState({ name:"", username:"", password:"" });
+
+  useEffect(() => { document.title = "Register | QuizApp"; }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (form.name === "" || form.username === "" || form.password === "") {
-      toast.error("Semua field harus diisi!");
-      return;
-    } else if (form.password.length < 6) {
-      toast.error("Password harus minimal 6 karakter!");
-      return;
-    } else if (form.username.includes(" ")) {
-      toast.error("Username tidak boleh mengandung spasi!");
-      return;
-    }
+    if (!form.name || !form.username || !form.password) return toast.error("Semua field harus diisi!");
+    if (form.password.length < 6)   return toast.error("Password harus minimal 6 karakter!");
+    if (form.username.includes(" ")) return toast.error("Username tidak boleh mengandung spasi!");
     setLoading(true);
     try {
       await authAPI.register(form);
@@ -44,225 +59,110 @@ const Register = () => {
     }
   };
 
-  useEffect(() => {
-    document.title = "Register | QuizApp";
-  }, []);
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: S950 }}>
+      {/* Ambient blobs */}
+      <div style={{ position:"fixed", inset:0, pointerEvents:"none", overflow:"hidden", zIndex:0 }}>
+        <div style={{ position:"absolute", top:"-10%", right:"-10%", width:"500px", height:"500px", background:"rgb(99 102 241 / 0.07)", borderRadius:"50%", filter:"blur(100px)" }} />
+        <div style={{ position:"absolute", bottom:"-10%", left:"-10%",  width:"500px", height:"500px", background:"rgb(34 211 238 / 0.05)", borderRadius:"50%", filter:"blur(100px)" }} />
+        <div style={{ position:"absolute", inset:0, backgroundImage:`radial-gradient(circle, var(--color-surface-800) 1px, transparent 1px)`, backgroundSize:"32px 32px", opacity:0.28 }} />
+      </div>
+
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-lg"
+        initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }} transition={{ duration:0.5 }}
+        className="w-full max-w-lg relative" style={{ zIndex:1 }}
       >
-        {/* Header Section */}
-        <motion.div
-          className="text-center mb-8"
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <div className="flex gap-x-3 items-center justify-center mb-2">
-            <div className="bg-indigo-600 text-white p-2 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-indigo-500/30">
-              <Zap size={24} fill="currentColor" />
+        {/* Logo */}
+        <motion.div className="text-center mb-8" initial={{ scale:0.9 }} animate={{ scale:1 }} transition={{ delay:0.2 }}>
+          <div className="flex gap-3 items-center justify-center mb-2">
+            <div className="p-2 rounded-xl" style={{ background:"linear-gradient(135deg,#4f46e5,#7c3aed)", boxShadow:"0 4px 16px rgb(99 102 241 / 0.35)" }}>
+              <Zap size={22} fill="white" style={{ color:"white" }} />
             </div>
-            <span className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
-              QuizApp
-            </span>
+            <span className="text-3xl font-black" style={{ background:"linear-gradient(90deg,#818cf8,#a78bfa)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>QuizApp</span>
           </div>
-          <p className="text-slate-600 mt-2">
-            Uji pengetahuanmu dengan kuis seru!
-          </p>
+          <p className="text-sm" style={{ color: S500 }}>Uji pengetahuanmu dengan kuis seru!</p>
         </motion.div>
 
-        {/* Form Card */}
+        {/* Card */}
         <motion.form
           onSubmit={handleRegister}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/20 relative overflow-hidden"
+          initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3 }}
+          className="p-8 rounded-3xl relative overflow-hidden"
+          style={{ background:"rgb(10 10 22 / 0.80)", backdropFilter:"blur(20px)", border:`1px solid ${S800}`, boxShadow:"0 24px 60px rgb(0 0 0 / 0.50)" }}
         >
-          {/* Decorative Background Elements */}
-          <div className="absolute -top-20 -right-20 h-40 w-40 bg-blue-100 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-20 -left-20 h-40 w-40 bg-cyan-100 rounded-full blur-3xl"></div>
+          {/* Inner glow blobs */}
+          <div style={{ position:"absolute", top:"-60px", right:"-60px", width:"180px", height:"180px", background:"rgb(99 102 241 / 0.06)", borderRadius:"50%", filter:"blur(50px)", pointerEvents:"none" }} />
+          <div style={{ position:"absolute", bottom:"-60px", left:"-60px", width:"180px", height:"180px", background:"rgb(34 211 238 / 0.04)", borderRadius:"50%", filter:"blur(50px)", pointerEvents:"none" }} />
 
-          {/* Form Content */}
           <div className="relative z-10">
-            {/* Form Header */}
             <div className="flex items-center justify-center gap-3 mb-8">
-              <UserPlus className="h-7 w-7 text-blue-600" />
-              <h2 className="text-2xl font-bold text-slate-800">
-                Buat Akun Baru
-              </h2>
+              <UserPlus size={22} style={{ color: BRAND }} />
+              <h2 className="text-2xl font-black" style={{ color: S100 }}>Buat Akun Baru</h2>
             </div>
 
-            {/* Form Fields */}
-            <div className="space-y-6">
-              {/* Name Field */}
-              <motion.div
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">
-                  Nama Lengkap
-                </label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-white"
-                    placeholder="Masukkan nama lengkap"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </div>
+            <div className="space-y-5">
+              <motion.div initial={{ x:-20, opacity:0 }} animate={{ x:0, opacity:1 }} transition={{ delay:0.4 }}>
+                <DarkInput icon={User} label="Nama Lengkap" type="text" required placeholder="Masukkan nama lengkap" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
               </motion.div>
-
-              {/* Username Field */}
-              <motion.div
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">
-                  Username
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-white"
-                    placeholder="Pilih username unik"
-                    value={form.username}
-                    onChange={(e) =>
-                      setForm({ ...form, username: e.target.value })
-                    }
-                  />
-                </div>
+              <motion.div initial={{ x:-20, opacity:0 }} animate={{ x:0, opacity:1 }} transition={{ delay:0.5 }}>
+                <DarkInput icon={Mail} label="Username" type="text" required placeholder="Pilih username unik" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
               </motion.div>
-
-              {/* Password Field */}
-              <motion.div
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                <label className="block text-sm font-medium text-slate-700 mb-2 ml-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <input
-                    type="password"
-                    required
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-white"
-                    placeholder="Buat password kuat"
-                    value={form.password}
-                    onChange={(e) =>
-                      setForm({ ...form, password: e.target.value })
-                    }
-                  />
-                </div>
-                <p className="text-xs text-slate-500 mt-2 ml-1">
-                  Minimal 6 karakter dengan kombinasi huruf dan angka
-                </p>
+              <motion.div initial={{ x:-20, opacity:0 }} animate={{ x:0, opacity:1 }} transition={{ delay:0.6 }}>
+                <DarkInput icon={Lock} label="Password" type="password" required placeholder="Buat password kuat" hint="Minimal 6 karakter dengan kombinasi huruf dan angka" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
               </motion.div>
             </div>
 
-            {/* Register Button */}
+            {/* Submit */}
             <motion.button
               disabled={loading}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full mt-10 bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-4 rounded-xl font-bold hover:shadow-xl shadow-lg transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-3 group relative overflow-hidden"
+              whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
+              className="w-full mt-8 p-4 rounded-xl font-black text-sm flex items-center justify-center gap-3 group relative overflow-hidden transition-all"
+              style={{ background:"linear-gradient(135deg,#4f46e5,#7c3aed)", color:"white", boxShadow:"0 8px 24px rgb(99 102 241 / 0.30)", opacity: loading ? 0.6 : 1 }}
             >
-              {/* Shine Effect */}
+              {/* Shine */}
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "100%" }}
-                transition={{ duration: 0.6 }}
+                className="absolute inset-0"
+                style={{ background:"linear-gradient(90deg, transparent, rgb(255 255 255 / 0.12), transparent)" }}
+                initial={{ x:"-100%" }} whileHover={{ x:"100%" }} transition={{ duration:0.5 }}
               />
-
               {loading ? (
-                <>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
-                    className="h-5 w-5 border-2 border-white border-t-transparent rounded-full"
-                  />
-                  <span>Membuat Akun...</span>
-                </>
+                <><motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:"linear" }} className="h-5 w-5 border-2 border-white border-t-transparent rounded-full" /><span>Membuat Akun...</span></>
               ) : (
-                <>
-                  <span>Daftar Sekarang</span>
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform" />
-                </>
+                <><span>Daftar Sekarang</span><ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" /></>
               )}
             </motion.button>
 
-            {/* Login Link */}
+            {/* Login link */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="mt-8 text-center p-4 bg-gradient-to-r from-blue-50/50 to-cyan-50/50 rounded-xl border border-blue-100"
+              initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.8 }}
+              className="mt-6 text-center p-4 rounded-xl"
+              style={{ background:"rgb(99 102 241 / 0.06)", border:`1px solid ${S800}` }}
             >
-              <p className="text-slate-700">
+              <p className="text-sm" style={{ color: S500 }}>
                 Sudah punya akun?{" "}
-                <Link
-                  to="/login"
-                  className="text-blue-600 font-bold hover:text-blue-700 inline-flex items-center gap-2 group"
-                >
-                  Masuk ke akunmu
-                  <Sparkles className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+                <Link to="/login" className="font-black inline-flex items-center gap-1 group" style={{ color: BRAND }}>
+                  Masuk ke akunmu <Sparkles size={13} className="group-hover:rotate-12 transition-transform" />
                 </Link>
               </p>
             </motion.div>
 
-            {/* Features List */}
+            {/* Feature chips */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.9 }}
-              className="mt-8 grid grid-cols-2 gap-4 text-sm text-slate-600"
+              initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.9 }}
+              className="mt-6 grid grid-cols-2 gap-3 text-xs"
             >
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                <span>Akses ke 1000+ kuis</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                <span>Statistik pribadi</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                <span>Kompetisi dengan teman</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                <span>Leaderboard global</span>
-              </div>
+              {["Akses ke 1000+ kuis","Statistik pribadi","Kompetisi dengan teman","Leaderboard global"].map((txt, i) => (
+                <div key={i} className="flex items-center gap-2" style={{ color: S500 }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND }} />
+                  <span>{txt}</span>
+                </div>
+              ))}
             </motion.div>
           </div>
         </motion.form>
 
-        {/* Footer */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="text-center text-slate-500 text-sm mt-6"
-        >
-          Dengan mendaftar, kamu menyetujui Syarat & Ketentuan QuizzApp
+        <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1 }} className="text-center text-xs mt-5" style={{ color: S600 }}>
+          Dengan mendaftar, kamu menyetujui Syarat &amp; Ketentuan QuizApp
         </motion.p>
       </motion.div>
     </div>
