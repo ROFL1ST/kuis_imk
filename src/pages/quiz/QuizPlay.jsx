@@ -208,13 +208,12 @@ const QuizPlay = ({ isRemedial: propIsRemedial = false }) => {
     }
   };
 
-  // --- SSE Realtime ---
+  // --- SSE Realtime — gunakan /api/* proxy, X-API-KEY diinject oleh proxy ---
   useEffect(() => {
     if (!isRealtime || !challengeID) return;
-    const token = getToken();
     const eventSource = new EventSourcePolyfill(
-      `${import.meta.env.VITE_API_URL}/challenges/${challengeID}/lobby-stream`,
-      { headers: { "X-API-KEY": import.meta.env.VITE_API_KEY }, withCredentials: true, heartbeatTimeout: 120000 }
+      `/api/challenges/${challengeID}/lobby-stream`,
+      { withCredentials: true, heartbeatTimeout: 120000 }
     );
     eventSource.onmessage = (event) => { if (event.data === ":keepalive") return; };
     eventSource.addEventListener("player_update", (e) => {
